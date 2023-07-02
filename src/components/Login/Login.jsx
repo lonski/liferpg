@@ -6,7 +6,7 @@ import "./Login.css";
 import { Button } from "@mui/material";
 
 export const Login = () => {
-  const [user, loading, error] = useAuthState(auth);
+  const [user, loading] = useAuthState(auth);
   const navigate = useNavigate();
   useEffect(() => {
     if (loading) {
@@ -14,7 +14,7 @@ export const Login = () => {
       return;
     }
     if (user) navigate("/home");
-  }, [user, loading]);
+  }, [user, loading, navigate]);
   return (
     <div className="login">
       <Button onClick={signInWithGoogle}>Login with Google</Button>
