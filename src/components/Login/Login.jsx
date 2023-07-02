@@ -17,7 +17,9 @@ export const Login = () => {
   }, [user, loading, navigate]);
   return (
     <div className="login">
-      <Button onClick={signInWithGoogle}>Login with Google</Button>
+      <Button variant="contained" onClick={signInWithGoogle}>
+        Login
+      </Button>
     </div>
   );
 };
