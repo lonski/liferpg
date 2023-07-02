@@ -5,7 +5,9 @@ import {
   collection,
   where,
   getDocs,
-  addDoc,
+  setDoc,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import {
   GoogleAuthProvider,
@@ -32,10 +34,9 @@ const signInWithGoogle = async () => {
   try {
     const res = await signInWithPopup(auth, googleProvider);
     const user = res.user;
-    const q = query(collection(db, "users"), where("uid", "==", user.uid));
-    const docs = await getDocs(q);
-    if (docs.docs.length === 0) {
-      await addDoc(collection(db, "users"), {
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists()) {
+      await setDoc(doc(collection(db, "users"), user.uid), {
         uid: user.uid,
         name: user.displayName,
         authProvider: "google",
@@ -48,9 +49,6 @@ const signInWithGoogle = async () => {
   }
 };
 
-const logout = () => {
-  alert("lol");
-  signOut(auth);
-};
+const logout = () => signOut(auth);
 
 export { auth, db, signInWithGoogle, logout };
