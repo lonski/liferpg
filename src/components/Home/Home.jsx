@@ -1,10 +1,18 @@
-import { Button, CircularProgress } from "@mui/material";
+import {
+  AppBar,
+  Box,
+  CircularProgress,
+  Container,
+  IconButton,
+  Toolbar,
+} from "@mui/material";
 import { logout } from "../../firebase";
 import { useNavigate } from "react-router-dom";
 import React from "react";
 import { Character } from "components/Character/Character";
 import { useAuth } from "hooks/useAuth";
 import { useCharacters } from "hooks/useCharacters";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 export const Home = () => {
   const [user, loading] = useAuth();
@@ -15,22 +23,34 @@ export const Home = () => {
   const [characters, charactersLoading] = useCharacters(user);
 
   return (
-    <div>
-      {(loading || charactersLoading) && <CircularProgress />}
-      {loading || (
-        <>
-          <Button onClick={handleLogout}>Logout</Button>
-        </>
-      )}
-      {charactersLoading || (
-        <>
-          {characters
-            .filter((c) => c !== undefined)
-            .map((c) => (
-              <Character key={c.name} character={c} />
-            ))}
-        </>
-      )}
-    </div>
+    <>
+      <AppBar position="static">
+        <Toolbar variant="dense">
+          {(loading || charactersLoading) && (
+            <CircularProgress color="info" size={24} />
+          )}
+          <Box sx={{ flexGrow: 1 }} />
+          {loading || (
+            <>
+              <IconButton color="inherit" onClick={handleLogout}>
+                <LogoutIcon />
+              </IconButton>
+            </>
+          )}
+        </Toolbar>
+      </AppBar>
+
+      <Container maxWidth="xs">
+        {charactersLoading || (
+          <>
+            {characters
+              .filter((c) => c !== undefined)
+              .map((c) => (
+                <Character key={c.name} character={c} />
+              ))}
+          </>
+        )}
+      </Container>
+    </>
   );
 };
