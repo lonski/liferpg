@@ -26,7 +26,10 @@ export const Character = ({ character }) => {
               <Box>
                 <LinearProgress
                   variant="determinate"
-                  value={(character.current_xp * 100) / character.next_level_xp}
+                  value={Math.min(
+                    (character.current_xp * 100) / character.next_level_xp,
+                    100
+                  )}
                 />
               </Box>
             </>
