@@ -18,7 +18,7 @@ export const Home = () => {
   const [user, loading] = useAuth();
   const navigate = useNavigate();
   const handleLogout = () => {
-    logout().then(() => navigate("/"));
+    logout().then(() => navigate("/login"));
   };
   const [characters, charactersLoading] = useCharacters(user);
 
@@ -26,30 +26,34 @@ export const Home = () => {
     <>
       <AppBar position="static">
         <Toolbar variant="dense">
-          {(loading || charactersLoading) && (
-            <CircularProgress color="info" size={24} />
-          )}
-          <Box sx={{ flexGrow: 1 }} />
-          {loading || (
-            <>
-              <IconButton color="inherit" onClick={handleLogout}>
-                <LogoutIcon />
-              </IconButton>
-            </>
-          )}
+          <>
+            {(loading || charactersLoading) && (
+              <CircularProgress color="info" size={24} />
+            )}
+            <Box sx={{ flexGrow: 1 }} />
+            {loading || (
+              <>
+                <IconButton color="inherit" onClick={handleLogout}>
+                  <LogoutIcon />
+                </IconButton>
+              </>
+            )}
+          </>
         </Toolbar>
       </AppBar>
 
       <Container maxWidth="xs">
-        {charactersLoading || (
-          <>
-            {characters
-              .filter((c) => c !== undefined)
-              .map((c) => (
-                <Character key={c.name} character={c} />
-              ))}
-          </>
-        )}
+        <>
+          {charactersLoading || (
+            <>
+              {characters
+                .filter((c) => c !== undefined)
+                .map((c) => (
+                  <Character key={c.name} character={c} />
+                ))}
+            </>
+          )}
+        </>
       </Container>
     </>
   );

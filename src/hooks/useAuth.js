@@ -18,6 +18,7 @@ export const useAuth = () => {
 
     if (!authUser) {
       navigate("/login");
+      return;
     }
 
     getDoc(doc(db, "users", authUser.uid))
