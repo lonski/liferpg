@@ -2,18 +2,24 @@ import { Box } from "@mui/material";
 import "./App.css";
 import { Home } from "./components/Home/Home";
 import { Login } from "./components/Login/Login";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import React from "react";
 
 function App() {
+  const router = createBrowserRouter([
+    {
+      path: "/",
+      element: <Home />,
+    },
+    {
+      path: "/login",
+      element: <Login />,
+    },
+  ]);
+
   return (
     <Box className="app">
-      <Router>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/home" element={<Home />} />
-        </Routes>
-      </Router>
+      <RouterProvider router={router} />
     </Box>
   );
 }
