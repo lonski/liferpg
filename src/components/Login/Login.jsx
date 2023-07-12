@@ -13,7 +13,7 @@ export const Login = () => {
       // maybe trigger a loading screen
       return;
     }
-    if (user) navigate("/home");
+    if (user) navigate("/");
   }, [user, loading, navigate]);
   return (
     <div className="login">
