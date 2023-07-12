@@ -1,18 +1,20 @@
+import { Box } from "@mui/material";
 import "./App.css";
 import { Home } from "./components/Home/Home";
 import { Login } from "./components/Login/Login";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import React from "react";
 
 function App() {
   return (
-    <div className="app">
+    <Box className="app">
       <Router>
         <Routes>
-          <Route exact path="/" element={<Login />} />
-          <Route exact path="/home" element={<Home />} />
+          <Route path="/" element={<Login />} />
+          <Route path="/home" element={<Home />} />
         </Routes>
       </Router>
-    </div>
+    </Box>
   );
 }
 
