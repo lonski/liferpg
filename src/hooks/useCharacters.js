@@ -5,6 +5,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 export const useCharacters = (user) => {
   const [characters, setCharacters] = useState(null);
   const [loading, setLoading] = useState(true);
+  const handleRefresh = () => {};
 
   useEffect(() => {
     if (!user) {
@@ -16,11 +17,11 @@ export const useCharacters = (user) => {
       : query(c, where("email", "==", user.email));
     getDocs(q)
       .then((r) => {
-        const chars = r.docs.map((d) => d.data());
+        const chars = r.docs.map((d) => ({ ...d.data(), id: d.id }));
         return setCharacters(chars);
       })
       .then(() => setLoading(false));
-  }, [user]);
+  }, [user, handleRefresh]);
 
-  return [characters, loading];
+  return [characters, loading, handleRefresh];
 };

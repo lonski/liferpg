@@ -1,9 +1,21 @@
-import { Box, LinearProgress, Paper, Typography } from "@mui/material";
-import React from "react";
+import {
+  Box,
+  IconButton,
+  LinearProgress,
+  Paper,
+  Typography,
+} from "@mui/material";
+import React, { useState } from "react";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import WalletIcon from "@mui/icons-material/Wallet";
+import EditIcon from "@mui/icons-material/Edit";
+import { EditCharacterDialog } from "components/EditCharacterDialog/EditCharacterDialog";
 
-export const Character = ({ character }) => {
+export const Character = ({ character, user }) => {
+  const [edit, setEdit] = useState(false);
+  const handleEdit = () => setEdit(true);
+  const handleClose = () => setEdit(false);
+
   return (
     <div>
       {character && (
@@ -34,14 +46,26 @@ export const Character = ({ character }) => {
               </Box>
             </>
           )}
-          <div>
+          <Box display="flex" justifyContent="space-between">
             <Box marginTop={"10px"} display="flex" justifyContent="left">
               <WalletIcon />
               <Typography color={"black"} sx={{ marginLeft: "4px" }}>
                 {character.gold} zł
               </Typography>
             </Box>
-          </div>
+            {user?.admin && (
+              <Box>
+                <IconButton onClick={handleEdit}>
+                  <EditIcon />
+                </IconButton>
+                <EditCharacterDialog
+                  charToEdit={character}
+                  open={edit}
+                  handleClose={handleClose}
+                />
+              </Box>
+            )}
+          </Box>
         </Paper>
       )}
     </div>
