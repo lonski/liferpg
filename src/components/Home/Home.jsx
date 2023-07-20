@@ -49,7 +49,7 @@ export const Home = () => {
               {characters
                 .filter((c) => c !== undefined)
                 .map((c) => (
-                  <Character key={c.name} character={c} />
+                  <Character key={c.name} character={c} user={user} />
                 ))}
             </>
           )}
