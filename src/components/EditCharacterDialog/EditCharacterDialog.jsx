@@ -1,5 +1,6 @@
 import { Box, Button, Dialog, Input, Typography } from "@mui/material";
 import React, { useState } from "react";
+import PropTypes from "prop-types";
 
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -107,6 +108,30 @@ export const EditCharacterDialog = ({
             </Box>
 
             <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems={"center"}
+            >
+              <Box sx={{ width: "90px" }}>
+                <Typography color={"black"} sx={{ marginLeft: "4px" }}>
+                  Przychylność:
+                </Typography>
+              </Box>
+              <Box sx={{ marginLeft: "8px", width: "64px" }}>
+                <Input
+                  type={"number"}
+                  value={character.favour}
+                  onChange={(e) => {
+                    setCharacter((prev) => ({
+                      ...prev,
+                      favour: Number(e.target.value),
+                    }));
+                  }}
+                />
+              </Box>
+            </Box>
+
+            <Box
               sx={{ marginTop: "12px" }}
               display="flex"
               justifyContent="space-between"
@@ -124,4 +149,11 @@ export const EditCharacterDialog = ({
       )}
     </div>
   );
+};
+
+EditCharacterDialog.propTypes = {
+  charToEdit: PropTypes.object,
+  open: PropTypes.boolean,
+  handleClose: PropTypes.object,
+  handleRefresh: PropTypes.object,
 };
