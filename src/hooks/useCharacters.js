@@ -5,7 +5,6 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 export const useCharacters = (user) => {
   const [characters, setCharacters] = useState(null);
   const [loading, setLoading] = useState(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleRefresh = () => {};
 
   useEffect(() => {

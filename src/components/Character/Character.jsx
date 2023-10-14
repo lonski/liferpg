@@ -10,17 +10,41 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import WalletIcon from "@mui/icons-material/Wallet";
 import EditIcon from "@mui/icons-material/Edit";
 import { EditCharacterDialog } from "components/EditCharacterDialog/EditCharacterDialog";
+import PropTypes from "prop-types";
+import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
+import SentimentSatisfiedIcon from "@mui/icons-material/SentimentSatisfied";
+import SentimentSatisfiedAltIcon from "@mui/icons-material/SentimentSatisfiedAlt";
+import SentimentDissatisfiedIcon from "@mui/icons-material/SentimentDissatisfied";
+import {
+  SentimentDissatisfied,
+  SentimentVerySatisfied,
+} from "@mui/icons-material";
 
 export const Character = ({ character, user }) => {
   const [edit, setEdit] = useState(false);
   const handleEdit = () => setEdit(true);
   const handleClose = () => setEdit(false);
-
   return (
     <div>
       {character && (
         <Paper sx={{ margin: "4px", padding: "4px" }} elevation={2}>
-          <Typography variant="h4">{character.name}</Typography>
+          <Box display="flex" justifyContent="space-between">
+            <Typography variant="h4">{character.name}</Typography>
+            <Box>
+              <Box marginTop={"10px"} display="flex" justifyContent="left">
+                {character.favour === 0 && <SentimentSatisfiedIcon />}
+                {character.favour === -1 && (
+                  <SentimentDissatisfied color="warning" />
+                )}
+                {character.favour < -1 && (
+                  <SentimentVeryDissatisfiedIcon color="error" />
+                )}
+                {character.favour > 0 && (
+                  <SentimentSatisfiedAltIcon color="success" />
+                )}
+              </Box>
+            </Box>
+          </Box>
           {character.clazz && (
             <Typography variant="overline" display="block" gutterBottom>
               {character.clazz}
@@ -70,4 +94,9 @@ export const Character = ({ character, user }) => {
       )}
     </div>
   );
+};
+
+Character.propTypes = {
+  character: PropTypes.object,
+  user: PropTypes.object,
 };
