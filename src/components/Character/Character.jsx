@@ -1,5 +1,6 @@
 import {
   Box,
+  Chip,
   IconButton,
   LinearProgress,
   Paper,
@@ -20,6 +21,7 @@ export const Character = ({ character, user }) => {
   const [edit, setEdit] = useState(false);
   const handleEdit = () => setEdit(true);
   const handleClose = () => setEdit(false);
+  const [badgeVisible, setBadgeVisible] = useState(false);
   return (
     <div>
       {character && (
@@ -48,7 +50,7 @@ export const Character = ({ character, user }) => {
           )}
 
           {character.level && (
-            <>
+            <Box onClick={() => setBadgeVisible((prev) => !prev)}>
               <Box display="flex" justifyContent="left">
                 <TrendingUpIcon />
                 <Typography color={"black"} sx={{ marginLeft: "4px" }}>
@@ -63,8 +65,30 @@ export const Character = ({ character, user }) => {
                     100
                   )}
                 />
+                {badgeVisible && (
+                  <Box
+                    display="flex"
+                    justifyContent="center"
+                    sx={{ marginTop: 1 }}
+                  >
+                    <Chip
+                      sx={{ width: "100%" }}
+                      label={
+                        <span>
+                          Do następnego poziomu brakuje:&nbsp;
+                          <b>
+                            {character.next_level_xp - character.current_xp}
+                          </b>
+                          &nbsp;punktów
+                        </span>
+                      }
+                      color="success"
+                      variant="outlined"
+                    />
+                  </Box>
+                )}
               </Box>
-            </>
+            </Box>
           )}
           <Box display="flex" justifyContent="space-between">
             <Box marginTop={"10px"} display="flex" justifyContent="left">
