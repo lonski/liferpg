@@ -14,11 +14,7 @@ import PropTypes from "prop-types";
 import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
 import SentimentSatisfiedIcon from "@mui/icons-material/SentimentSatisfied";
 import SentimentSatisfiedAltIcon from "@mui/icons-material/SentimentSatisfiedAlt";
-import SentimentDissatisfiedIcon from "@mui/icons-material/SentimentDissatisfied";
-import {
-  SentimentDissatisfied,
-  SentimentVerySatisfied,
-} from "@mui/icons-material";
+import { SentimentDissatisfied } from "@mui/icons-material";
 
 export const Character = ({ character, user }) => {
   const [edit, setEdit] = useState(false);

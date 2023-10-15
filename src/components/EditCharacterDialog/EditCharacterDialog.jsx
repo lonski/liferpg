@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase";
+import { useQueryClient } from "react-query";
 
 export const EditCharacterDialog = ({
   charToEdit,
@@ -11,10 +12,14 @@ export const EditCharacterDialog = ({
   handleClose,
   handleRefresh,
 }) => {
+  const queryClient = useQueryClient();
   const [character, setCharacter] = useState(charToEdit);
   const handleSave = async () => {
     const charDoc = doc(db, "characters", character.id);
-    await updateDoc(charDoc, character).then(handleRefresh).then(handleClose);
+    await updateDoc(charDoc, character)
+      .then(handleRefresh)
+      .then(handleClose)
+      .then(() => queryClient.invalidateQueries("characters"));
   };
 
   return (
@@ -153,7 +158,7 @@ export const EditCharacterDialog = ({
 
 EditCharacterDialog.propTypes = {
   charToEdit: PropTypes.object,
-  open: PropTypes.boolean,
-  handleClose: PropTypes.object,
-  handleRefresh: PropTypes.object,
+  open: PropTypes.bool,
+  handleClose: PropTypes.any,
+  handleRefresh: PropTypes.any,
 };
