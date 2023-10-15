@@ -24,7 +24,7 @@ export const useAuth = () => {
     getDoc(doc(db, "users", authUser.uid))
       .then((d) => setUser(d.data()))
       .then(() => setLoading(false));
-  }, [authUser, authLoading, navigate]);
+  }, [authUser, authLoading]);
 
   return [user, loading];
 };

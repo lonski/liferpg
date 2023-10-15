@@ -15,22 +15,19 @@ import { useCharacters } from "hooks/useCharacters";
 import LogoutIcon from "@mui/icons-material/Logout";
 
 export const Home = () => {
-  const [reload, setReload] = useState(false);
-  const [user, loading] = useAuth();
   const navigate = useNavigate();
   const handleLogout = () => {
     logout().then(() => navigate("/login"));
   };
-  const [characters, charactersLoading] = useCharacters(user, reload);
+  const [user, authLoading] = useAuth();
+  const [characters, loading] = useCharacters();
 
   return (
     <>
       <AppBar position="static">
         <Toolbar variant="dense">
           <>
-            {(loading || charactersLoading) && (
-              <CircularProgress color="info" size={24} />
-            )}
+            {loading && <CircularProgress color="info" size={24} />}
             <Box sx={{ flexGrow: 1 }} />
             {loading || (
               <>
@@ -45,17 +42,12 @@ export const Home = () => {
 
       <Container maxWidth="xs">
         <>
-          {charactersLoading || (
+          {characters && (
             <>
               {characters
                 .filter((c) => c !== undefined)
                 .map((c) => (
-                  <Character
-                    key={c.name}
-                    character={c}
-                    user={user}
-                    handleRefresh={() => setReload((prev) => !prev)}
-                  />
+                  <Character key={c.name} character={c} user={user} />
                 ))}
             </>
           )}
