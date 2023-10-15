@@ -119,20 +119,62 @@ export const EditCharacterDialog = ({
             >
               <Box sx={{ width: "90px" }}>
                 <Typography color={"black"} sx={{ marginLeft: "4px" }}>
-                  Przychylność:
+                  Dolary:
                 </Typography>
               </Box>
               <Box sx={{ marginLeft: "8px", width: "64px" }}>
                 <Input
                   type={"number"}
-                  value={character.favour}
+                  value={character.gold_usd}
                   onChange={(e) => {
                     setCharacter((prev) => ({
                       ...prev,
-                      favour: Number(e.target.value),
+                      gold_usd: e.target.value,
                     }));
                   }}
                 />
+              </Box>
+            </Box>
+
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems={"center"}
+            >
+              <Box sx={{ width: "90px" }}>
+                <Typography color={"black"} sx={{ marginLeft: "4px" }}>
+                  Przychylność:
+                </Typography>
+              </Box>
+              <Box>
+                <Box
+                  sx={{ marginLeft: "4px" }}
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <Button
+                    onClick={() => {
+                      setCharacter((prev) => ({
+                        ...prev,
+                        favour: prev.favour - 1,
+                      }));
+                    }}
+                  >
+                    &#x1f44e;
+                  </Button>
+                  <Box>{character.favour}</Box>
+                  <Button
+                    onClick={() => {
+                      setCharacter((prev) => ({
+                        ...prev,
+                        favour: prev.favour + 1,
+                      }));
+                    }}
+                  >
+                    &#128077;
+                  </Button>
+                </Box>
               </Box>
             </Box>
 

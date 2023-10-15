@@ -93,9 +93,24 @@ export const Character = ({ character, user }) => {
           <Box display="flex" justifyContent="space-between">
             <Box marginTop={"10px"} display="flex" justifyContent="left">
               <WalletIcon />
-              <Typography color={"black"} sx={{ marginLeft: "4px" }}>
-                {character.gold} zł
-              </Typography>
+              <Box color={"black"}>
+                <Chip
+                  sx={{ marginLeft: "4px" }}
+                  size="small"
+                  variant="outlined"
+                  label={<span> {character.gold}zł </span>}
+                  color="warning"
+                />
+                {character.gold_usd && (
+                  <Chip
+                    sx={{ marginLeft: "4px" }}
+                    size="small"
+                    variant="outlined"
+                    label={<span> {character.gold_usd}$ </span>}
+                    color="warning"
+                  />
+                )}
+              </Box>
             </Box>
             {user?.admin && (
               <Box>
