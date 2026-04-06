@@ -185,7 +185,7 @@ export const EditCharacterDialog = ({
             </Typography>
             {(character.traits || []).map((trait, index) => (
               <Box
-                key={index}
+                key={trait.name}
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
@@ -195,9 +195,12 @@ export const EditCharacterDialog = ({
                 <Input
                   value={trait.value}
                   onChange={(e) => {
-                    const updated = [...character.traits];
-                    updated[index] = { ...trait, value: e.target.value };
-                    setCharacter((prev) => ({ ...prev, traits: updated }));
+                    const value = e.target.value;
+                    setCharacter((prev) => {
+                      const updated = [...prev.traits];
+                      updated[index] = { ...updated[index], value };
+                      return { ...prev, traits: updated };
+                    });
                   }}
                   sx={{ width: "64px" }}
                 />
