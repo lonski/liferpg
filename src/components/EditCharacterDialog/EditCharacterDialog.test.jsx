@@ -68,3 +68,27 @@ test('deleting a trait removes it from the list', () => {
   expect(screen.queryByText('Siła')).not.toBeInTheDocument();
   expect(screen.getByText('Zręczność')).toBeInTheDocument();
 });
+
+test('adding a new trait appends it to the list', async () => {
+  render(
+    <EditCharacterDialog
+      charToEdit={character}
+      open={true}
+      handleClose={jest.fn()}
+    />
+  );
+  // Type into the freeSolo Autocomplete input
+  const nameInput = screen.getByPlaceholderText('Nowa cecha...');
+  fireEvent.change(nameInput, { target: { value: 'Charyzma' } });
+
+  const valueInput = screen.getByPlaceholderText('Wartość');
+  fireEvent.change(valueInput, { target: { value: 'wysoka' } });
+
+  fireEvent.click(screen.getByLabelText('dodaj cechę'));
+
+  expect(screen.getByText('Charyzma')).toBeInTheDocument();
+  expect(screen.getByDisplayValue('wysoka')).toBeInTheDocument();
+  // add row is reset
+  expect(nameInput.value).toBe('');
+  expect(valueInput.value).toBe('');
+});
