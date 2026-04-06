@@ -1,5 +1,6 @@
-import { Box, Button, Dialog, Divider, IconButton, Input, Typography } from "@mui/material";
+import { Autocomplete, Box, Button, Dialog, Divider, IconButton, Input, TextField, Typography } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
@@ -14,7 +15,17 @@ export const EditCharacterDialog = ({
   handleRefresh,
 }) => {
   const queryClient = useQueryClient();
+  const existingTraitNames = [
+    ...new Set(
+      queryClient
+        .getQueriesData(["characters"])
+        .flatMap(([, data]) => (data || []))
+        .flatMap((c) => (c.traits || []).map((t) => t.name))
+    ),
+  ];
   const [character, setCharacter] = useState(charToEdit);
+  const [newTraitName, setNewTraitName] = useState('');
+  const [newTraitValue, setNewTraitValue] = useState('');
   const handleSave = async () => {
     const charDoc = doc(db, "characters", character.id);
     await updateDoc(charDoc, character)
@@ -219,6 +230,50 @@ export const EditCharacterDialog = ({
                 </IconButton>
               </Box>
             ))}
+
+            <Box display="flex" alignItems="flex-end" gap={1} sx={{ mt: 1 }}>
+              <Autocomplete
+                freeSolo
+                options={existingTraitNames}
+                value={newTraitName}
+                onChange={(e, value) => setNewTraitName(value || '')}
+                onInputChange={(e, value) => setNewTraitName(value || '')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    variant="standard"
+                    placeholder="Nowa cecha..."
+                    size="small"
+                  />
+                )}
+                size="small"
+                sx={{ flex: 1 }}
+              />
+              <Input
+                value={newTraitValue}
+                onChange={(e) => setNewTraitValue(e.target.value)}
+                placeholder="Wartość"
+                sx={{ width: "64px" }}
+              />
+              <IconButton
+                aria-label="dodaj cechę"
+                size="small"
+                disabled={!newTraitName.trim()}
+                onClick={() => {
+                  setCharacter((prev) => ({
+                    ...prev,
+                    traits: [
+                      ...(prev.traits || []),
+                      { name: newTraitName.trim(), value: newTraitValue },
+                    ],
+                  }));
+                  setNewTraitName('');
+                  setNewTraitValue('');
+                }}
+              >
+                <AddIcon fontSize="small" />
+              </IconButton>
+            </Box>
 
             <Box
               sx={{ marginTop: "12px" }}
