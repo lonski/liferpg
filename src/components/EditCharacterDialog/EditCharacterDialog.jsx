@@ -19,8 +19,7 @@ export const EditCharacterDialog = ({
     .flatMap(([, data]) => (data || []));
   const existingTraitNames = useMemo(
     () => [...new Set(allCharacters.flatMap((c) => (c.traits || []).map((t) => t.name)))],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [open]
+    [open] // eslint-disable-line
   );
   const [character, setCharacter] = useState(charToEdit);
   useEffect(() => {
