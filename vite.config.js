@@ -5,12 +5,10 @@ import { fileURLToPath, URL } from 'node:url';
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: [
-      {
-        find: /^([^./])/,
-        replacement: fileURLToPath(new URL('./src/$1', import.meta.url)),
-      },
-    ],
+    alias: {
+      components: fileURLToPath(new URL('./src/components', import.meta.url)),
+      hooks: fileURLToPath(new URL('./src/hooks', import.meta.url)),
+    },
   },
   test: {
     environment: 'jsdom',
