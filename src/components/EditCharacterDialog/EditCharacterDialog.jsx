@@ -1,5 +1,7 @@
-import { Box, Button, Dialog, Input, Typography } from "@mui/material";
-import React, { useState } from "react";
+import { Autocomplete, Box, Button, Dialog, Divider, IconButton, Input, TextField, Typography } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import React, { useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 import { doc, updateDoc } from "firebase/firestore";
@@ -13,7 +15,17 @@ export const EditCharacterDialog = ({
   handleRefresh,
 }) => {
   const queryClient = useQueryClient();
+  const existingTraitNames = useMemo(() => [
+    ...new Set(
+      queryClient
+        .getQueriesData(["characters"])
+        .flatMap(([, data]) => (data || []))
+        .flatMap((c) => (c.traits || []).map((t) => t.name))
+    ),
+  ], [queryClient]);
   const [character, setCharacter] = useState(charToEdit);
+  const [newTraitName, setNewTraitName] = useState('');
+  const [newTraitValue, setNewTraitValue] = useState('');
   const handleSave = async () => {
     const charDoc = doc(db, "characters", character.id);
     await updateDoc(charDoc, character)
@@ -176,6 +188,91 @@ export const EditCharacterDialog = ({
                   </Button>
                 </Box>
               </Box>
+            </Box>
+
+            <Divider sx={{ my: 1 }} />
+            <Typography color={"black"} sx={{ marginLeft: "4px", mb: 1 }}>
+              Cechy:
+            </Typography>
+            {(character.traits || []).map((trait, index) => (
+              <Box
+                key={index}
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ mb: 0.5 }}
+              >
+                <Typography sx={{ flex: 1 }}>{trait.name}</Typography>
+                <Input
+                  value={trait.value}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setCharacter((prev) => ({
+                      ...prev,
+                      traits: prev.traits.map((t, i) =>
+                        i === index ? { ...t, value } : t
+                      ),
+                    }));
+                  }}
+                  sx={{ width: "64px" }}
+                />
+                <IconButton
+                  aria-label="usuń cechę"
+                  size="small"
+                  onClick={() => {
+                    setCharacter((prev) => ({
+                      ...prev,
+                      traits: prev.traits.filter((_, i) => i !== index),
+                    }));
+                  }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            ))}
+
+            <Box display="flex" alignItems="flex-end" gap={1} sx={{ mt: 1 }}>
+              <Autocomplete
+                freeSolo
+                options={existingTraitNames}
+                value={newTraitName}
+                onChange={(e, value) => setNewTraitName(value || '')}
+                onInputChange={(e, value) => setNewTraitName(value || '')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    variant="standard"
+                    placeholder="Nowa cecha..."
+                    size="small"
+                  />
+                )}
+                size="small"
+                sx={{ flex: 1 }}
+              />
+              <Input
+                value={newTraitValue}
+                onChange={(e) => setNewTraitValue(e.target.value)}
+                placeholder="Wartość"
+                sx={{ width: "64px" }}
+              />
+              <IconButton
+                aria-label="dodaj cechę"
+                size="small"
+                disabled={!newTraitName.trim()}
+                onClick={() => {
+                  setCharacter((prev) => ({
+                    ...prev,
+                    traits: [
+                      ...(prev.traits || []),
+                      { name: newTraitName.trim(), value: newTraitValue },
+                    ],
+                  }));
+                  setNewTraitName('');
+                  setNewTraitValue('');
+                }}
+              >
+                <AddIcon fontSize="small" />
+              </IconButton>
             </Box>
 
             <Box

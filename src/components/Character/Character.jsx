@@ -1,6 +1,7 @@
 import {
   Box,
   Chip,
+  Divider,
   IconButton,
   LinearProgress,
   Paper,
@@ -125,6 +126,35 @@ export const Character = ({ character, user }) => {
               </Box>
             )}
           </Box>
+          {character.traits?.length > 0 && (
+            <>
+              <Divider sx={{ mt: 1 }} />
+              <Typography
+                variant="overline"
+                display="block"
+                sx={{ mt: 0.5, lineHeight: 1.5 }}
+              >
+                Cechy
+              </Typography>
+              {character.traits.map((trait) => (
+                <Box
+                  key={trait.name}
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  sx={{ py: 0.25 }}
+                >
+                  <Typography variant="body2">{trait.name}</Typography>
+                  <Chip
+                    label={trait.value}
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                  />
+                </Box>
+              ))}
+            </>
+          )}
         </Paper>
       )}
     </div>
