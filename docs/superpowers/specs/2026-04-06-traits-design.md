@@ -5,7 +5,7 @@
 
 ## Overview
 
-Add a "Cechy" (Traits) section to each character card displaying RPG-style numeric attributes. Admins can add, remove, and edit traits per character via the existing edit dialog.
+Add a "Cechy" (Traits) section to each character card displaying arbitrary attributes. Admins can add, remove, and edit traits per character via the existing edit dialog.
 
 ## Data Model
 
@@ -16,17 +16,16 @@ Add a `traits` field to each character document in Firestore:
   name: "Helonator",
   // ...existing fields...
   traits: [
-    { name: "Siła", value: 12, type: "number" },
-    { name: "Zręczność", value: 8, type: "number" }
+    { name: "Siła", value: "12" },
+    { name: "Charakter", value: "Odważny" }
   ]
 }
 ```
 
-- Type: array of `{ name: string, value: number, type: string }` objects
-- `type` defaults to `"number"` when adding a new trait; reserved for future extension (e.g. `"text"`, `"boolean"`)
+- Type: array of `{ name: string, value: string }` objects
+- Values are free-form text — any string is valid
 - Order is preserved (array, not map)
 - Field is optional — characters without `traits` (or with empty array) simply don't show the section
-- Values are integers only (for `type: "number"`)
 
 ## Character Card (`Character.jsx`)
 
@@ -46,7 +45,7 @@ A "Cechy" section is added below the "Dolary" row. It is divided into two parts:
 
 One inline row per trait in `character.traits`:
 - Name: read-only `Typography` (names are not editable after creation — only the value)
-- Value: `<Input type="number">` bound to the trait's value in local state
+- Value: `<Input>` (text) bound to the trait's value in local state
 - Delete: `IconButton` with `DeleteIcon` — removes the trait from the array
 
 ### Add new trait row
@@ -56,8 +55,8 @@ A combobox + value input + add button:
   - Options: all unique trait names collected from all characters currently in React Query cache (`["characters"]` query data) — no extra Firestore call
   - Typing filters options; if typed text matches nothing, a `"+ Dodaj 'X'"` option is shown (standard `freeSolo` + `filterOptions` with `createOption` pattern)
   - Selecting an existing option or confirming a new one fills the name field
-- **Value**: `<Input type="number">` starting at 0
-- **Add button**: `IconButton` with `AddIcon` — appends `{ name, value: Number(value), type: "number" }` to `character.traits` in local state and resets the add row
+- **Value**: `<Input>` (text) starting empty
+- **Add button**: `IconButton` with `AddIcon` — appends `{ name, value }` to `character.traits` in local state and resets the add row
 
 ### Save behaviour
 
