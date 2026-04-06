@@ -1,15 +1,15 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { EditCharacterDialog } from './EditCharacterDialog';
 
-jest.mock('../../firebase', () => ({ db: {} }));
-jest.mock('firebase/firestore', () => ({
-  doc: jest.fn(),
-  updateDoc: jest.fn(() => Promise.resolve()),
+vi.mock('../../firebase', () => ({ db: {} }));
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(),
+  updateDoc: vi.fn(() => Promise.resolve()),
 }));
-jest.mock('@tanstack/react-query', () => ({
+vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({
-    invalidateQueries: jest.fn(),
-    getQueriesData: jest.fn(() => []),
+    invalidateQueries: vi.fn(),
+    getQueriesData: vi.fn(() => []),
   }),
 }));
 
@@ -33,7 +33,7 @@ test('renders existing traits in the dialog', () => {
     <EditCharacterDialog
       charToEdit={character}
       open={true}
-      handleClose={jest.fn()}
+      handleClose={vi.fn()}
     />
   );
   expect(screen.getByText('Siła')).toBeInTheDocument();
@@ -47,7 +47,7 @@ test('editing a trait value updates local state', () => {
     <EditCharacterDialog
       charToEdit={character}
       open={true}
-      handleClose={jest.fn()}
+      handleClose={vi.fn()}
     />
   );
   const input = screen.getByDisplayValue('12');
@@ -60,11 +60,11 @@ test('deleting a trait removes it from the list', () => {
     <EditCharacterDialog
       charToEdit={character}
       open={true}
-      handleClose={jest.fn()}
+      handleClose={vi.fn()}
     />
   );
   const deleteButtons = screen.getAllByLabelText('usuń cechę');
-  fireEvent.click(deleteButtons[0]); // delete Siła
+  fireEvent.click(deleteButtons[0]);
   expect(screen.queryByText('Siła')).not.toBeInTheDocument();
   expect(screen.getByText('Zręczność')).toBeInTheDocument();
 });
@@ -74,10 +74,9 @@ test('adding a new trait appends it to the list', () => {
     <EditCharacterDialog
       charToEdit={character}
       open={true}
-      handleClose={jest.fn()}
+      handleClose={vi.fn()}
     />
   );
-  // Type into the freeSolo Autocomplete input
   const nameInput = screen.getByPlaceholderText('Nowa cecha...');
   fireEvent.change(nameInput, { target: { value: 'Charyzma' } });
 
@@ -88,7 +87,6 @@ test('adding a new trait appends it to the list', () => {
 
   expect(screen.getByText('Charyzma')).toBeInTheDocument();
   expect(screen.getByDisplayValue('wysoka')).toBeInTheDocument();
-  // add row is reset
   expect(nameInput.value).toBe('');
   expect(valueInput.value).toBe('');
 });
