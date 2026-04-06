@@ -8,9 +8,8 @@ import {
 } from "@mui/material";
 import { logout } from "../../firebase";
 import { useNavigate } from "react-router-dom";
-import React, { useState } from "react";
+import React from "react";
 import { Character } from "components/Character/Character";
-import { useAuth } from "hooks/useAuth";
 import { useCharacters } from "hooks/useCharacters";
 import LogoutIcon from "@mui/icons-material/Logout";
 
@@ -19,8 +18,7 @@ export const Home = () => {
   const handleLogout = () => {
     logout().then(() => navigate("/login"));
   };
-  const [user, authLoading] = useAuth();
-  const [characters, loading] = useCharacters();
+  const [characters, loading, user] = useCharacters();
 
   return (
     <>
@@ -47,7 +45,7 @@ export const Home = () => {
               {characters
                 .filter((c) => c !== undefined)
                 .map((c) => (
-                  <Character key={c.name} character={c} user={user} />
+                  <Character key={c.id} character={c} user={user} />
                 ))}
             </>
           )}

@@ -17,6 +17,7 @@ export const useAuth = () => {
     }
 
     if (!authUser) {
+      setLoading(false);
       navigate("/login");
       return;
     }
@@ -24,7 +25,7 @@ export const useAuth = () => {
     getDoc(doc(db, "users", authUser.uid))
       .then((d) => setUser(d.data()))
       .then(() => setLoading(false));
-  }, [authUser, authLoading]);
+  }, [authUser, authLoading, navigate]);
 
   return [user, loading];
 };
