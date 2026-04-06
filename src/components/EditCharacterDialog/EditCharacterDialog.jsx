@@ -196,11 +196,12 @@ export const EditCharacterDialog = ({
                   value={trait.value}
                   onChange={(e) => {
                     const value = e.target.value;
-                    setCharacter((prev) => {
-                      const updated = [...prev.traits];
-                      updated[index] = { ...updated[index], value };
-                      return { ...prev, traits: updated };
-                    });
+                    setCharacter((prev) => ({
+                      ...prev,
+                      traits: prev.traits.map((t, i) =>
+                        i === index ? { ...t, value } : t
+                      ),
+                    }));
                   }}
                   sx={{ width: "64px" }}
                 />
