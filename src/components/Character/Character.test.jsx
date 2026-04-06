@@ -1,8 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { Character } from './Character';
 
-// EditCharacterDialog pulls in firebase & react-query — mock it out
-jest.mock('components/EditCharacterDialog/EditCharacterDialog', () => ({
+vi.mock('components/EditCharacterDialog/EditCharacterDialog', () => ({
   EditCharacterDialog: () => null,
 }));
 
