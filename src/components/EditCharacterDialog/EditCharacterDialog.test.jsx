@@ -6,7 +6,7 @@ jest.mock('firebase/firestore', () => ({
   doc: jest.fn(),
   updateDoc: jest.fn(() => Promise.resolve()),
 }));
-jest.mock('react-query', () => ({
+jest.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({
     invalidateQueries: jest.fn(),
     getQueriesData: jest.fn(() => []),

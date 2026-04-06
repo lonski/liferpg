@@ -6,7 +6,7 @@ import PropTypes from "prop-types";
 
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase";
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const EditCharacterDialog = ({
   charToEdit,
@@ -15,7 +15,7 @@ export const EditCharacterDialog = ({
 }) => {
   const queryClient = useQueryClient();
   const allCharacters = queryClient
-    .getQueriesData(["characters"])
+    .getQueriesData({ queryKey: ["characters"] })
     .flatMap(([, data]) => (data || []));
   const existingTraitNames = useMemo(
     () => [...new Set(allCharacters.flatMap((c) => (c.traits || []).map((t) => t.name)))],
@@ -31,7 +31,7 @@ export const EditCharacterDialog = ({
     try {
       const charDoc = doc(db, "characters", character.id);
       await updateDoc(charDoc, character);
-      await queryClient.invalidateQueries("characters");
+      await queryClient.invalidateQueries({ queryKey: ["characters"] });
       handleClose();
     } catch (err) {
       console.error(err);
