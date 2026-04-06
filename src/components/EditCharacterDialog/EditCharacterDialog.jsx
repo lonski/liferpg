@@ -196,7 +196,7 @@ export const EditCharacterDialog = ({
             </Typography>
             {(character.traits || []).map((trait, index) => (
               <Box
-                key={trait.name}
+                key={index}
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
