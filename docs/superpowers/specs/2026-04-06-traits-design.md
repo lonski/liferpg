@@ -16,16 +16,17 @@ Add a `traits` field to each character document in Firestore:
   name: "Helonator",
   // ...existing fields...
   traits: [
-    { name: "Siła", value: 12 },
-    { name: "Zręczność", value: 8 }
+    { name: "Siła", value: 12, type: "number" },
+    { name: "Zręczność", value: 8, type: "number" }
   ]
 }
 ```
 
-- Type: array of `{ name: string, value: number }` objects
+- Type: array of `{ name: string, value: number, type: string }` objects
+- `type` defaults to `"number"` when adding a new trait; reserved for future extension (e.g. `"text"`, `"boolean"`)
 - Order is preserved (array, not map)
 - Field is optional — characters without `traits` (or with empty array) simply don't show the section
-- Values are integers only
+- Values are integers only (for `type: "number"`)
 
 ## Character Card (`Character.jsx`)
 
@@ -56,7 +57,7 @@ A combobox + value input + add button:
   - Typing filters options; if typed text matches nothing, a `"+ Dodaj 'X'"` option is shown (standard `freeSolo` + `filterOptions` with `createOption` pattern)
   - Selecting an existing option or confirming a new one fills the name field
 - **Value**: `<Input type="number">` starting at 0
-- **Add button**: `IconButton` with `AddIcon` — appends `{ name, value: Number(value) }` to `character.traits` in local state and resets the add row
+- **Add button**: `IconButton` with `AddIcon` — appends `{ name, value: Number(value), type: "number" }` to `character.traits` in local state and resets the add row
 
 ### Save behaviour
 
