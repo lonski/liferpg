@@ -1,4 +1,5 @@
-import { Box, Button, Dialog, Input, Typography } from "@mui/material";
+import { Box, Button, Dialog, Divider, IconButton, Input, Typography } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 
@@ -177,6 +178,43 @@ export const EditCharacterDialog = ({
                 </Box>
               </Box>
             </Box>
+
+            <Divider sx={{ my: 1 }} />
+            <Typography color={"black"} sx={{ marginLeft: "4px", mb: 1 }}>
+              Cechy:
+            </Typography>
+            {(character.traits || []).map((trait, index) => (
+              <Box
+                key={index}
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ mb: 0.5 }}
+              >
+                <Typography sx={{ flex: 1 }}>{trait.name}</Typography>
+                <Input
+                  value={trait.value}
+                  onChange={(e) => {
+                    const updated = [...character.traits];
+                    updated[index] = { ...trait, value: e.target.value };
+                    setCharacter((prev) => ({ ...prev, traits: updated }));
+                  }}
+                  sx={{ width: "64px" }}
+                />
+                <IconButton
+                  aria-label="usuń cechę"
+                  size="small"
+                  onClick={() => {
+                    setCharacter((prev) => ({
+                      ...prev,
+                      traits: prev.traits.filter((_, i) => i !== index),
+                    }));
+                  }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            ))}
 
             <Box
               sx={{ marginTop: "12px" }}
