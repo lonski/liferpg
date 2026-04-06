@@ -91,6 +91,7 @@ export const Character = ({ character, user }) => {
             </Box>
           )}
           <Box display="flex" justifyContent="space-between">
+            {character.gold !== undefined && (
             <Box marginTop={"10px"} display="flex" justifyContent="left">
               <WalletIcon />
               <Box color={"black"}>
@@ -112,6 +113,7 @@ export const Character = ({ character, user }) => {
                 )}
               </Box>
             </Box>
+            )}
             {user?.admin && (
               <Box>
                 <IconButton onClick={handleEdit}>
