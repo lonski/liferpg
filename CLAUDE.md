@@ -44,6 +44,7 @@ uid, name, email, authProvider, admin (bool)
 **`characters/{id}`**
 ```
 name, clazz, email, level, current_xp, next_level_xp, gold, gold_usd, favour
+traits: [{ name: string, value: string }]  (optional)
 ```
 
 - Characters are linked to users via `email`.
