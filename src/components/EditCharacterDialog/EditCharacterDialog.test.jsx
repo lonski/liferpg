@@ -69,7 +69,7 @@ test('deleting a trait removes it from the list', () => {
   expect(screen.getByText('Zręczność')).toBeInTheDocument();
 });
 
-test('adding a new trait appends it to the list', async () => {
+test('adding a new trait appends it to the list', () => {
   render(
     <EditCharacterDialog
       charToEdit={character}

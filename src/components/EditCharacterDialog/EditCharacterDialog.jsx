@@ -1,7 +1,7 @@
 import { Autocomplete, Box, Button, Dialog, Divider, IconButton, Input, TextField, Typography } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 import { doc, updateDoc } from "firebase/firestore";
@@ -15,14 +15,14 @@ export const EditCharacterDialog = ({
   handleRefresh,
 }) => {
   const queryClient = useQueryClient();
-  const existingTraitNames = [
+  const existingTraitNames = useMemo(() => [
     ...new Set(
       queryClient
         .getQueriesData(["characters"])
         .flatMap(([, data]) => (data || []))
         .flatMap((c) => (c.traits || []).map((t) => t.name))
     ),
-  ];
+  ], [queryClient]);
   const [character, setCharacter] = useState(charToEdit);
   const [newTraitName, setNewTraitName] = useState('');
   const [newTraitValue, setNewTraitValue] = useState('');
