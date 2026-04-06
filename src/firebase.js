@@ -1,7 +1,6 @@
 import { initializeApp } from "firebase/app";
 import {
   getFirestore,
-  collection,
   setDoc,
   doc,
   getDoc,
@@ -33,7 +32,7 @@ const signInWithGoogle = async () => {
     const user = res.user;
     const userDoc = await getDoc(doc(db, "users", user.uid));
     if (!userDoc.exists()) {
-      await setDoc(doc(collection(db, "users"), user.uid), {
+      await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         name: user.displayName,
         authProvider: "google",

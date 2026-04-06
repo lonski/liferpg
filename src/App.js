@@ -8,17 +8,12 @@ import { QueryClient, QueryClientProvider } from "react-query";
 
 const queryClient = new QueryClient();
 
+const router = createBrowserRouter([
+  { path: "/", element: <Home /> },
+  { path: "/login", element: <Login /> },
+]);
+
 function App() {
-  const router = createBrowserRouter([
-    {
-      path: "/",
-      element: <Home />,
-    },
-    {
-      path: "/login",
-      element: <Login />,
-    },
-  ]);
 
   return (
     <QueryClientProvider client={queryClient}>

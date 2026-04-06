@@ -1,7 +1,7 @@
 import { Autocomplete, Box, Button, Dialog, Divider, IconButton, Input, TextField, Typography } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 import { doc, updateDoc } from "firebase/firestore";
@@ -12,26 +12,32 @@ export const EditCharacterDialog = ({
   charToEdit,
   open,
   handleClose,
-  handleRefresh,
 }) => {
   const queryClient = useQueryClient();
-  const existingTraitNames = useMemo(() => [
-    ...new Set(
-      queryClient
-        .getQueriesData(["characters"])
-        .flatMap(([, data]) => (data || []))
-        .flatMap((c) => (c.traits || []).map((t) => t.name))
-    ),
-  ], [queryClient]);
+  const allCharacters = queryClient
+    .getQueriesData(["characters"])
+    .flatMap(([, data]) => (data || []));
+  const existingTraitNames = useMemo(
+    () => [...new Set(allCharacters.flatMap((c) => (c.traits || []).map((t) => t.name)))],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [open]
+  );
   const [character, setCharacter] = useState(charToEdit);
+  useEffect(() => {
+    if (open) setCharacter(charToEdit);
+  }, [open, charToEdit]);
   const [newTraitName, setNewTraitName] = useState('');
   const [newTraitValue, setNewTraitValue] = useState('');
   const handleSave = async () => {
-    const charDoc = doc(db, "characters", character.id);
-    await updateDoc(charDoc, character)
-      .then(handleRefresh)
-      .then(handleClose)
-      .then(() => queryClient.invalidateQueries("characters"));
+    try {
+      const charDoc = doc(db, "characters", character.id);
+      await updateDoc(charDoc, character);
+      await queryClient.invalidateQueries("characters");
+      handleClose();
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
   };
 
   return (
@@ -56,7 +62,7 @@ export const EditCharacterDialog = ({
                   onChange={(e) => {
                     setCharacter((prev) => ({
                       ...prev,
-                      level: e.target.value,
+                      level: Number(e.target.value),
                     }));
                   }}
                 />
@@ -80,7 +86,7 @@ export const EditCharacterDialog = ({
                   onChange={(e) => {
                     setCharacter((prev) => ({
                       ...prev,
-                      current_xp: e.target.value,
+                      current_xp: Number(e.target.value),
                     }));
                   }}
                 />
@@ -93,7 +99,7 @@ export const EditCharacterDialog = ({
                   onChange={(e) => {
                     setCharacter((prev) => ({
                       ...prev,
-                      next_level_xp: e.target.value,
+                      next_level_xp: Number(e.target.value),
                     }));
                   }}
                 />
@@ -117,7 +123,7 @@ export const EditCharacterDialog = ({
                   onChange={(e) => {
                     setCharacter((prev) => ({
                       ...prev,
-                      gold: e.target.value,
+                      gold: Number(e.target.value),
                     }));
                   }}
                 />
@@ -141,7 +147,7 @@ export const EditCharacterDialog = ({
                   onChange={(e) => {
                     setCharacter((prev) => ({
                       ...prev,
-                      gold_usd: e.target.value,
+                      gold_usd: Number(e.target.value),
                     }));
                   }}
                 />
@@ -298,6 +304,5 @@ export const EditCharacterDialog = ({
 EditCharacterDialog.propTypes = {
   charToEdit: PropTypes.object,
   open: PropTypes.bool,
-  handleClose: PropTypes.any,
-  handleRefresh: PropTypes.any,
+  handleClose: PropTypes.func,
 };

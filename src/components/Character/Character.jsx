@@ -23,6 +23,7 @@ export const Character = ({ character, user }) => {
   const handleEdit = () => setEdit(true);
   const handleClose = () => setEdit(false);
   const [badgeVisible, setBadgeVisible] = useState(false);
+  const favour = character?.favour ?? 0;
   return (
     <div>
       {character && (
@@ -31,14 +32,14 @@ export const Character = ({ character, user }) => {
             <Typography variant="h4">{character.name}</Typography>
             <Box>
               <Box marginTop={"10px"} display="flex" justifyContent="left">
-                {character.favour === 0 && <SentimentSatisfiedIcon />}
-                {character.favour === -1 && (
+                {favour === 0 && <SentimentSatisfiedIcon />}
+                {favour === -1 && (
                   <SentimentDissatisfied color="warning" />
                 )}
-                {character.favour < -1 && (
+                {favour < -1 && (
                   <SentimentVeryDissatisfiedIcon color="error" />
                 )}
-                {character.favour > 0 && (
+                {favour > 0 && (
                   <SentimentSatisfiedAltIcon color="success" />
                 )}
               </Box>
@@ -50,7 +51,7 @@ export const Character = ({ character, user }) => {
             </Typography>
           )}
 
-          {character.level && (
+          {character.level != null && (
             <Box onClick={() => setBadgeVisible((prev) => !prev)}>
               <Box display="flex" justifyContent="left">
                 <TrendingUpIcon />
@@ -92,6 +93,7 @@ export const Character = ({ character, user }) => {
             </Box>
           )}
           <Box display="flex" justifyContent="space-between">
+            {character.gold && (
             <Box marginTop={"10px"} display="flex" justifyContent="left">
               <WalletIcon />
               <Box color={"black"}>
@@ -102,7 +104,7 @@ export const Character = ({ character, user }) => {
                   label={<span> {character.gold}zł </span>}
                   color="warning"
                 />
-                {character.gold_usd && (
+                {character.gold_usd != null && (
                   <Chip
                     sx={{ marginLeft: "4px" }}
                     size="small"
@@ -113,6 +115,7 @@ export const Character = ({ character, user }) => {
                 )}
               </Box>
             </Box>
+            )}
             {user?.admin && (
               <Box>
                 <IconButton onClick={handleEdit}>
@@ -136,9 +139,9 @@ export const Character = ({ character, user }) => {
               >
                 Cechy
               </Typography>
-              {character.traits.map((trait) => (
+              {character.traits.map((trait, index) => (
                 <Box
-                  key={trait.name}
+                  key={index}
                   display="flex"
                   justifyContent="space-between"
                   alignItems="center"
