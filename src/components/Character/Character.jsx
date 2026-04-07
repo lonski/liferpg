@@ -1,165 +1,152 @@
-import {
-  Box,
-  Chip,
-  Divider,
-  IconButton,
-  LinearProgress,
-  Paper,
-  Typography,
-} from "@mui/material";
 import React, { useState } from "react";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import WalletIcon from "@mui/icons-material/Wallet";
+import { IconButton, LinearProgress } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import { EditCharacterDialog } from "components/EditCharacterDialog/EditCharacterDialog";
 import PropTypes from "prop-types";
-import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
-import SentimentSatisfiedIcon from "@mui/icons-material/SentimentSatisfied";
-import SentimentSatisfiedAltIcon from "@mui/icons-material/SentimentSatisfiedAlt";
-import { SentimentDissatisfied } from "@mui/icons-material";
-import { FEATURE_FAVOUR } from "featureFlags";
+import styles from "./Character.module.css";
+
+const showFavour = import.meta.env.VITE_SHOW_FAVOUR === 'true';
+
+const FavourEmoji = ({ favour }) => {
+  if (favour < -1) return <span>😠</span>;
+  if (favour === -1) return <span>😕</span>;
+  if (favour > 0) return <span>😊</span>;
+  return <span>😐</span>;
+};
+
+FavourEmoji.propTypes = { favour: PropTypes.number };
 
 export const Character = ({ character, user }) => {
   const [edit, setEdit] = useState(false);
-  const handleEdit = () => setEdit(true);
-  const handleClose = () => setEdit(false);
   const [badgeVisible, setBadgeVisible] = useState(false);
-  const favour = character?.favour ?? 0;
-  return (
-    <div>
-      {character && (
-        <Paper sx={{ margin: "4px", padding: "4px" }} elevation={2}>
-          <Box display="flex" justifyContent="space-between">
-            <Typography variant="h4">{character.name}</Typography>
-            {FEATURE_FAVOUR && (
-              <Box marginTop={"10px"} display="flex" justifyContent="left">
-                {favour === 0 && <SentimentSatisfiedIcon />}
-                {favour === -1 && (
-                  <SentimentDissatisfied color="warning" />
-                )}
-                {favour < -1 && (
-                  <SentimentVeryDissatisfiedIcon color="error" />
-                )}
-                {favour > 0 && (
-                  <SentimentSatisfiedAltIcon color="success" />
-                )}
-              </Box>
-            )}
-          </Box>
-          {character.clazz && (
-            <Typography variant="overline" display="block" gutterBottom>
-              {character.clazz}
-            </Typography>
-          )}
 
+  if (!character) return null;
+
+  const favour = character?.favour ?? 0;
+  const xpPercent = character.level != null
+    ? Math.min((character.current_xp * 100) / character.next_level_xp, 100)
+    : 0;
+  const xpRemaining = character.next_level_xp - character.current_xp;
+
+  return (
+    <div className={styles.card}>
+      {/* Top band */}
+      <div className={styles.topBand}>
+        <span className={styles.bandLabel}>✦ Karta Postaci ✦</span>
+        {user?.admin && (
+          <IconButton
+            aria-label="edytuj postać"
+            size="small"
+            className={styles.editIconBtn}
+            onClick={() => setEdit(true)}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className={styles.body}>
+        <div className={styles.innerFrame}>
+          <span className={`${styles.cornerOrnament} ${styles.cornerTL}`}>❧</span>
+          <span className={`${styles.cornerOrnament} ${styles.cornerTR}`}>❧</span>
+
+          {/* Name + class */}
+          <div className={styles.nameBlock}>
+            <span className={styles.characterName}>{character.name}</span>
+            {character.clazz && (
+              <span className={styles.characterClass}>{character.clazz}</span>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className={styles.divider}>
+            <span className={`${styles.dividerLine} ${styles.dividerLineLeft}`} />
+            <span className={styles.dividerGlyph}>✦</span>
+            <span className={`${styles.dividerLine} ${styles.dividerLineRight}`} />
+          </div>
+
+          {/* Level + XP */}
           {character.level != null && (
-            <Box onClick={() => setBadgeVisible((prev) => !prev)}>
-              <Box display="flex" justifyContent="left">
-                <TrendingUpIcon />
-                <Typography color={"black"} sx={{ marginLeft: "4px" }}>
-                  Poziom {character.level}
-                </Typography>
-              </Box>
-              <Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={Math.min(
-                    (character.current_xp * 100) / character.next_level_xp,
-                    100
-                  )}
-                />
-                {badgeVisible && (
-                  <Box
-                    display="flex"
-                    justifyContent="center"
-                    sx={{ marginTop: 1 }}
-                  >
-                    <Chip
-                      sx={{ width: "100%" }}
-                      label={
-                        <span>
-                          Do następnego poziomu brakuje:&nbsp;
-                          <b>
-                            {character.next_level_xp - character.current_xp}
-                          </b>
-                          &nbsp;punktów
-                        </span>
-                      }
-                      color="success"
-                      variant="outlined"
-                    />
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          )}
-          <Box display="flex" justifyContent="space-between">
-            {character.gold && (
-            <Box marginTop={"10px"} display="flex" justifyContent="left">
-              <WalletIcon />
-              <Box color={"black"}>
-                <Chip
-                  sx={{ marginLeft: "4px" }}
-                  size="small"
-                  variant="outlined"
-                  label={<span> {character.gold}zł </span>}
-                  color="warning"
-                />
-                {character.gold_usd != null && (
-                  <Chip
-                    sx={{ marginLeft: "4px" }}
-                    size="small"
-                    variant="outlined"
-                    label={<span> {character.gold_usd}$ </span>}
-                    color="warning"
-                  />
-                )}
-              </Box>
-            </Box>
-            )}
-            {user?.admin && (
-              <Box>
-                <IconButton onClick={handleEdit}>
-                  <EditIcon />
-                </IconButton>
-                <EditCharacterDialog
-                  charToEdit={character}
-                  open={edit}
-                  handleClose={handleClose}
-                />
-              </Box>
-            )}
-          </Box>
-          {character.traits?.length > 0 && (
             <>
-              <Divider sx={{ mt: 1 }} />
-              <Typography
-                variant="overline"
-                display="block"
-                sx={{ mt: 0.5, lineHeight: 1.5 }}
-              >
-                Cechy
-              </Typography>
-              {character.traits.map((trait, index) => (
-                <Box
-                  key={index}
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  sx={{ py: 0.25 }}
+              <div className={styles.levelRow}>
+                <span className={styles.statLabel}>Poziom</span>
+                <span className={styles.levelBadge}>{character.level}</span>
+              </div>
+              <div className={styles.xpSection}>
+                <div className={styles.xpMeta}>
+                  <span>Doświadczenie</span>
+                  <span>{character.current_xp} / {character.next_level_xp} XP</span>
+                </div>
+                <div
+                  className={styles.xpBarWrapper}
+                  onClick={() => setBadgeVisible((prev) => !prev)}
                 >
-                  <Typography variant="body2">{trait.name}</Typography>
-                  <Chip
-                    label={trait.value}
-                    color="primary"
-                    variant="outlined"
-                    size="small"
-                  />
-                </Box>
-              ))}
+                  <LinearProgress variant="determinate" value={xpPercent} />
+                </div>
+                {badgeVisible && (
+                  <div style={{ textAlign: 'center' }}>
+                    <span className={styles.xpHint}>
+                      Do następnego poziomu: <strong>{xpRemaining}</strong> XP
+                    </span>
+                  </div>
+                )}
+              </div>
             </>
           )}
-        </Paper>
+
+          {/* Gold */}
+          {character.gold && (
+            <div className={styles.goldRow}>
+              <span className={styles.statLabel}>Złoto&nbsp; </span>
+              <span className={styles.goldValue}>{character.gold} zł</span>
+              {character.gold_usd != null && (
+                <>
+                  <span className={styles.goldSeparator}>·</span>
+                  <span className={styles.goldValue}>{character.gold_usd} $</span>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Favour (feature-flagged) */}
+          {showFavour && (
+            <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <FavourEmoji favour={favour} />
+            </div>
+          )}
+
+          {/* Traits */}
+          {character.traits?.length > 0 && (
+            <>
+              <div className={styles.traitsDivider}>
+                <span className={styles.traitsDividerLineLeft} />
+                <span className={styles.traitsDividerLabel}>Cechy</span>
+                <span className={styles.traitsDividerLineRight} />
+              </div>
+              <div className={styles.traitPills}>
+                {character.traits.map((trait, index) => (
+                  <div key={index} className={styles.traitPill}>
+                    <span className={styles.traitName}>{trait.name}</span>
+                    <span className={styles.traitValue}>{trait.value}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom band */}
+      <div className={styles.bottomBand}>— ✦ —</div>
+
+      {/* Edit dialog */}
+      {user?.admin && (
+        <EditCharacterDialog
+          charToEdit={character}
+          open={edit}
+          handleClose={() => setEdit(false)}
+        />
       )}
     </div>
   );
