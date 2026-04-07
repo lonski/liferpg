@@ -1,0 +1,249 @@
+/* ── Outer card ── */
+.card {
+  background: radial-gradient(ellipse at 50% 0%, #f5e8d0 0%, #e0ccaa 60%, #c8b080 100%);
+  border: 2px solid #6b1a1a;
+  border-radius: 4px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+/* ── Bands ── */
+.topBand {
+  background: linear-gradient(90deg, #3a0a0a, #7a1414, #3a0a0a);
+  padding: 7px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bandLabel {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: 4px;
+  color: rgba(245, 232, 208, 0.85);
+  text-transform: uppercase;
+}
+
+.bottomBand {
+  background: linear-gradient(90deg, #3a0a0a, #7a1414, #3a0a0a);
+  padding: 5px 16px;
+  text-align: center;
+  color: rgba(245, 232, 208, 0.5);
+  font-size: 10px;
+  letter-spacing: 3px;
+}
+
+/* ── Body / inner frame ── */
+.body {
+  padding: 16px;
+}
+
+.innerFrame {
+  position: relative;
+  border: 1px solid rgba(107, 26, 26, 0.35);
+  border-radius: 2px;
+  padding: 12px;
+}
+
+.cornerOrnament {
+  position: absolute;
+  font-size: 12px;
+  color: rgba(107, 26, 26, 0.55);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.cornerTL { top: 5px; left: 5px; }
+.cornerTR { top: 5px; right: 5px; transform: scaleX(-1); }
+
+/* ── Name / class ── */
+.nameBlock {
+  text-align: center;
+  padding: 0 16px;
+  margin-bottom: 4px;
+}
+
+.characterName {
+  font-family: 'Cinzel', serif !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: #2d0a0a !important;
+  letter-spacing: 2px !important;
+}
+
+.characterClass {
+  font-family: 'Cinzel', serif !important;
+  font-size: 9px !important;
+  letter-spacing: 4px !important;
+  color: #6b1a1a !important;
+  text-transform: uppercase !important;
+  margin-top: 3px !important;
+  display: block !important;
+}
+
+/* ── Divider ── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+}
+
+.dividerLineLeft {
+  background: linear-gradient(90deg, transparent, #6b1a1a);
+}
+
+.dividerLineRight {
+  background: linear-gradient(90deg, #6b1a1a, transparent);
+}
+
+.dividerGlyph {
+  font-size: 11px;
+  color: #6b1a1a;
+}
+
+/* ── Level row ── */
+.levelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.statLabel {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #6b1a1a;
+  text-transform: uppercase;
+}
+
+.levelBadge {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2d0a0a;
+  background: rgba(107, 26, 26, 0.1);
+  border: 1px solid rgba(107, 26, 26, 0.4);
+  border-radius: 3px;
+  padding: 1px 12px;
+}
+
+/* ── XP bar ── */
+.xpMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #6b1a1a;
+  font-style: italic;
+  margin-bottom: 4px;
+}
+
+.xpBarWrapper {
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.xpHint {
+  text-align: center;
+  margin-top: 4px;
+  font-size: 10px;
+  color: #6b1a1a;
+  font-style: italic;
+  background: rgba(107, 26, 26, 0.08);
+  border: 1px solid rgba(107, 26, 26, 0.2);
+  border-radius: 10px;
+  padding: 2px 10px;
+  display: inline-block;
+}
+
+.xpSection {
+  margin-bottom: 10px;
+}
+
+/* ── Gold row ── */
+.goldRow {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.goldValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2d0a0a;
+}
+
+.goldSeparator {
+  color: #6b1a1a;
+  margin: 0 8px;
+}
+
+/* ── Traits ── */
+.traitsDivider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.traitsDividerLineLeft {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(107, 26, 26, 0.4));
+}
+
+.traitsDividerLineRight {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(107, 26, 26, 0.4), transparent);
+}
+
+.traitsDividerLabel {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: 3px;
+  color: #6b1a1a;
+  text-transform: uppercase;
+}
+
+.traitPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+}
+
+.traitPill {
+  background: rgba(107, 26, 26, 0.1);
+  border: 1px solid rgba(107, 26, 26, 0.4);
+  border-radius: 10px;
+  padding: 2px 10px;
+  font-size: 10px;
+  color: #2d0a0a;
+}
+
+.traitName {
+  color: #6b1a1a;
+  font-style: italic;
+}
+
+.traitValue {
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+/* ── Edit icon in band ── */
+.editIconBtn {
+  color: rgba(245, 232, 208, 0.55) !important;
+  padding: 2px !important;
+}
+
+.editIconBtn:hover {
+  color: rgba(245, 232, 208, 0.9) !important;
+}
