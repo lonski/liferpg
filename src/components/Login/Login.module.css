@@ -59,7 +59,6 @@
 .dividerLine {
   flex: 1;
   height: 1px;
-  width: 60px;
 }
 
 .dividerLineLeft {
@@ -90,9 +89,8 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
 }
 
-.loginButton:hover {
-  background: linear-gradient(135deg, #4a1010, #8b2020) !important;
-  border-color: rgba(200, 134, 10, 0.8) !important;
+.googleIcon {
+  font-size: 20px;
 }
 
 .loginButtonLabel {

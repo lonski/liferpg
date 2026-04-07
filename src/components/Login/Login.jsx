@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, signInWithGoogle } from "../../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -32,8 +32,14 @@ export const Login = () => {
         onClick={signInWithGoogle}
         className={styles.loginButton}
         disableElevation
+        sx={{
+          '&:hover': {
+            background: 'linear-gradient(135deg, #4a1010, #8b2020)',
+            borderColor: 'rgba(200,134,10,0.8)',
+          },
+        }}
       >
-        <span style={{ fontSize: 20 }}>G</span>
+        <span className={styles.googleIcon} aria-hidden="true">G</span>
         <span>
           <span className={styles.loginButtonLabel}>Zaloguj przez Google</span>
           <span className={styles.loginButtonSub}>Wejdź do Kroniki</span>
