@@ -1,19 +1,51 @@
-import { Autocomplete, Box, Button, Dialog, Divider, IconButton, Input, TextField, Typography } from "@mui/material";
+import {
+  Autocomplete,
+  Box,
+  Button,
+  Dialog,
+  IconButton,
+  Input,
+  TextField,
+  Typography,
+} from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import React, { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
-
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useQueryClient } from "@tanstack/react-query";
 import { FEATURE_FAVOUR } from "../../featureFlags";
 
-export const EditCharacterDialog = ({
-  charToEdit,
-  open,
-  handleClose,
-}) => {
+const bandStyle = {
+  background: 'linear-gradient(90deg, #3a0a0a, #7a1414, #3a0a0a)',
+  padding: '7px 16px',
+  textAlign: 'center',
+};
+
+const bandLabelStyle = {
+  fontFamily: "'Cinzel', serif",
+  fontSize: '8px',
+  letterSpacing: '4px',
+  color: 'rgba(245,232,208,0.85)',
+  textTransform: 'uppercase',
+};
+
+const fieldLabelStyle = {
+  fontFamily: "'Cinzel', serif",
+  fontSize: '9px',
+  letterSpacing: '2px',
+  color: '#6b1a1a',
+  textTransform: 'uppercase',
+  minWidth: 90,
+};
+
+const inputSx = {
+  width: 64,
+  '& .MuiInput-underline:before': { borderBottomColor: 'rgba(107,26,26,0.4)' },
+};
+
+export const EditCharacterDialog = ({ charToEdit, open, handleClose }) => {
   const queryClient = useQueryClient();
   const allCharacters = queryClient
     .getQueriesData({ queryKey: ["characters"] })
@@ -28,6 +60,7 @@ export const EditCharacterDialog = ({
   }, [open, charToEdit]);
   const [newTraitName, setNewTraitName] = useState('');
   const [newTraitValue, setNewTraitValue] = useState('');
+
   const handleSave = async () => {
     try {
       const charDoc = doc(db, "characters", character.id);
@@ -40,168 +73,210 @@ export const EditCharacterDialog = ({
     }
   };
 
+  if (!character) return null;
+
   return (
-    <div>
-      {character && (
-        <Dialog onClose={handleClose} open={open}>
-          <Box sx={{ margin: "10px", padding: "10px" }}>
+    <Dialog
+      onClose={handleClose}
+      open={open}
+      PaperProps={{
+        sx: {
+          background: 'transparent',
+          boxShadow: 'none',
+          overflow: 'visible',
+          m: 2,
+        },
+      }}
+    >
+      {/* Card wrapper */}
+      <Box
+        sx={{
+          background: 'radial-gradient(ellipse at 50% 0%, #f5e8d0 0%, #e0ccaa 60%, #c8b080 100%)',
+          border: '2px solid #6b1a1a',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+          minWidth: 280,
+        }}
+      >
+        {/* Top band */}
+        <Box sx={bandStyle}>
+          <span style={bandLabelStyle}>✦ Edycja Postaci ✦</span>
+        </Box>
+
+        {/* Body */}
+        <Box sx={{ p: 2 }}>
+          <Box
+            sx={{
+              position: 'relative',
+              border: '1px solid rgba(107,26,26,0.35)',
+              borderRadius: '2px',
+              p: '12px',
+            }}
+          >
+            {/* Corner ornaments */}
             <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems={"center"}
+              component="span"
+              sx={{
+                position: 'absolute',
+                top: 5,
+                left: 5,
+                fontSize: 12,
+                color: 'rgba(107,26,26,0.55)',
+                lineHeight: 1,
+                pointerEvents: 'none',
+              }}
             >
-              <Box sx={{ width: "90px" }}>
-                <Typography color={"black"} sx={{ marginLeft: "4px" }}>
-                  Poziom:
-                </Typography>
-              </Box>
-              <Box sx={{ marginLeft: "8px", width: "64px" }}>
-                <Input
-                  type={"number"}
-                  value={character.level}
-                  onChange={(e) => {
-                    setCharacter((prev) => ({
-                      ...prev,
-                      level: Number(e.target.value),
-                    }));
-                  }}
-                />
-              </Box>
+              ❧
+            </Box>
+            <Box
+              component="span"
+              sx={{
+                position: 'absolute',
+                top: 5,
+                right: 5,
+                fontSize: 12,
+                color: 'rgba(107,26,26,0.55)',
+                lineHeight: 1,
+                transform: 'scaleX(-1)',
+                pointerEvents: 'none',
+              }}
+            >
+              ❧
             </Box>
 
+            {/* Character name */}
+            <Typography
+              sx={{
+                fontFamily: "'Cinzel',serif",
+                fontSize: 16,
+                fontWeight: 700,
+                color: '#2d0a0a',
+                letterSpacing: 2,
+                textAlign: 'center',
+                mb: 1.5,
+              }}
+            >
+              {character.name}
+            </Typography>
+
+            {/* Numeric fields */}
+            {[
+              { label: 'Poziom', key: 'level' },
+              { label: 'Złoto', key: 'gold' },
+              { label: 'Dolary', key: 'gold_usd' },
+            ].map(({ label, key }) => (
+              <Box
+                key={key}
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{ mb: 1 }}
+              >
+                <Typography sx={fieldLabelStyle}>{label}</Typography>
+                <Input
+                  type="number"
+                  value={character[key]}
+                  onChange={(e) =>
+                    setCharacter((prev) => ({ ...prev, [key]: Number(e.target.value) }))
+                  }
+                  sx={inputSx}
+                />
+              </Box>
+            ))}
+
+            {/* XP row (two inputs) */}
             <Box
               display="flex"
               justifyContent="space-between"
-              alignItems={"center"}
+              alignItems="center"
+              sx={{ mb: 1 }}
             >
-              <Box sx={{ width: "90px" }}>
-                <Typography color={"black"} sx={{ marginLeft: "4px" }}>
-                  XP:
-                </Typography>
-              </Box>
-              <Box sx={{ marginLeft: "8px", width: "64px" }}>
+              <Typography sx={fieldLabelStyle}>XP</Typography>
+              <Box display="flex" alignItems="center" gap={0.5}>
                 <Input
-                  type={"number"}
+                  type="number"
                   value={character.current_xp}
-                  onChange={(e) => {
-                    setCharacter((prev) => ({
-                      ...prev,
-                      current_xp: Number(e.target.value),
-                    }));
-                  }}
+                  onChange={(e) =>
+                    setCharacter((prev) => ({ ...prev, current_xp: Number(e.target.value) }))
+                  }
+                  sx={inputSx}
                 />
-              </Box>
-              /
-              <Box sx={{ marginLeft: "8px", width: "64px" }}>
+                <Typography sx={{ color: '#6b1a1a', mx: 0.5 }}>/</Typography>
                 <Input
-                  type={"number"}
+                  type="number"
                   value={character.next_level_xp}
-                  onChange={(e) => {
-                    setCharacter((prev) => ({
-                      ...prev,
-                      next_level_xp: Number(e.target.value),
-                    }));
-                  }}
+                  onChange={(e) =>
+                    setCharacter((prev) => ({ ...prev, next_level_xp: Number(e.target.value) }))
+                  }
+                  sx={inputSx}
                 />
               </Box>
             </Box>
 
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems={"center"}
-            >
-              <Box sx={{ width: "90px" }}>
-                <Typography color={"black"} sx={{ marginLeft: "4px" }}>
-                  Złoto:
-                </Typography>
-              </Box>
-              <Box sx={{ marginLeft: "8px", width: "64px" }}>
-                <Input
-                  type={"number"}
-                  value={character.gold}
-                  onChange={(e) => {
-                    setCharacter((prev) => ({
-                      ...prev,
-                      gold: Number(e.target.value),
-                    }));
-                  }}
-                />
-              </Box>
-            </Box>
-
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems={"center"}
-            >
-              <Box sx={{ width: "90px" }}>
-                <Typography color={"black"} sx={{ marginLeft: "4px" }}>
-                  Dolary:
-                </Typography>
-              </Box>
-              <Box sx={{ marginLeft: "8px", width: "64px" }}>
-                <Input
-                  type={"number"}
-                  value={character.gold_usd}
-                  onChange={(e) => {
-                    setCharacter((prev) => ({
-                      ...prev,
-                      gold_usd: Number(e.target.value),
-                    }));
-                  }}
-                />
-              </Box>
-            </Box>
-
+            {/* Favour (feature-flagged) */}
             {FEATURE_FAVOUR && (
               <Box
                 display="flex"
                 justifyContent="space-between"
-                alignItems={"center"}
+                alignItems="center"
+                sx={{ mb: 1 }}
               >
-                <Box sx={{ width: "90px" }}>
-                  <Typography color={"black"} sx={{ marginLeft: "4px" }}>
-                    Przychylność:
-                  </Typography>
-                </Box>
-                <Box>
-                  <Box
-                    sx={{ marginLeft: "4px" }}
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
+                <Typography sx={fieldLabelStyle}>Przychylność</Typography>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Button
+                    size="small"
+                    onClick={() =>
+                      setCharacter((prev) => ({ ...prev, favour: prev.favour - 1 }))
+                    }
                   >
-                    <Button
-                      onClick={() => {
-                        setCharacter((prev) => ({
-                          ...prev,
-                          favour: prev.favour - 1,
-                        }));
-                      }}
-                    >
-                      &#x1f44e;
-                    </Button>
-                    <Box>{character.favour}</Box>
-                    <Button
-                      onClick={() => {
-                        setCharacter((prev) => ({
-                          ...prev,
-                          favour: prev.favour + 1,
-                        }));
-                      }}
-                    >
-                      &#128077;
-                    </Button>
-                  </Box>
+                    👎
+                  </Button>
+                  <Typography sx={{ fontWeight: 700, color: '#2d0a0a' }}>
+                    {character.favour}
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={() =>
+                      setCharacter((prev) => ({ ...prev, favour: prev.favour + 1 }))
+                    }
+                  >
+                    👍
+                  </Button>
                 </Box>
               </Box>
             )}
 
-            <Divider sx={{ my: 1 }} />
-            <Typography color={"black"} sx={{ marginLeft: "4px", mb: 1 }}>
-              Cechy:
-            </Typography>
+            {/* Traits divider */}
+            <Box display="flex" alignItems="center" gap={0.75} sx={{ my: 1.5 }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  height: 1,
+                  background: 'linear-gradient(90deg, transparent, rgba(107,26,26,0.4))',
+                }}
+              />
+              <Typography
+                sx={{
+                  fontFamily: "'Cinzel',serif",
+                  fontSize: 8,
+                  letterSpacing: 3,
+                  color: '#6b1a1a',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Cechy
+              </Typography>
+              <Box
+                sx={{
+                  flex: 1,
+                  height: 1,
+                  background: 'linear-gradient(90deg, rgba(107,26,26,0.4), transparent)',
+                }}
+              />
+            </Box>
+
+            {/* Existing traits */}
             {(character.traits || []).map((trait, index) => (
               <Box
                 key={index}
@@ -210,35 +285,37 @@ export const EditCharacterDialog = ({
                 justifyContent="space-between"
                 sx={{ mb: 0.5 }}
               >
-                <Typography sx={{ flex: 1 }}>{trait.name}</Typography>
+                <Typography sx={{ flex: 1, fontSize: 11, color: '#3d1010', fontStyle: 'italic' }}>
+                  {trait.name}
+                </Typography>
                 <Input
                   value={trait.value}
                   onChange={(e) => {
                     const value = e.target.value;
                     setCharacter((prev) => ({
                       ...prev,
-                      traits: prev.traits.map((t, i) =>
-                        i === index ? { ...t, value } : t
-                      ),
+                      traits: prev.traits.map((t, i) => (i === index ? { ...t, value } : t)),
                     }));
                   }}
-                  sx={{ width: "64px" }}
+                  sx={{ width: 64 }}
                 />
                 <IconButton
                   aria-label="usuń cechę"
                   size="small"
-                  onClick={() => {
+                  onClick={() =>
                     setCharacter((prev) => ({
                       ...prev,
                       traits: prev.traits.filter((_, i) => i !== index),
-                    }));
-                  }}
+                    }))
+                  }
+                  sx={{ color: '#6b1a1a', ml: 0.5 }}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </Box>
             ))}
 
+            {/* Add new trait */}
             <Box display="flex" alignItems="flex-end" gap={1} sx={{ mt: 1 }}>
               <Autocomplete
                 freeSolo
@@ -261,7 +338,7 @@ export const EditCharacterDialog = ({
                 value={newTraitValue}
                 onChange={(e) => setNewTraitValue(e.target.value)}
                 placeholder="Wartość"
-                sx={{ width: "64px" }}
+                sx={{ width: 64 }}
               />
               <IconButton
                 aria-label="dodaj cechę"
@@ -278,28 +355,57 @@ export const EditCharacterDialog = ({
                   setNewTraitName('');
                   setNewTraitValue('');
                 }}
+                sx={{ color: '#6b1a1a' }}
               >
                 <AddIcon fontSize="small" />
               </IconButton>
             </Box>
-
-            <Box
-              sx={{ marginTop: "12px" }}
-              display="flex"
-              justifyContent="space-between"
-              alignItems={"center"}
-            >
-              <Button color="primary" onClick={handleSave}>
-                Zapisz
-              </Button>
-              <Button color="secondary" onClick={handleClose}>
-                Anuluj
-              </Button>
-            </Box>
           </Box>
-        </Dialog>
-      )}
-    </div>
+        </Box>
+
+        {/* Bottom band with Save / Cancel */}
+        <Box
+          sx={{
+            ...bandStyle,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Button
+            onClick={handleSave}
+            size="small"
+            sx={{
+              fontFamily: "'Cinzel',serif",
+              fontSize: 9,
+              letterSpacing: 2,
+              color: '#f5e8d0',
+              textTransform: 'uppercase',
+              border: '1px solid rgba(245,232,208,0.3)',
+              borderRadius: '3px',
+              px: 2,
+              '&:hover': { background: 'rgba(245,232,208,0.1)' },
+            }}
+          >
+            Zapisz
+          </Button>
+          <Button
+            onClick={handleClose}
+            size="small"
+            sx={{
+              fontFamily: "'Cinzel',serif",
+              fontSize: 9,
+              letterSpacing: 2,
+              color: 'rgba(245,232,208,0.5)',
+              textTransform: 'uppercase',
+              '&:hover': { color: '#f5e8d0' },
+            }}
+          >
+            Anuluj
+          </Button>
+        </Box>
+      </Box>
+    </Dialog>
   );
 };
 
