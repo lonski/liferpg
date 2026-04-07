@@ -4,8 +4,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import { EditCharacterDialog } from "components/EditCharacterDialog/EditCharacterDialog";
 import PropTypes from "prop-types";
 import styles from "./Character.module.css";
-
-const showFavour = import.meta.env.VITE_SHOW_FAVOUR === 'true';
+import { FEATURE_FAVOUR } from "featureFlags";
 
 const FavourEmoji = ({ favour }) => {
   if (favour < -1) return <span>😠</span>;
@@ -110,7 +109,7 @@ export const Character = ({ character, user }) => {
           )}
 
           {/* Favour (feature-flagged) */}
-          {showFavour && (
+          {FEATURE_FAVOUR && (
             <div style={{ textAlign: 'center', marginBottom: 8 }}>
               <FavourEmoji favour={favour} />
             </div>
