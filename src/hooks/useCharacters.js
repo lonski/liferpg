@@ -14,7 +14,9 @@ export const useCharacters = () => {
         return undefined;
       }
       const c = collection(db, "characters");
-      const q = user.admin ? query(c) : query(c, where("email", "==", user.email));
+      const q = (user.admin || user.readOnlyOthers)
+        ? query(c)
+        : query(c, where("email", "==", user.email));
 
       return getDocs(q).then((r) => r.docs.map((d) => ({ ...d.data(), id: d.id })));
     },
