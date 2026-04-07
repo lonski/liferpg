@@ -7,10 +7,12 @@ import {
   Typography,
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
-import React from "react";
+import AdminIcon from "@mui/icons-material/AdminPanelSettings";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../../firebase";
 import { Character } from "components/Character/Character";
+import { UserManagement } from "components/UserManagement/UserManagement";
 import { useCharacters } from "hooks/useCharacters";
 
 export const Home = () => {
@@ -19,6 +21,7 @@ export const Home = () => {
     logout().then(() => navigate("/login"));
   };
   const [characters, loading, user] = useCharacters();
+  const [userManagementOpen, setUserManagementOpen] = useState(false);
 
   return (
     <>
@@ -61,6 +64,23 @@ export const Home = () => {
                   {user.displayName}
                 </Typography>
               )}
+              {user?.admin && (
+                <IconButton
+                  aria-label="Zarządzaj użytkownikami"
+                  onClick={() => setUserManagementOpen(true)}
+                  size="small"
+                  sx={{
+                    color: 'rgba(245,232,208,0.6)',
+                    border: '1px solid rgba(200,134,10,0.4)',
+                    borderRadius: '3px',
+                    padding: '4px 6px',
+                    mr: 1,
+                    '&:hover': { color: '#f5e8d0', borderColor: 'rgba(200,134,10,0.8)' },
+                  }}
+                >
+                  <AdminIcon fontSize="small" />
+                </IconButton>
+              )}
               <IconButton
                 aria-label="Wyloguj"
                 onClick={handleLogout}
@@ -86,6 +106,11 @@ export const Home = () => {
             .filter((c) => c !== undefined)
             .map((c) => <Character key={c.id} character={c} user={user} />)}
       </Container>
+
+      <UserManagement
+        open={userManagementOpen}
+        handleClose={() => setUserManagementOpen(false)}
+      />
     </>
   );
 };
