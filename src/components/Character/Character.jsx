@@ -17,6 +17,7 @@ import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDiss
 import SentimentSatisfiedIcon from "@mui/icons-material/SentimentSatisfied";
 import SentimentSatisfiedAltIcon from "@mui/icons-material/SentimentSatisfiedAlt";
 import { SentimentDissatisfied } from "@mui/icons-material";
+import { FEATURE_FAVOUR } from "featureFlags";
 
 export const Character = ({ character, user }) => {
   const [edit, setEdit] = useState(false);
@@ -30,7 +31,7 @@ export const Character = ({ character, user }) => {
         <Paper sx={{ margin: "4px", padding: "4px" }} elevation={2}>
           <Box display="flex" justifyContent="space-between">
             <Typography variant="h4">{character.name}</Typography>
-            <Box>
+            {FEATURE_FAVOUR && (
               <Box marginTop={"10px"} display="flex" justifyContent="left">
                 {favour === 0 && <SentimentSatisfiedIcon />}
                 {favour === -1 && (
@@ -43,7 +44,7 @@ export const Character = ({ character, user }) => {
                   <SentimentSatisfiedAltIcon color="success" />
                 )}
               </Box>
-            </Box>
+            )}
           </Box>
           {character.clazz && (
             <Typography variant="overline" display="block" gutterBottom>

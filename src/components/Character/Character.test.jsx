@@ -32,3 +32,8 @@ test('does not render traits section when traits field is absent', () => {
   render(<Character character={base} user={null} />);
   expect(screen.queryByText('Cechy')).not.toBeInTheDocument();
 });
+
+test('does not render favour icon by default (flag off)', () => {
+  render(<Character character={{ name: 'Hero', favour: 1 }} user={null} />);
+  expect(document.querySelector('[data-testid="SentimentSatisfiedAltIcon"]')).not.toBeInTheDocument();
+});
