@@ -181,7 +181,7 @@ export const UserManagement = ({ open, handleClose }) => {
                     <Switch
                       size="small"
                       checked={u.readOnlyOthers || false}
-                      disabled={isUpdating}
+                      disabled={isUpdating || u.admin}
                       onChange={(e) => updateUserFlags(u.id, { readOnlyOthers: e.target.checked })}
                       sx={switchSx}
                     />
