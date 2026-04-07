@@ -17,13 +17,25 @@ const theme = createTheme({
   components: {
     MuiLinearProgress: {
       styleOverrides: {
-        root: { backgroundColor: 'rgba(107,26,26,0.12)', border: '1px solid rgba(107,26,26,0.35)', borderRadius: 2, height: 8 },
-        bar: { background: 'linear-gradient(90deg, #6b1a1a, #c8860a)', borderRadius: 2 },
+        root: {
+          backgroundColor: 'rgba(107,26,26,0.12)',
+          border: '1px solid rgba(107,26,26,0.35)',
+          borderRadius: 2,
+          height: 8,
+        },
+        bar: {
+          background: 'linear-gradient(90deg, #6b1a1a, #c8860a)',
+          borderRadius: 2,
+        },
       },
     },
     MuiChip: {
       styleOverrides: {
-        root: { fontFamily: "'Libre Baskerville', Georgia, serif", color: '#1a0a0a', borderColor: 'rgba(107,26,26,0.4)' },
+        root: {
+          fontFamily: "'Libre Baskerville', Georgia, serif",
+          color: '#1a0a0a',
+          borderColor: 'rgba(107,26,26,0.4)',
+        },
       },
     },
     MuiButton: {
@@ -34,12 +46,20 @@ const theme = createTheme({
           color: '#f5e8d0',
           '&:hover': { background: 'linear-gradient(135deg, #4a1010, #8b2020)' },
         },
-        outlinedPrimary: { borderColor: 'rgba(107,26,26,0.5)', color: '#1a0a0a' },
+        outlinedPrimary: {
+          borderColor: 'rgba(107,26,26,0.5)',
+          color: '#1a0a0a',
+        },
       },
     },
     MuiDialog: {
       styleOverrides: {
-        paper: { background: 'transparent', boxShadow: 'none', overflow: 'visible', margin: 16 },
+        paper: {
+          background: 'transparent',
+          boxShadow: 'none',
+          overflow: 'visible',
+          margin: 16,
+        },
       },
     },
     MuiInput: {
