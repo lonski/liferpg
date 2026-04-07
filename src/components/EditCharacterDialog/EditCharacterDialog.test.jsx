@@ -69,6 +69,12 @@ test('deleting a trait removes it from the list', () => {
   expect(screen.getByText('Zręczność')).toBeInTheDocument();
 });
 
+test('does not render Przychylność field by default (flag off)', () => {
+  const char = { id: '1', level: 1, current_xp: 0, next_level_xp: 100, gold: 0, gold_usd: 0, favour: 2, traits: [] };
+  render(<EditCharacterDialog charToEdit={char} open={true} handleClose={() => {}} />);
+  expect(screen.queryByText('Przychylność:')).not.toBeInTheDocument();
+});
+
 test('adding a new trait appends it to the list', () => {
   render(
     <EditCharacterDialog
