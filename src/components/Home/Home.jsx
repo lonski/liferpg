@@ -1,17 +1,17 @@
 import {
   AppBar,
-  Box,
   CircularProgress,
   Container,
   IconButton,
   Toolbar,
+  Typography,
 } from "@mui/material";
-import { logout } from "../../firebase";
-import { useNavigate } from "react-router-dom";
+import LogoutIcon from "@mui/icons-material/Logout";
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { logout } from "../../firebase";
 import { Character } from "components/Character/Character";
 import { useCharacters } from "hooks/useCharacters";
-import LogoutIcon from "@mui/icons-material/Logout";
 
 export const Home = () => {
   const navigate = useNavigate();
@@ -22,34 +22,68 @@ export const Home = () => {
 
   return (
     <>
-      <AppBar position="static">
+      <AppBar
+        position="static"
+        sx={{
+          background: 'linear-gradient(90deg, #280606, #4a0e0e, #280606)',
+          borderBottom: '1px solid rgba(200,134,10,0.3)',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
+        }}
+      >
         <Toolbar variant="dense">
-          <>
-            {loading && <CircularProgress color="info" size={24} />}
-            <Box sx={{ flexGrow: 1 }} />
-            {loading || (
-              <>
-                <IconButton color="inherit" onClick={handleLogout}>
-                  <LogoutIcon />
-                </IconButton>
-              </>
-            )}
-          </>
+          <Typography
+            variant="h6"
+            sx={{
+              fontFamily: "'Cinzel', serif",
+              fontWeight: 700,
+              letterSpacing: '3px',
+              color: '#f5e8d0',
+              flexGrow: 1,
+            }}
+          >
+            ⚔&nbsp; LifeRPG
+          </Typography>
+
+          {loading ? (
+            <CircularProgress size={20} sx={{ color: '#c8860a' }} />
+          ) : (
+            <>
+              {user?.displayName && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'rgba(245,232,208,0.45)',
+                    fontStyle: 'italic',
+                    mr: 1,
+                    fontSize: '11px',
+                  }}
+                >
+                  {user.displayName}
+                </Typography>
+              )}
+              <IconButton
+                onClick={handleLogout}
+                size="small"
+                sx={{
+                  color: 'rgba(245,232,208,0.6)',
+                  border: '1px solid rgba(200,134,10,0.4)',
+                  borderRadius: '3px',
+                  padding: '4px 6px',
+                  '&:hover': { color: '#f5e8d0', borderColor: 'rgba(200,134,10,0.8)' },
+                }}
+              >
+                <LogoutIcon fontSize="small" />
+              </IconButton>
+            </>
+          )}
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="xs">
-        <>
-          {characters && (
-            <>
-              {characters
-                .filter((c) => c !== undefined)
-                .map((c) => (
-                  <Character key={c.id} character={c} user={user} />
-                ))}
-            </>
-          )}
-        </>
+      <Container maxWidth="xs" sx={{ py: 2 }}>
+        {characters &&
+          characters
+            .filter((c) => c !== undefined)
+            .map((c) => <Character key={c.id} character={c} user={user} />)}
       </Container>
     </>
   );
