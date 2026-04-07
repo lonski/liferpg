@@ -33,7 +33,7 @@ const fieldLabelStyle = {
 };
 
 export const UserManagement = ({ open, handleClose }) => {
-  const { users, loading, updateUserFlags, isUpdating, updateError } = useUsers();
+  const { users, loading, fetchError, updateUserFlags, isUpdating, updateError } = useUsers();
 
   if (loading) {
     return (
@@ -193,6 +193,11 @@ export const UserManagement = ({ open, handleClose }) => {
           </Box>
         </Box>
 
+        {fetchError && (
+          <Alert severity="error" sx={{ mx: 2, mb: 1, fontSize: 11 }}>
+            Błąd pobierania: {fetchError.message}
+          </Alert>
+        )}
         {updateError && (
           <Alert severity="error" sx={{ mx: 2, mb: 1, fontSize: 11 }}>
             {updateError.message}
