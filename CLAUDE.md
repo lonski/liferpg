@@ -4,18 +4,20 @@ A React web app that gamifies real life — users are RPG characters with levels
 
 ## Tech Stack
 
-- **React 18** (Create React App)
-- **Firebase 9** — Firestore (database) + Google Auth
-- **MUI v5** (Material UI) — all UI components
-- **React Query v3** — data fetching and cache invalidation
-- **React Router v6** — client-side routing
+- **React 19** + **Vite 8** — build tooling (replaced Create React App)
+- **Firebase 12** — Firestore (database) + Google Auth
+- **MUI v7** (Material UI) — all UI components
+- **TanStack Query v5** (`@tanstack/react-query`) — data fetching and cache invalidation
+- **React Router v7** — client-side routing
+- **Vitest** — test runner (replaced Jest)
 
 ## Commands
 
 ```bash
-npm start        # dev server at localhost:3000
-npm run build    # production build
-npm test         # run tests (jest/react-testing-library)
+npm start          # dev server at localhost:5173
+npm run build      # production build → dist/
+npm run preview    # serve production build locally
+npm test           # run tests (vitest/react-testing-library)
 ```
 
 ## Project Structure
@@ -23,7 +25,8 @@ npm test         # run tests (jest/react-testing-library)
 ```
 src/
   firebase.js                          # Firebase init, Google sign-in, Firestore exports
-  App.js                               # Root: QueryClientProvider + router
+  App.jsx                              # Root: QueryClientProvider + router
+  main.jsx                             # Vite entry point
   hooks/
     useAuth.js                         # Auth state; redirects to /login if unauthenticated
     useCharacters.js                   # Fetches characters from Firestore for current user
@@ -32,6 +35,13 @@ src/
     Character/Character.jsx            # Character card (level, XP bar, gold, favour)
     EditCharacterDialog/               # Admin-only dialog to edit character stats
     Login/Login.jsx                    # Google sign-in page
+index.html                             # Vite entry HTML (project root, not public/)
+vite.config.js                         # Vite + Vitest configuration
+tsconfig.json                          # Path aliases — baseUrl: "./src"
+.eslintrc.json                         # ESLint config (standard + google + react)
+.github/workflows/
+  firebase-hosting-merge.yml           # Deploy to Firebase on push to master
+  firebase-hosting-pull-request.yml    # Deploy preview on pull request
 ```
 
 ## Firestore Data Model
@@ -63,9 +73,22 @@ traits: [{ name: string, value: string }]  (optional)
 
 The UI is in **Polish**. Labels in components (Poziom, Złoto, XP, Przychylność, etc.) are intentional — do not translate them.
 
+## CI/CD
+
+Two Firebase Hosting workflows in `.github/workflows/`:
+
+- **`firebase-hosting-merge.yml`** — triggers on push to `master`; builds and deploys to the live channel.
+- **`firebase-hosting-pull-request.yml`** — triggers on pull requests; builds and deploys a preview channel.
+
+Both workflows run: `npm install && npm run build && rm -rf public && mv dist public`
+
+**When changing the build pipeline** (output directory, build command, Node version, etc.), update both workflow files to match. The `dist/` directory is Vite's output — do not change `build.outDir` in `vite.config.js` without also updating the workflows.
+
 ## Conventions
 
 - Components use named exports (not default exports).
-- Absolute imports are configured in `jsconfig.json` — `src/` is the root, so `import { X } from "components/X/X"` works.
-- ESLint uses `eslint-config-google` + `eslint-config-standard`. Run `npx eslint src/` to check.
+- Absolute imports configured via `tsconfig.json` `baseUrl: "./src"` — resolved by Vite's native `resolve.tsconfigPaths`. Example: `import { X } from "components/X/X"`.
+- JSX files use `.jsx` extension (`.js` files are not processed for JSX by Vite's Oxc transformer).
+- ESLint uses `eslint-config-google` + `eslint-config-standard` + `eslint-plugin-react`. Run `npx eslint src/` to check.
 - No TypeScript — plain JS with PropTypes for component prop validation.
+- Tests use Vitest globals (`vi`, `describe`, `test`, `expect`) — no imports needed. Use `vi.mock`/`vi.fn`, not `jest.mock`/`jest.fn`.
