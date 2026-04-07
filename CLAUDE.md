@@ -48,7 +48,7 @@ tsconfig.json                          # Path aliases — baseUrl: "./src"
 
 **`users/{uid}`**
 ```
-uid, name, email, authProvider, admin (bool)
+uid, name, email, authProvider, admin (bool), readOnlyOthers (bool)
 ```
 
 **`characters/{id}`**
@@ -58,12 +58,13 @@ traits: [{ name: string, value: string }]  (optional)
 ```
 
 - Characters are linked to users via `email`.
-- Admin users see **all** characters; regular users see only their own.
+- Admin users see **all** characters and can edit any; `readOnlyOthers` users see all characters but cannot edit any; regular users see only their own.
 
 ## Key Behaviors
 
 - **Auth**: `useAuth` hook handles auth state and redirects. Must be used inside a React Router context.
 - **Admin**: `user.admin === true` unlocks the edit button on each character card and shows all characters.
+- **ReadOnlyOthers**: `user.readOnlyOthers === true` allows viewing all characters but cannot edit any.
 - **Favour**: integer; rendered as mood emoji (< -1 = very unhappy, -1 = unhappy, 0 = neutral, > 0 = happy).
 - **Currency**: `gold` = PLN (złoty), `gold_usd` = USD. Both displayed as chips if present.
 - **XP badge**: clicking the XP progress bar toggles a chip showing XP remaining to next level.
