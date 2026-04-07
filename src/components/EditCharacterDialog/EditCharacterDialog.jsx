@@ -7,6 +7,7 @@ import PropTypes from "prop-types";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useQueryClient } from "@tanstack/react-query";
+import { FEATURE_FAVOUR } from "../../featureFlags";
 
 export const EditCharacterDialog = ({
   charToEdit,
@@ -153,47 +154,49 @@ export const EditCharacterDialog = ({
               </Box>
             </Box>
 
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems={"center"}
-            >
-              <Box sx={{ width: "90px" }}>
-                <Typography color={"black"} sx={{ marginLeft: "4px" }}>
-                  Przychylność:
-                </Typography>
-              </Box>
-              <Box>
-                <Box
-                  sx={{ marginLeft: "4px" }}
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Button
-                    onClick={() => {
-                      setCharacter((prev) => ({
-                        ...prev,
-                        favour: prev.favour - 1,
-                      }));
-                    }}
+            {FEATURE_FAVOUR && (
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems={"center"}
+              >
+                <Box sx={{ width: "90px" }}>
+                  <Typography color={"black"} sx={{ marginLeft: "4px" }}>
+                    Przychylność:
+                  </Typography>
+                </Box>
+                <Box>
+                  <Box
+                    sx={{ marginLeft: "4px" }}
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
                   >
-                    &#x1f44e;
-                  </Button>
-                  <Box>{character.favour}</Box>
-                  <Button
-                    onClick={() => {
-                      setCharacter((prev) => ({
-                        ...prev,
-                        favour: prev.favour + 1,
-                      }));
-                    }}
-                  >
-                    &#128077;
-                  </Button>
+                    <Button
+                      onClick={() => {
+                        setCharacter((prev) => ({
+                          ...prev,
+                          favour: prev.favour - 1,
+                        }));
+                      }}
+                    >
+                      &#x1f44e;
+                    </Button>
+                    <Box>{character.favour}</Box>
+                    <Button
+                      onClick={() => {
+                        setCharacter((prev) => ({
+                          ...prev,
+                          favour: prev.favour + 1,
+                        }));
+                      }}
+                    >
+                      &#128077;
+                    </Button>
+                  </Box>
                 </Box>
               </Box>
-            </Box>
+            )}
 
             <Divider sx={{ my: 1 }} />
             <Typography color={"black"} sx={{ marginLeft: "4px", mb: 1 }}>
