@@ -35,6 +35,7 @@ export const useUsers = () => {
   return {
     users: queryResult.data,
     loading: authLoading || (!!user?.admin && queryResult.isPending),
+    fetchError: queryResult.error,
     updateUserFlags: (uid, flags) => updateUserMutation.mutate({ uid, flags }),
     isUpdating: updateUserMutation.isPending,
     updateError: updateUserMutation.error,
