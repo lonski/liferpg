@@ -30,10 +30,12 @@ src/
   hooks/
     useAuth.js                         # Auth state; redirects to /login if unauthenticated
     useCharacters.js                   # Fetches characters from Firestore for current user
+    useUsers.js                        # Fetches users (admin only); updates user flags
   components/
     Home/Home.jsx                      # Main page — renders character list
     Character/Character.jsx            # Character card (level, XP bar, gold, favour)
     EditCharacterDialog/               # Admin-only dialog to edit character stats
+    UserManagement/                   # Admin-only dialog to manage user permissions
     Login/Login.jsx                    # Google sign-in page
 index.html                             # Vite entry HTML (project root, not public/)
 vite.config.js                         # Vite + Vitest configuration

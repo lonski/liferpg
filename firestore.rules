@@ -2,8 +2,27 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true;
+    }
+
+    function isOwnUser(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read: if isOwnUser(uid) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /characters/{characterId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
     }
   }
 }
