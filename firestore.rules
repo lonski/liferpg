@@ -22,7 +22,7 @@ service cloud.firestore {
 
     match /characters/{characterId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }

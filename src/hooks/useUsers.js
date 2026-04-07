@@ -4,11 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
 
 export const useUsers = () => {
-  const [user] = useAuth();
+  const [user, authLoading] = useAuth();
   const queryClient = useQueryClient();
 
   const queryResult = useQuery({
-    queryKey: ["users"],
+    queryKey: ["users", user?.uid],
     queryFn: async () => {
       if (!user || !user.admin) {
         return [];
@@ -21,21 +21,23 @@ export const useUsers = () => {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: async ({ uid, admin, readOnlyOthers }) => {
+    mutationFn: async ({ uid, flags }) => {
       if (!user?.admin) {
         throw new Error("Only admins can update user flags");
       }
-      await updateDoc(doc(db, "users", uid), { admin, readOnlyOthers });
+      await updateDoc(doc(db, "users", uid), flags);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["users", user?.uid] });
     },
   });
 
   return {
     users: queryResult.data,
-    loading: queryResult.isLoading,
-    updateUserFlags: (uid, flags) => updateUserMutation.mutate({ uid, ...flags }),
+    loading: authLoading || queryResult.isLoading,
+    updateUserFlags: (uid, flags) => updateUserMutation.mutate({ uid, flags }),
+    isUpdating: updateUserMutation.isPending,
+    updateError: updateUserMutation.error,
     isAdmin: user?.admin,
   };
 };

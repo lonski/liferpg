@@ -1,4 +1,4 @@
-import { Box, Button, Dialog, Typography, Switch } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Dialog, Typography, Switch } from "@mui/material";
 import React from "react";
 import PropTypes from "prop-types";
 import { useUsers } from "hooks/useUsers";
@@ -17,6 +17,13 @@ const bandLabelStyle = {
   textTransform: 'uppercase',
 };
 
+const switchSx = {
+  '& .MuiSwitch-switchBase.Mui-checked': { color: '#7a1414' },
+  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+    backgroundColor: '#7a1414',
+  },
+};
+
 const fieldLabelStyle = {
   fontFamily: "'Cinzel', serif",
   fontSize: '9px',
@@ -26,10 +33,26 @@ const fieldLabelStyle = {
 };
 
 export const UserManagement = ({ open, handleClose }) => {
-  const { users, loading, updateUserFlags } = useUsers();
+  const { users, loading, updateUserFlags, isUpdating, updateError } = useUsers();
 
   if (loading) {
-    return null;
+    return (
+      <Dialog open={open} onClose={handleClose}>
+        <Box
+          sx={{
+            background: 'radial-gradient(ellipse at 50% 0%, #f5e8d0 0%, #e0ccaa 60%, #c8b080 100%)',
+            border: '2px solid #6b1a1a',
+            borderRadius: '4px',
+            p: 6,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <CircularProgress sx={{ color: '#7a1414' }} />
+        </Box>
+      </Dialog>
+    );
   }
 
   return (
@@ -148,18 +171,9 @@ export const UserManagement = ({ open, handleClose }) => {
                     <Switch
                       size="small"
                       checked={u.admin || false}
-                      onChange={(e) =>
-                        updateUserFlags(u.id, {
-                          admin: e.target.checked,
-                          readOnlyOthers: u.readOnlyOthers || false,
-                        })
-                      }
-                      sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': { color: '#7a1414' },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                          backgroundColor: '#7a1414',
-                        },
-                      }}
+                      disabled={isUpdating}
+                      onChange={(e) => updateUserFlags(u.id, { admin: e.target.checked })}
+                      sx={switchSx}
                     />
                     <Typography sx={fieldLabelStyle}>Admin</Typography>
                   </Box>
@@ -167,18 +181,9 @@ export const UserManagement = ({ open, handleClose }) => {
                     <Switch
                       size="small"
                       checked={u.readOnlyOthers || false}
-                      onChange={(e) =>
-                        updateUserFlags(u.id, {
-                          admin: u.admin || false,
-                          readOnlyOthers: e.target.checked,
-                        })
-                      }
-                      sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': { color: '#7a1414' },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                          backgroundColor: '#7a1414',
-                        },
-                      }}
+                      disabled={isUpdating}
+                      onChange={(e) => updateUserFlags(u.id, { readOnlyOthers: e.target.checked })}
+                      sx={switchSx}
                     />
                     <Typography sx={fieldLabelStyle}>Tylko do odczytu</Typography>
                   </Box>
@@ -187,6 +192,12 @@ export const UserManagement = ({ open, handleClose }) => {
             ))}
           </Box>
         </Box>
+
+        {updateError && (
+          <Alert severity="error" sx={{ mx: 2, mb: 1, fontSize: 11 }}>
+            {updateError.message}
+          </Alert>
+        )}
 
         <Box
           sx={{
