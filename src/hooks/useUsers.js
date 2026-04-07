@@ -34,7 +34,7 @@ export const useUsers = () => {
 
   return {
     users: queryResult.data,
-    loading: authLoading || queryResult.isLoading,
+    loading: authLoading || (!!user?.admin && queryResult.isPending),
     updateUserFlags: (uid, flags) => updateUserMutation.mutate({ uid, flags }),
     isUpdating: updateUserMutation.isPending,
     updateError: updateUserMutation.error,
