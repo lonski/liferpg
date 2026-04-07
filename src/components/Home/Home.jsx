@@ -62,6 +62,7 @@ export const Home = () => {
                 </Typography>
               )}
               <IconButton
+                aria-label="Wyloguj"
                 onClick={handleLogout}
                 size="small"
                 sx={{
