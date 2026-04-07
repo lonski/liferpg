@@ -52,7 +52,7 @@ export const EditCharacterDialog = ({ charToEdit, open, handleClose }) => {
     .flatMap(([, data]) => (data || []));
   const existingTraitNames = useMemo(
     () => [...new Set(allCharacters.flatMap((c) => (c.traits || []).map((t) => t.name)))],
-    [open] // eslint-disable-line
+    [open] // eslint-disable-line react-hooks/exhaustive-deps -- recompute only on dialog open
   );
   const [character, setCharacter] = useState(charToEdit);
   useEffect(() => {
@@ -279,7 +279,7 @@ export const EditCharacterDialog = ({ charToEdit, open, handleClose }) => {
             {/* Existing traits */}
             {(character.traits || []).map((trait, index) => (
               <Box
-                key={index}
+                key={trait.name}
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
@@ -411,6 +411,6 @@ export const EditCharacterDialog = ({ charToEdit, open, handleClose }) => {
 
 EditCharacterDialog.propTypes = {
   charToEdit: PropTypes.object,
-  open: PropTypes.bool,
-  handleClose: PropTypes.func,
+  open: PropTypes.bool.isRequired,
+  handleClose: PropTypes.func.isRequired,
 };
