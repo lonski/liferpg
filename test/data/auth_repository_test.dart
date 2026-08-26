@@ -56,7 +56,6 @@ class _FakeGoogleSignInPlatform extends GoogleSignInPlatform {
 void main() {
   GoogleSignInPlatform.instance = _FakeGoogleSignInPlatform();
 
-
   test('ensureUserDocument creates a doc with both flags false', () async {
     final db = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
