@@ -5,20 +5,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/data/firebase_providers.dart';
 import 'package:liferpg/features/login/login_screen.dart';
-import 'package:liferpg/main.dart';
 
 void main() {
-  testWidgets('signed-out users land on the login screen', (tester) async {
+  testWidgets('shows the chronicle branding and the Polish sign-in copy',
+      (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         firebaseAuthProvider.overrideWithValue(MockFirebaseAuth()),
         firestoreProvider.overrideWithValue(FakeFirebaseFirestore()),
       ],
-      child: const LifeRpgApp(),
+      child: const MaterialApp(home: LoginScreen()),
     ));
-    await tester.pump();
 
-    expect(find.byType(MaterialApp), findsOneWidget);
-    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.text('LifeRPG'), findsOneWidget);
+    expect(find.text('Kronika Bohaterów'), findsOneWidget);
+    expect(find.text('Zaloguj przez Google'), findsOneWidget);
+    expect(find.text('Wejdź do Kroniki'), findsOneWidget);
+    expect(find.text('„Twoja legenda czeka...”'), findsOneWidget);
   });
 }
