@@ -4,9 +4,19 @@ import 'app_theme.dart';
 
 /// A horizontal rule broken by a ✦, fading out towards the ends.
 class OrnamentDivider extends StatelessWidget {
-  const OrnamentDivider({super.key, this.color = crimson, this.width = 120});
+  const OrnamentDivider({
+    super.key,
+    this.color = crimson,
+    this.glyphColor,
+    this.width = 120,
+  });
 
   final Color color;
+
+  /// Colour of the ✦ glyph, when it differs from the line colour (e.g. the
+  /// Login screen's gold divider uses a different alpha for each).
+  /// Defaults to [color].
+  final Color? glyphColor;
   final double width;
 
   @override
@@ -29,7 +39,10 @@ class OrnamentDivider extends StatelessWidget {
         line(true),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text('✦', style: TextStyle(fontSize: 10, color: color)),
+          child: Text(
+            '✦',
+            style: TextStyle(fontSize: 11, color: glyphColor ?? color),
+          ),
         ),
         line(false),
       ],
@@ -71,13 +84,13 @@ class TopBand extends StatelessWidget {
           const SizedBox(width: 32),
           Expanded(
             child: Text(
-              label,
+              label.toUpperCase(),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontFamily: fontDisplay,
                 fontSize: 8,
                 letterSpacing: 4,
-                color: Color(0xD9F5E8D0),
+                color: bandLabelColor,
               ),
             ),
           ),
@@ -100,7 +113,12 @@ class BottomBand extends StatelessWidget {
       alignment: Alignment.center,
       child: const Text(
         '— ✦ —',
-        style: TextStyle(fontSize: 9, color: parchmentMuted, height: 1),
+        style: TextStyle(
+          fontSize: 10,
+          letterSpacing: 3,
+          color: parchmentMedium,
+          height: 1,
+        ),
       ),
     );
   }

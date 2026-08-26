@@ -14,7 +14,14 @@ const TextStyle _fieldLabel = TextStyle(
   color: crimson,
 );
 
-const Color _inkHeading = Color(0xFF2D0A0A);
+// The "Cechy" divider heading uses a distinct, smaller style from the field
+// labels above it -- see EditCharacterDialog.jsx's separate divider label.
+const TextStyle _traitsDividerLabel = TextStyle(
+  fontFamily: fontDisplay,
+  fontSize: 8,
+  letterSpacing: 3,
+  color: crimson,
+);
 
 String? _validateOptionalInt(String? value) {
   final text = (value ?? '').trim();
@@ -151,11 +158,12 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
             key: const Key('save-character'),
             onPressed: _saving ? null : _save,
             child: Text(
-              _saving ? '...' : 'Zapisz',
+              _saving ? '...' : 'Zapisz'.toUpperCase(),
               style: const TextStyle(
                 fontFamily: fontDisplay,
+                fontSize: 9,
                 letterSpacing: 2,
-                color: gold,
+                color: parchmentLight,
               ),
             ),
           ),
@@ -172,6 +180,13 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                 decoration: BoxDecoration(
                   border: Border.all(color: crimson, width: 2),
                   borderRadius: BorderRadius.circular(4),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: dialogShadowColor,
+                      blurRadius: 32,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Column(
@@ -197,7 +212,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 2,
-                                    color: _inkHeading,
+                                    color: inkHeading,
                                   ),
                                 ),
                                 const SizedBox(height: 12),
@@ -271,7 +286,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
   Widget _favourRow() => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('Przychylność', style: _fieldLabel),
+          Text('Przychylność'.toUpperCase(), style: _fieldLabel),
           Row(
             children: [
               IconButton(
@@ -283,7 +298,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                 '$_favour',
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: _inkHeading,
+                  color: inkHeading,
                 ),
               ),
               IconButton(
@@ -299,7 +314,11 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
   Widget _traitEditor(List<String> knownNames) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Cechy', style: _fieldLabel, textAlign: TextAlign.center),
+          Text(
+            'Cechy'.toUpperCase(),
+            style: _traitsDividerLabel,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 8),
           for (var i = 0; i < _traits.length; i++)
             Row(
@@ -308,7 +327,12 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                 Expanded(
                   child: Text(
                     _traits[i].name,
-                    style: const TextStyle(fontFamily: fontBody, fontSize: 12),
+                    style: const TextStyle(
+                      fontFamily: fontBody,
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                      color: traitNameInk,
+                    ),
                   ),
                 ),
                 SizedBox(
@@ -350,7 +374,8 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                       focusNode: focusNode,
                       onChanged: (v) => _newTraitName.text = v,
                       onSubmitted: (_) => onSubmitted(),
-                      decoration: const InputDecoration(labelText: 'Nazwa'),
+                      decoration:
+                          const InputDecoration(labelText: 'Nowa cecha...'),
                     );
                   },
                   onSelected: (v) => _newTraitName.text = v,
@@ -436,7 +461,7 @@ class _LabelledField extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: _fieldLabel),
+          Text(label.toUpperCase(), style: _fieldLabel),
           SizedBox(width: 64, child: child),
         ],
       );
