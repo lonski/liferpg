@@ -44,6 +44,15 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
   final _formKey = GlobalKey<FormState>();
   late final Map<String, TextEditingController> _controllers;
   late List<Trait> _traits;
+  // Stable per-row identity, independent of list position, so that removing
+  // a trait in the middle of the list doesn't confuse Flutter's element
+  // reconciliation into rebinding a surviving row's TextField to the wrong
+  // controller. Each row's TextEditingController is owned by its own
+  // _TraitValueField State (see below) and is created/disposed by Flutter
+  // itself as that keyed element enters/leaves the tree — we never touch a
+  // trait-value controller directly here.
+  late List<int> _traitKeys;
+  int _nextTraitKey = 0;
   late int _favour;
   final _newTraitName = TextEditingController();
   final _newTraitValue = TextEditingController();
@@ -61,6 +70,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
       'next_level_xp': TextEditingController(text: c.nextLevelXp.toString()),
     };
     _traits = List<Trait>.from(c.traits);
+    _traitKeys = [for (final _ in _traits) _nextTraitKey++];
     _favour = c.favour;
   }
 
@@ -82,6 +92,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
     if (name.isEmpty || value.isEmpty) return;
     setState(() {
       _traits = [..._traits, Trait(name: name, value: value)];
+      _traitKeys = [..._traitKeys, _nextTraitKey++];
       _newTraitName.clear();
       _newTraitValue.clear();
     });
@@ -292,6 +303,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
           const SizedBox(height: 8),
           for (var i = 0; i < _traits.length; i++)
             Row(
+              key: ValueKey(_traitKeys[i]),
               children: [
                 Expanded(
                   child: Text(
@@ -299,12 +311,15 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                     style: const TextStyle(fontFamily: fontBody, fontSize: 12),
                   ),
                 ),
-                Text(
-                  _traits[i].value,
-                  style: const TextStyle(
-                    fontFamily: fontBody,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                SizedBox(
+                  width: 64,
+                  child: _TraitValueField(
+                    fieldKey: Key('trait-value-$i'),
+                    initialValue: _traits[i].value,
+                    onChanged: (value) => setState(() {
+                      _traits = [..._traits];
+                      _traits[i] = Trait(name: _traits[i].name, value: value);
+                    }),
                   ),
                 ),
                 IconButton(
@@ -312,8 +327,10 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                   iconSize: 18,
                   color: crimson,
                   icon: const Icon(Icons.delete),
-                  onPressed: () =>
-                      setState(() => _traits = [..._traits]..removeAt(i)),
+                  onPressed: () => setState(() {
+                    _traits = [..._traits]..removeAt(i);
+                    _traitKeys = [..._traitKeys]..removeAt(i);
+                  }),
                 ),
               ],
             ),
@@ -357,6 +374,55 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
             ],
           ),
         ],
+      );
+}
+
+// Owns the TextEditingController for a single trait's value. Wrapping this
+// in its own StatefulWidget (keyed on a stable per-trait id by the caller)
+// means Flutter creates/disposes this State — and the controller inside it
+// — automatically as the row enters/leaves the tree, even when other rows
+// shift position around it. No manual controller bookkeeping is needed in
+// the parent screen.
+class _TraitValueField extends StatefulWidget {
+  const _TraitValueField({
+    required this.fieldKey,
+    required this.initialValue,
+    required this.onChanged,
+  });
+
+  final Key fieldKey;
+  final String initialValue;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_TraitValueField> createState() => _TraitValueFieldState();
+}
+
+class _TraitValueFieldState extends State<_TraitValueField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => TextField(
+        key: widget.fieldKey,
+        controller: _controller,
+        style: const TextStyle(
+          fontFamily: fontBody,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+        onChanged: widget.onChanged,
       );
 }
 

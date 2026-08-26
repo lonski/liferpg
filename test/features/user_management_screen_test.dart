@@ -63,4 +63,29 @@ void main() {
         tester.widget<Switch>(find.byKey(const Key('readonly-u1')));
     expect(adminSwitch.onChanged, isNull);
   });
+
+  testWidgets('toggling the admin switch writes admin', (tester) async {
+    final db = await seed();
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(const Key('admin-u2')));
+    await tester.pumpAndSettle();
+
+    final snap = await db.collection('users').doc('u2').get();
+    expect(snap.data()!['admin'], isTrue);
+  });
+
+  testWidgets('shows an empty state when there are no users', (tester) async {
+    final db = FakeFirebaseFirestore();
+    await pumpScreen(tester, db);
+    expect(find.text('Brak użytkowników'), findsOneWidget);
+  });
+
+  testWidgets('falls back to a placeholder when a user has no name',
+      (tester) async {
+    final db = await seed();
+    await db.collection('users').doc('u2').update({'name': ''});
+    await pumpScreen(tester, db);
+    expect(find.text('Bez nazwy'), findsOneWidget);
+  });
 }

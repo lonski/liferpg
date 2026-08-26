@@ -17,11 +17,17 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   final Set<String> _pending = {};
 
   Future<void> _setReadOnly(AppUser user, bool value) async {
+    await _updateFlag(user, {'readOnlyOthers': value});
+  }
+
+  Future<void> _setAdmin(AppUser user, bool value) async {
+    await _updateFlag(user, {'admin': value});
+  }
+
+  Future<void> _updateFlag(AppUser user, Map<String, Object?> flags) async {
     setState(() => _pending.add(user.uid));
     try {
-      await ref
-          .read(userRepositoryProvider)
-          .updateUserFlags(user.uid, {'readOnlyOthers': value});
+      await ref.read(userRepositoryProvider).updateUserFlags(user.uid, flags);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -72,50 +78,92 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         data: (list) => Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: list.length,
-              separatorBuilder: (context, i) =>
-                  const Divider(color: goldBorderFaint, height: 1),
-              itemBuilder: (context, i) {
-                final user = list[i];
-                final busy = _pending.contains(user.uid);
-                return ListTile(
-                  title: Text(
-                    user.name.isEmpty ? user.email : user.name,
-                    style: const TextStyle(
-                      fontFamily: fontDisplay,
-                      fontSize: 13,
-                      color: parchmentLight,
+            child: list.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Brak użytkowników',
+                      style: TextStyle(
+                        fontFamily: fontDisplay,
+                        fontSize: 12,
+                        color: crimson,
+                      ),
                     ),
-                  ),
-                  subtitle: Text(
-                    user.admin ? '${user.email} · admin' : user.email,
-                    style: const TextStyle(
-                      fontFamily: fontBody,
-                      fontSize: 11,
-                      color: parchmentFaint,
-                    ),
-                  ),
-                  trailing: busy
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: gold),
-                        )
-                      : Switch(
-                          key: Key('readonly-${user.uid}'),
-                          value: user.readOnlyOthers,
-                          activeThumbColor: gold,
-                          // Admins already see everything, so the flag is
-                          // meaningless for them and stays locked.
-                          onChanged:
-                              user.admin ? null : (v) => _setReadOnly(user, v),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: list.length,
+                    separatorBuilder: (context, i) =>
+                        const Divider(color: goldBorderFaint, height: 1),
+                    itemBuilder: (context, i) {
+                      final user = list[i];
+                      final busy = _pending.contains(user.uid);
+                      return ListTile(
+                        title: Text(
+                          user.name.isEmpty ? 'Bez nazwy' : user.name,
+                          style: const TextStyle(
+                            fontFamily: fontDisplay,
+                            fontSize: 13,
+                            color: parchmentLight,
+                          ),
                         ),
-                );
-              },
-            ),
+                        subtitle: Text(
+                          user.email,
+                          style: const TextStyle(
+                            fontFamily: fontBody,
+                            fontSize: 11,
+                            color: parchmentFaint,
+                          ),
+                        ),
+                        trailing: busy
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: gold),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Switch(
+                                    key: Key('admin-${user.uid}'),
+                                    value: user.admin,
+                                    activeThumbColor: gold,
+                                    onChanged: (v) => _setAdmin(user, v),
+                                  ),
+                                  const Text(
+                                    'Admin',
+                                    style: TextStyle(
+                                      fontFamily: fontDisplay,
+                                      fontSize: 9,
+                                      letterSpacing: 2,
+                                      color: crimson,
+                                    ),
+                                  ),
+                                  Switch(
+                                    key: Key('readonly-${user.uid}'),
+                                    value: user.readOnlyOthers,
+                                    activeThumbColor: gold,
+                                    // Admins already see everything, so the
+                                    // flag is meaningless for them and stays
+                                    // locked.
+                                    onChanged: user.admin
+                                        ? null
+                                        : (v) => _setReadOnly(user, v),
+                                  ),
+                                  const Text(
+                                    'Tylko do odczytu',
+                                    style: TextStyle(
+                                      fontFamily: fontDisplay,
+                                      fontSize: 9,
+                                      letterSpacing: 2,
+                                      color: crimson,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      );
+                    },
+                  ),
           ),
         ),
       ),

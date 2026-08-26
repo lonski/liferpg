@@ -97,6 +97,22 @@ void main() {
     expect(traits.single['value'], '14');
   });
 
+  testWidgets('an edited trait value is persisted', (tester) async {
+    final (db, character) = await seed();
+    await pumpEdit(tester, db, character);
+
+    await tester.enterText(find.byKey(const Key('trait-value-0')), '19');
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    final snap = await db.collection('characters').doc(character.id).get();
+    final traits = (snap.data()!['traits'] as List<dynamic>)
+        .map((t) => Map<String, dynamic>.from(t as Map))
+        .toList();
+    expect(traits.single['name'], 'Siła');
+    expect(traits.single['value'], '19');
+  });
+
   testWidgets('a non-numeric level blocks the save', (tester) async {
     final (db, character) = await seed();
     await pumpEdit(tester, db, character);
