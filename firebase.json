@@ -10,5 +10,24 @@
       "**/.*",
       "**/node_modules/**"
     ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "liferpg-f3bab",
+          "appId": "1:215203057009:android:a5d82bbb2b71c0efc37ad0",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "liferpg-f3bab",
+          "configurations": {
+            "android": "1:215203057009:android:a5d82bbb2b71c0efc37ad0"
+          }
+        }
+      }
+    }
   }
 }
