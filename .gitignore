@@ -34,3 +34,4 @@ npm-debug.log*
 .vscode
 yarn-debug.log*
 yarn-error.log*
+tools/rules-test/node_modules/
