@@ -22,7 +22,7 @@ addition described under "First-login bootstrap".
 | Visual target | Faithful parchment/heraldic theme, native mobile interaction patterns. |
 | Data layer | Live Firestore snapshot streams with on-device offline persistence. |
 | State management | Riverpod, over a repository layer. |
-| Application id | `com.liferpg.app`, minSdk 23. |
+| Application id | `com.liferpg.app`; minSdk follows `flutter.minSdkVersion` (24 on Flutter 3.47.1). |
 
 Rejected: BLoC (ceremony out of proportion to three screens); plain
 `StreamBuilder` with `InheritedWidget` (hand-rolls what Riverpod provides and
