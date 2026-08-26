@@ -64,7 +64,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         ),
       ),
       body: users.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: gold)),
+        loading: () =>
+            const Center(child: CircularProgressIndicator(color: crimsonBright)),
         error: (error, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -93,7 +94,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                     padding: const EdgeInsets.all(16),
                     itemCount: list.length,
                     separatorBuilder: (context, i) =>
-                        const Divider(color: goldBorderFaint, height: 1),
+                        const Divider(color: crimsonBorderFaint, height: 1),
                     itemBuilder: (context, i) {
                       final user = list[i];
                       final busy = _pending.contains(user.uid);
@@ -102,7 +103,9 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                           user.name.isEmpty ? 'Bez nazwy' : user.name,
                           style: const TextStyle(
                             fontFamily: fontDisplay,
-                            fontSize: 13,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
                             color: parchmentLight,
                           ),
                         ),
@@ -110,7 +113,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                           user.email,
                           style: const TextStyle(
                             fontFamily: fontBody,
-                            fontSize: 11,
+                            fontSize: 10,
                             color: parchmentFaint,
                           ),
                         ),
@@ -127,12 +130,13 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                                   Switch(
                                     key: Key('admin-${user.uid}'),
                                     value: user.admin,
-                                    activeThumbColor: gold,
+                                    activeThumbColor: crimsonBright,
+                                    activeTrackColor: crimsonBright,
                                     onChanged: (v) => _setAdmin(user, v),
                                   ),
-                                  const Text(
-                                    'Admin',
-                                    style: TextStyle(
+                                  Text(
+                                    'Admin'.toUpperCase(),
+                                    style: const TextStyle(
                                       fontFamily: fontDisplay,
                                       fontSize: 9,
                                       letterSpacing: 2,
@@ -142,7 +146,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                                   Switch(
                                     key: Key('readonly-${user.uid}'),
                                     value: user.readOnlyOthers,
-                                    activeThumbColor: gold,
+                                    activeThumbColor: crimsonBright,
+                                    activeTrackColor: crimsonBright,
                                     // Admins already see everything, so the
                                     // flag is meaningless for them and stays
                                     // locked.
@@ -150,9 +155,9 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                                         ? null
                                         : (v) => _setReadOnly(user, v),
                                   ),
-                                  const Text(
-                                    'Tylko do odczytu',
-                                    style: TextStyle(
+                                  Text(
+                                    'Tylko do odczytu'.toUpperCase(),
+                                    style: const TextStyle(
                                       fontFamily: fontDisplay,
                                       fontSize: 9,
                                       letterSpacing: 2,

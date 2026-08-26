@@ -18,8 +18,8 @@ void main() {
     ));
 
     expect(find.text('LifeRPG'), findsOneWidget);
-    expect(find.text('Kronika Bohaterów'), findsOneWidget);
-    expect(find.text('Zaloguj przez Google'), findsOneWidget);
+    expect(find.text('KRONIKA BOHATERÓW'), findsOneWidget);
+    expect(find.text('ZALOGUJ PRZEZ GOOGLE'), findsOneWidget);
     expect(find.text('Wejdź do Kroniki'), findsOneWidget);
     expect(find.text('„Twoja legenda czeka...”'), findsOneWidget);
   });

@@ -8,12 +8,27 @@ import 'edit_character_screen.dart';
 
 const TextStyle kStatLabel = TextStyle(
   fontFamily: fontDisplay,
-  fontSize: 9,
+  fontSize: 10,
   letterSpacing: 2,
   color: crimson,
 );
 
-const Color _inkHeading = Color(0xFF2D0A0A);
+// .xpMeta -- the "Doświadczenie" label and the "n / n XP" counter share this
+// style; neither is uppercase and neither uses the display font.
+const TextStyle _xpMetaText = TextStyle(
+  fontFamily: fontBody,
+  fontSize: 10,
+  fontStyle: FontStyle.italic,
+  color: crimson,
+);
+
+// .traitsDividerLabel
+const TextStyle _traitsDividerLabel = TextStyle(
+  fontFamily: fontDisplay,
+  fontSize: 8,
+  letterSpacing: 3,
+  color: crimson,
+);
 
 class CharacterCard extends StatefulWidget {
   const CharacterCard({
@@ -42,7 +57,7 @@ class _CharacterCardState extends State<CharacterCard> {
         border: Border.all(color: crimson, width: 2),
         borderRadius: BorderRadius.circular(4),
         boxShadow: const [
-          BoxShadow(color: Color(0xB3000000), blurRadius: 32, offset: Offset(0, 8)),
+          BoxShadow(color: cardShadowColor, blurRadius: 24, offset: Offset(0, 6)),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -58,7 +73,7 @@ class _CharacterCardState extends State<CharacterCard> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     iconSize: 16,
-                    color: parchmentMuted,
+                    color: parchmentSoft,
                     icon: const Icon(Icons.edit),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -152,20 +167,19 @@ class _NameBlock extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontFamily: fontDisplay,
-              fontSize: 18,
+              fontSize: 22,
               fontWeight: FontWeight.w700,
               letterSpacing: 2,
-              color: _inkHeading,
+              color: inkHeading,
             ),
           ),
           if (character.clazz != null)
             Text(
-              character.clazz!,
+              character.clazz!.toUpperCase(),
               style: const TextStyle(
-                fontFamily: fontBody,
-                fontSize: 10,
-                fontStyle: FontStyle.italic,
-                letterSpacing: 1,
+                fontFamily: fontDisplay,
+                fontSize: 9,
+                letterSpacing: 4,
                 color: crimson,
               ),
             ),
@@ -182,21 +196,21 @@ class _LevelRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('Poziom', style: kStatLabel),
+          Text('Poziom'.toUpperCase(), style: kStatLabel),
           Container(
             decoration: BoxDecoration(
-              gradient: bandGradient,
-              border: Border.all(color: goldBorder),
+              color: crimsonFaint,
+              border: Border.all(color: crimsonBorderStrong),
               borderRadius: BorderRadius.circular(3),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
             child: Text(
               '$level',
               style: const TextStyle(
                 fontFamily: fontDisplay,
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: parchmentLight,
+                color: inkHeading,
               ),
             ),
           ),
@@ -221,14 +235,10 @@ class _XpSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Doświadczenie', style: kStatLabel),
+              const Text('Doświadczenie', style: _xpMetaText),
               Text(
                 '${character.currentXp} / ${character.nextLevelXp} XP',
-                style: const TextStyle(
-                  fontFamily: fontBody,
-                  fontSize: 10,
-                  color: crimson,
-                ),
+                style: _xpMetaText,
               ),
             ],
           ),
@@ -254,22 +264,28 @@ class _XpSection extends StatelessWidget {
               ),
             ),
           ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 150),
-            child: hintVisible
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      'Do następnego poziomu: ${character.xpRemaining} XP',
-                      style: const TextStyle(
-                        fontFamily: fontBody,
-                        fontSize: 10,
-                        color: crimson,
-                      ),
-                    ),
-                  )
-                : const SizedBox(width: double.infinity),
-          ),
+          // React shows/hides this hint with no transition; no AnimatedSize.
+          if (hintVisible)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: crimsonBgFaint,
+                  border: Border.all(color: crimsonBorderFaint),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                child: Text(
+                  'Do następnego poziomu: ${character.xpRemaining} XP',
+                  style: const TextStyle(
+                    fontFamily: fontBody,
+                    fontSize: 10,
+                    fontStyle: FontStyle.italic,
+                    color: crimson,
+                  ),
+                ),
+              ),
+            ),
         ],
       );
 }
@@ -279,9 +295,9 @@ class _GoldRow extends StatelessWidget {
 
   static const TextStyle _goldValue = TextStyle(
     fontFamily: fontBody,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: FontWeight.w700,
-    color: Color(0xFF8A5A06),
+    color: inkHeading,
   );
 
   final Character character;
@@ -290,7 +306,7 @@ class _GoldRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('Złoto', style: kStatLabel),
+          Text('Złoto'.toUpperCase(), style: kStatLabel),
           Row(
             children: [
               Text('${character.gold} zł', style: _goldValue),
@@ -308,14 +324,14 @@ class _TraitsHeading extends StatelessWidget {
   const _TraitsHeading();
 
   @override
-  Widget build(BuildContext context) => const Row(
+  Widget build(BuildContext context) => Row(
         children: [
-          Expanded(child: Divider(color: crimsonBorder, height: 1)),
+          const Expanded(child: Divider(color: crimsonBorderStrong, height: 1)),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Text('Cechy', style: kStatLabel),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text('Cechy'.toUpperCase(), style: _traitsDividerLabel),
           ),
-          Expanded(child: Divider(color: crimsonBorder, height: 1)),
+          const Expanded(child: Divider(color: crimsonBorderStrong, height: 1)),
         ],
       );
 }
@@ -335,30 +351,30 @@ class _TraitPills extends StatelessWidget {
             Container(
               decoration: BoxDecoration(
                 color: crimsonFaint,
-                border: Border.all(color: crimsonBorder),
+                border: Border.all(color: crimsonBorderStrong),
                 borderRadius: BorderRadius.circular(10),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     t.name,
                     style: const TextStyle(
-                      fontFamily: fontDisplay,
-                      fontSize: 9,
-                      letterSpacing: 1,
+                      fontFamily: fontBody,
+                      fontSize: 10,
+                      fontStyle: FontStyle.italic,
                       color: crimson,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   Text(
                     t.value,
                     style: const TextStyle(
                       fontFamily: fontBody,
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: _inkHeading,
+                      color: inkHeading,
                     ),
                   ),
                 ],

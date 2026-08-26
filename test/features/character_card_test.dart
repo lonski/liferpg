@@ -28,8 +28,8 @@ void main() {
     );
 
     expect(find.text('Grommash'), findsOneWidget);
-    expect(find.text('Wojownik'), findsOneWidget);
-    expect(find.text('Poziom'), findsOneWidget);
+    expect(find.text('WOJOWNIK'), findsOneWidget);
+    expect(find.text('POZIOM'), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
     expect(find.text('250 zł'), findsOneWidget);
     expect(find.text('12 \$'), findsOneWidget);
@@ -59,7 +59,7 @@ void main() {
       canEdit: false,
     )));
 
-    expect(find.text('Cechy'), findsOneWidget);
+    expect(find.text('CECHY'), findsOneWidget);
     expect(find.text('Siła'), findsOneWidget);
     expect(find.text('18'), findsOneWidget);
   });

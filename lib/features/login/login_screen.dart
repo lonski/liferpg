@@ -38,41 +38,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('⚔', style: TextStyle(fontSize: 40, color: gold)),
-              const SizedBox(height: 12),
+              const Text(
+                '⚔',
+                style: TextStyle(
+                  fontSize: 40,
+                  color: gold,
+                  shadows: [Shadow(color: goldBorder, blurRadius: 12)],
+                ),
+              ),
+              const SizedBox(height: 10),
               const Text(
                 'LifeRPG',
                 style: TextStyle(
                   fontFamily: fontDisplay,
-                  fontSize: 32,
+                  fontSize: 28,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 6,
+                  letterSpacing: 4,
                   color: parchmentLight,
+                  shadows: [Shadow(color: goldBorderFaint, blurRadius: 20)],
                 ),
               ),
-              const SizedBox(height: 6),
-              const Text(
-                'Kronika Bohaterów',
-                style: TextStyle(
-                  fontFamily: fontBody,
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                  letterSpacing: 2,
-                  color: parchmentFaint,
+              const SizedBox(height: 4),
+              Text(
+                'Kronika Bohaterów'.toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: fontDisplay,
+                  fontSize: 9,
+                  letterSpacing: 5,
+                  color: goldSubtitle,
                 ),
               ),
-              const SizedBox(height: 20),
-              const OrnamentDivider(color: gold, width: 160),
+              const SizedBox(height: 12),
+              const OrnamentDivider(
+                color: goldBorder,
+                glyphColor: goldGlyph,
+                width: 160,
+              ),
               const SizedBox(height: 32),
               _SignInButton(busy: _busy, onPressed: _busy ? null : _signIn),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
               const Text(
                 '„Twoja legenda czeka...”',
                 style: TextStyle(
                   fontFamily: fontBody,
-                  fontSize: 11,
+                  fontSize: 9,
                   fontStyle: FontStyle.italic,
-                  color: parchmentFaint,
+                  letterSpacing: 1,
+                  color: parchmentGhost,
                 ),
               ),
             ],
@@ -98,10 +110,13 @@ class _SignInButton extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             gradient: buttonGradient,
-            border: Border.all(color: goldBorder),
+            border: Border.all(color: goldGlyph),
             borderRadius: BorderRadius.circular(3),
+            boxShadow: const [
+              BoxShadow(color: buttonShadowColor, blurRadius: 16, offset: Offset(0, 4)),
+            ],
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -121,26 +136,26 @@ class _SignInButton extends StatelessWidget {
                     color: gold,
                   ),
                 ),
-              const SizedBox(width: 14),
-              const Column(
+              const SizedBox(width: 12),
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Zaloguj przez Google',
-                    style: TextStyle(
+                    'Zaloguj przez Google'.toUpperCase(),
+                    style: const TextStyle(
                       fontFamily: fontDisplay,
-                      fontSize: 13,
-                      letterSpacing: 1,
+                      fontSize: 11,
+                      letterSpacing: 3,
                       color: parchmentLight,
                     ),
                   ),
-                  Text(
+                  const Text(
                     'Wejdź do Kroniki',
                     style: TextStyle(
                       fontFamily: fontBody,
                       fontSize: 9,
                       fontStyle: FontStyle.italic,
-                      color: parchmentMuted,
+                      color: parchmentFaint,
                     ),
                   ),
                 ],

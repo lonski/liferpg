@@ -24,6 +24,9 @@ class HomeScreen extends ConsumerWidget {
           decoration: const BoxDecoration(
             gradient: appBarGradient,
             border: Border(bottom: BorderSide(color: goldBorderFaint)),
+            boxShadow: [
+              BoxShadow(color: cardShadowColor, blurRadius: 12, offset: Offset(0, 2)),
+            ],
           ),
         ),
         title: const Text(
@@ -31,7 +34,7 @@ class HomeScreen extends ConsumerWidget {
           style: TextStyle(
             fontFamily: fontDisplay,
             fontWeight: FontWeight.w700,
-            fontSize: 16,
+            fontSize: 20,
             letterSpacing: 3,
             color: parchmentLight,
           ),
@@ -46,25 +49,44 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           if (user?.admin ?? false)
-            IconButton(
-              key: const Key('open-user-management'),
-              tooltip: 'Zarządzaj użytkownikami',
-              iconSize: 18,
-              color: parchmentMuted,
-              icon: const Icon(Icons.admin_panel_settings),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const UserManagementScreen(),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: goldBorder),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: IconButton(
+                  key: const Key('open-user-management'),
+                  tooltip: 'Zarządzaj użytkownikami',
+                  iconSize: 18,
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  constraints: const BoxConstraints(),
+                  color: parchmentMuted,
+                  icon: const Icon(Icons.admin_panel_settings),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const UserManagementScreen(),
+                    ),
+                  ),
                 ),
               ),
             ),
-          IconButton(
-            key: const Key('logout'),
-            tooltip: 'Wyloguj',
-            iconSize: 18,
-            color: parchmentMuted,
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authRepositoryProvider).signOut(),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: goldBorder),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: IconButton(
+              key: const Key('logout'),
+              tooltip: 'Wyloguj',
+              iconSize: 18,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              constraints: const BoxConstraints(),
+              color: parchmentMuted,
+              icon: const Icon(Icons.logout),
+              onPressed: () => ref.read(authRepositoryProvider).signOut(),
+            ),
           ),
           const SizedBox(width: 4),
         ],
@@ -85,7 +107,7 @@ class HomeScreen extends ConsumerWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               children: [
                 for (final c in data.characters)
                   CharacterCard(character: c, canEdit: user?.canEdit ?? false),

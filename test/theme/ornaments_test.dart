@@ -28,7 +28,7 @@ void main() {
       label: '✦ Karta Postaci ✦',
       trailing: Icon(Icons.edit),
     )));
-    expect(find.text('✦ Karta Postaci ✦'), findsOneWidget);
+    expect(find.text('✦ KARTA POSTACI ✦'), findsOneWidget);
     expect(find.byIcon(Icons.edit), findsOneWidget);
   });
 
