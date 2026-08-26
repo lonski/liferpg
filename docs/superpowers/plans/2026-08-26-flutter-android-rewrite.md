@@ -1665,10 +1665,17 @@ final userRepositoryProvider = Provider<UserRepository>(
 
 /// Non-admins get an empty list rather than a permission error: the Firestore
 /// rules would reject the collection read anyway.
-final usersProvider = StreamProvider<List<AppUser>>((ref) {
-  final user = ref.watch(appUserProvider).value;
-  if (user == null || !user.admin) return Stream.value(const <AppUser>[]);
-  return ref.watch(userRepositoryProvider).watchUsers();
+final usersProvider = StreamProvider<List<AppUser>>((ref) async* {
+  // Await the resolved user rather than peeking at appUserProvider's transient
+  // `.value`: while appUserProvider is still loading, `.value` is null and is
+  // indistinguishable from "signed out", which would race an empty list out
+  // before the real user resolves. (Established in Task 6; same shape.)
+  final user = await ref.watch(appUserProvider.future);
+  if (user == null || !user.admin) {
+    yield const <AppUser>[];
+    return;
+  }
+  yield* ref.watch(userRepositoryProvider).watchUsers();
 });
 ```
 
