@@ -3794,7 +3794,9 @@ Firestore rules have their own emulator-based test suite in `tools/rules-test/`.
 ## Conventions
 
 - Never touch `FirebaseAuth.instance` or `FirebaseFirestore.instance` outside
-  `lib/data/firebase_providers.dart` — tests override those two providers.
+  `lib/data/firebase_providers.dart` — tests override those two providers. The one
+  exception is `main()`, which sets Firestore persistence before any `ProviderScope`
+  exists and therefore cannot route through a provider.
 - Colours are `const Color(0xAARRGGBB)` literals with alpha baked in.
 - Firestore field names stay snake_case (`current_xp`, `next_level_xp`,
   `gold_usd`); Dart-side names are camelCase and mapped in the models.
