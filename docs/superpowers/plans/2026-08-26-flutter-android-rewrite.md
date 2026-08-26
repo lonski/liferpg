@@ -21,6 +21,17 @@
 - Firestore field names stay snake_case exactly as stored: `current_xp`, `next_level_xp`, `gold_usd`, `readOnlyOthers`, `clazz`, `authProvider`.
 - `android/app/google-services.json` is gitignored and never committed.
 - Every task ends with a commit. Run `flutter analyze` before each commit; it must be clean.
+- **Riverpod 3.4.2 API (amended 2026-08-26, discovered during Task 5).** The plan was
+  originally written against Riverpod 2. Two consequences, both verified against the
+  installed package:
+  1. `AsyncValue.valueOrNull` does not exist in Riverpod 3; the nullable getter is
+     `.value`. Every occurrence in this plan has been rewritten to `.value`.
+  2. A `StreamProvider`'s subscription stays paused until it has an active listener, and
+     `container.read(provider.future)` alone does not count as one. Any test that awaits
+     `container.read(someStreamProvider.future)` must first attach a listener:
+     `container.listen(someStreamProvider, (_, _) {});`
+     Without it the test hangs forever rather than failing. This applies to the provider
+     tests in Tasks 5, 6 and 7.
 
 ---
 
@@ -1242,7 +1253,7 @@ final authStateProvider = StreamProvider<User?>(
 /// The Firestore users/{uid} document for whoever is signed in, as a live
 /// stream: an admin flipping somebody's flags takes effect without a relaunch.
 final appUserProvider = StreamProvider<AppUser?>((ref) {
-  final authUser = ref.watch(authStateProvider).valueOrNull;
+  final authUser = ref.watch(authStateProvider).value;
   if (authUser == null) return Stream<AppUser?>.value(null);
   return ref
       .watch(firestoreProvider)
@@ -1485,7 +1496,7 @@ final characterRepositoryProvider = Provider<CharacterRepository>(
 );
 
 final charactersProvider = StreamProvider<CharacterFeed>((ref) {
-  final user = ref.watch(appUserProvider).valueOrNull;
+  final user = ref.watch(appUserProvider).value;
   if (user == null) {
     return Stream.value(const CharacterFeed(
       characters: [],
@@ -1500,7 +1511,7 @@ final charactersProvider = StreamProvider<CharacterFeed>((ref) {
 /// screen offers these as autocomplete suggestions, mirroring the web app's
 /// existingTraitNames memo.
 final traitNamesProvider = Provider<List<String>>((ref) {
-  final feed = ref.watch(charactersProvider).valueOrNull;
+  final feed = ref.watch(charactersProvider).value;
   if (feed == null) return const [];
   final names = <String>{
     for (final c in feed.characters)
@@ -1655,7 +1666,7 @@ final userRepositoryProvider = Provider<UserRepository>(
 /// Non-admins get an empty list rather than a permission error: the Firestore
 /// rules would reject the collection read anyway.
 final usersProvider = StreamProvider<List<AppUser>>((ref) {
-  final user = ref.watch(appUserProvider).valueOrNull;
+  final user = ref.watch(appUserProvider).value;
   if (user == null || !user.admin) return Stream.value(const <AppUser>[]);
   return ref.watch(userRepositoryProvider).watchUsers();
 });
@@ -2635,7 +2646,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(appUserProvider).valueOrNull;
+    final user = ref.watch(appUserProvider).value;
     final feed = ref.watch(charactersProvider);
 
     return Scaffold(
@@ -2660,7 +2671,7 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          if (feed.valueOrNull?.isOffline ?? false)
+          if (feed.value?.isOffline ?? false)
             const Padding(
               padding: EdgeInsets.only(right: 4),
               child: Tooltip(
