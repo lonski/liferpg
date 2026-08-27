@@ -1,5 +1,6 @@
 
 android/app/google-services.json
+android/key.properties
 /build
 /coverage
 .dart_tool/
