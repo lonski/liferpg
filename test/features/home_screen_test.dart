@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:liferpg/data/firebase_providers.dart';
 import 'package:liferpg/features/character/character_card.dart';
 import 'package:liferpg/data/character_repository.dart';
 import 'package:liferpg/features/home/home_screen.dart';
+import 'package:liferpg/features/requests/new_change_request_screen.dart';
 import 'package:liferpg/models/character.dart';
 import 'package:liferpg/providers/character_providers.dart';
 
@@ -126,5 +128,118 @@ void main() {
     await pumpHome(tester, await seed(),
         extraOverrides: [feedOverride(offline: false)]);
     expect(find.byIcon(Icons.cloud_off), findsNothing);
+  });
+
+  testWidgets('offers the change-request FAB when the user has a character',
+      (tester) async {
+    await pumpHome(tester, await seed());
+    expect(find.byKey(const Key('new-change-request')), findsOneWidget);
+  });
+
+  testWidgets('hides the change-request FAB when the user owns no character',
+      (tester) async {
+    final db = FakeFirebaseFirestore();
+    await db.collection('users').doc('u1').set({
+      'uid': 'u1',
+      'name': 'Ala',
+      'email': 'ala@example.com',
+      'admin': false,
+      'readOnlyOthers': false,
+    });
+    await pumpHome(tester, db);
+    expect(find.byKey(const Key('new-change-request')), findsNothing);
+  });
+
+  testWidgets('shows the change-request queue action only for admins',
+      (tester) async {
+    await pumpHome(tester, await seed());
+    expect(find.byKey(const Key('open-change-requests')), findsNothing);
+
+    await pumpHome(tester, await seed(admin: true));
+    expect(find.byKey(const Key('open-change-requests')), findsOneWidget);
+  });
+
+  testWidgets('the FAB opens the request screen', (tester) async {
+    await pumpHome(tester, await seed());
+    await tester.tap(find.byKey(const Key('new-change-request')));
+    await tester.pumpAndSettle();
+    expect(find.byType(NewChangeRequestScreen), findsOneWidget);
+  });
+
+  // Regression coverage for `ownsACharacter`: an admin sees the whole roster,
+  // but the FAB is about posting a request against a character of their own,
+  // so a non-empty roster must not be mistaken for ownership.
+  testWidgets(
+      'hides the FAB for an admin who owns no character even though the '
+      'roster is non-empty', (tester) async {
+    final db = FakeFirebaseFirestore();
+    await db.collection('users').doc('u1').set({
+      'uid': 'u1',
+      'name': 'Ala',
+      'email': 'ala@example.com',
+      'admin': true,
+      'readOnlyOthers': false,
+    });
+    await db.collection('characters').add({
+      'name': 'Cudza postać',
+      'email': 'ktos.inny@example.com',
+      'level': 1,
+      'current_xp': 0,
+      'next_level_xp': 100,
+      'favour': 0,
+      'traits': <dynamic>[],
+    });
+    await pumpHome(tester, db);
+    expect(find.byType(CharacterCard), findsOneWidget);
+    expect(find.byKey(const Key('new-change-request')), findsNothing);
+  });
+
+  testWidgets(
+      'shows the FAB for an admin who owns a character alongside somebody '
+      "else's", (tester) async {
+    final db = await seed(admin: true);
+    await db.collection('characters').add({
+      'name': 'Cudza postać',
+      'email': 'ktos.inny@example.com',
+      'level': 1,
+      'current_xp': 0,
+      'next_level_xp': 100,
+      'favour': 0,
+      'traits': <dynamic>[],
+    });
+    await pumpHome(tester, db);
+    expect(find.byType(CharacterCard), findsNWidgets(2));
+    expect(find.byKey(const Key('new-change-request')), findsOneWidget);
+  });
+
+  testWidgets(
+      'shows a pending-count badge for the admin action when requests are '
+      'pending', (tester) async {
+    final db = await seed(admin: true);
+    await db.collection('change_requests').add({
+      'characterId': 'c1',
+      'characterName': 'Grommash',
+      'requesterUid': 'u1',
+      'requesterEmail': 'ala@example.com',
+      'status': 'pending',
+      'changes': {'current_xp': 10},
+      'createdAt': Timestamp.now(),
+    });
+    await pumpHome(tester, db);
+
+    final badge =
+        tester.widget<Badge>(find.byKey(const Key('pending-requests-badge')));
+    expect(badge.isLabelVisible, isTrue);
+    expect(find.text('1'), findsOneWidget);
+  });
+
+  testWidgets(
+      'hides the pending-count badge for the admin action when nothing is '
+      'pending', (tester) async {
+    await pumpHome(tester, await seed(admin: true));
+
+    final badge =
+        tester.widget<Badge>(find.byKey(const Key('pending-requests-badge')));
+    expect(badge.isLabelVisible, isFalse);
   });
 }

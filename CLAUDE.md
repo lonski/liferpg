@@ -48,6 +48,45 @@ traits: [{ name: string, value: string }]  (optional)
 - **This split is enforced server-side in `firestore.rules`, not just by the client query.** `/characters` reads require `isAdmin() || isReadOnlyOthers() || resource.data.email.lower() == request.auth.token.email.lower()`; writes require `isAdmin()`. A regular user's unconstrained collection query is therefore *rejected* by Firestore — the client must keep issuing `where('email', isEqualTo: <own email>)` (see `lib/data/character_repository.dart`), otherwise the home screen breaks with PERMISSION_DENIED.
 - **Case-sensitivity caveat (measured, not theoretical — half-fixed):** the rule now compares `.lower()` of both sides, so a character document whose `email` differs only in case from the owner's Google auth email (e.g. `Ala@Example.com` vs `ala@example.com`) **is allowed** to that owner at the rule level — a direct `get` succeeds. However this does **not** make the character appear in the app: the client's own-email query (`where('email', isEqualTo: <own email>)`) is matched by Firestore's server-side index using an exact, case-sensitive comparison, which the rule change cannot affect. That query still returns zero documents for a differently-cased character, so the owner's roster still shows it as missing. The rule fix only closes the direct-access hole; the underlying data (`email` on the character document) must still be corrected to match the owner's login email for the character to actually show up. A character document with no `email` field at all errors during `.lower()` evaluation, which Firestore treats as a denial for a regular user; admins and `readOnlyOthers` users still see it because their clauses in the `||` chain short-circuit before the `.lower()` comparison is evaluated (measured in `tools/rules-test/rules.test.mjs`).
 
+**`change_requests/{id}`**
+```
+characterId, characterName, requesterUid, requesterEmail
+status: 'pending' | 'accepted' | 'rejected'
+reason (optional), createdAt (server timestamp)
+changes:        { current_xp?, gold?, gold_usd?, traits?: [{name, value}] }
+appliedChanges: same shape, written on accept
+decidedBy, decidedAt: written on accept/reject
+```
+
+- Numeric entries in `changes` are **deltas**, not target values, so a request
+  stays correct if the character changes before an admin accepts it. Trait
+  entries are **upserts by name**: a matching trait's value is replaced, a new
+  name is appended. There is no remove operation.
+- Any signed-in user may post a request **for their own character only**;
+  the rule checks the target character's email against the caller's, and that
+  the request names the caller as `requesterUid` and is `pending` (with no
+  `decidedBy`/`decidedAt`/`appliedChanges` fields — those are the admin's to
+  write).
+- Only admins may read the whole collection or update a request. A regular
+  user's query must therefore carry
+  `where('requesterUid', isEqualTo: <own uid>)`, exactly like the roster's
+  own-email query.
+- Accepting runs a `runTransaction` on the **admin's client** (there are no
+  Cloud Functions in this project): it re-reads the request, aborts with
+  `ChangeRequestNoLongerPending` if it is no longer pending, applies the
+  deltas to the character, and flips the status — all atomically, so a
+  double-tap cannot apply a request twice.
+- `ChangeRequestRepository` sorts newest-first **client-side** rather than with
+  `orderBy`. This is deliberate: a request whose server timestamp has not
+  landed yet has a null `createdAt` and an `orderBy` query would drop it.
+- Applying a delta `.toInt()`s the resulting `current_xp` (XP is always
+  whole), while `gold` and `gold_usd` stay `num` so a fractional delta is
+  preserved. A non-numeric legacy value on the character (e.g. a stringly
+  `gold` field from the React era) is coerced to `0` before the delta is
+  added, per the same tolerant-parsing philosophy as `Character.fromMap` —
+  so a badly-typed legacy field silently absorbs the delta into a fresh
+  value rather than the transaction erroring.
+
 ## Key Behaviors
 
 - **Auth**: auth state is driven by `firebaseAuthProvider`; unauthenticated users are routed to the login screen.
@@ -56,6 +95,10 @@ traits: [{ name: string, value: string }]  (optional)
 - **Favour**: integer; rendered as mood emoji (< -1 = very unhappy, -1 = unhappy, 0 = neutral, > 0 = happy).
 - **Currency**: `gold` = PLN (złoty), `gold_usd` = USD. Both displayed as chips if present.
 - **XP badge**: tapping the XP progress bar toggles a chip showing XP remaining to next level.
+- **Change requests**: a round `+` FAB on the home screen (shown to any user
+  who owns a character) opens a form for requesting XP / gold / trait changes.
+  Admins get an inbox action in the AppBar opening the queue, where each
+  request can be accepted, edited-then-accepted, or rejected.
 
 ## UI Language
 

@@ -10,9 +10,11 @@ import {
   setDoc,
   getDoc,
   getDocs,
+  updateDoc,
   collection,
   query,
   where,
+  serverTimestamp,
 } from 'firebase/firestore';
 import assert from 'node:assert/strict';
 
@@ -241,4 +243,154 @@ test('a readOnlyOthers user may getDoc a character document with no email field 
 test('a regular user is DENIED getDoc on a character document with no email field at all', async () => {
   const db = ctxFor(ALICE);
   await assertFails(getDoc(doc(db, 'characters/c-noemail')));
+});
+
+// --- /change_requests --------------------------------------------------
+
+async function seedRequest(id, requesterUid) {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), `change_requests/${id}`), {
+      characterId: 'c-alice',
+      characterName: 'Alicja',
+      requesterUid,
+      requesterEmail: `${requesterUid}@example.com`,
+      status: 'pending',
+      changes: { current_xp: 50 },
+    });
+  });
+}
+
+test('a user may create a request for their own character', async () => {
+  const db = ctxFor(ALICE);
+  await assertSucceeds(
+    setDoc(doc(db, 'change_requests/req-alice'), {
+      characterId: 'c-alice',
+      characterName: 'Alicja',
+      requesterUid: ALICE.uid,
+      requesterEmail: ALICE.email,
+      status: 'pending',
+      changes: { current_xp: 50 },
+      createdAt: serverTimestamp(),
+    })
+  );
+});
+
+test("a user may not create a request for somebody else's character", async () => {
+  const db = ctxFor(BOB);
+  await assertFails(
+    setDoc(doc(db, 'change_requests/req-bob-for-alice'), {
+      characterId: 'c-alice',
+      characterName: 'Alicja',
+      requesterUid: BOB.uid,
+      requesterEmail: BOB.email,
+      status: 'pending',
+      changes: { current_xp: 50 },
+      createdAt: serverTimestamp(),
+    })
+  );
+});
+
+test("a user may not create a request in somebody else's name", async () => {
+  const db = ctxFor(ALICE);
+  await assertFails(
+    setDoc(doc(db, 'change_requests/req-spoofed'), {
+      characterId: 'c-alice',
+      characterName: 'Alicja',
+      requesterUid: BOB.uid,
+      requesterEmail: ALICE.email,
+      status: 'pending',
+      changes: { current_xp: 50 },
+      createdAt: serverTimestamp(),
+    })
+  );
+});
+
+test('a user may not create a request that is already accepted', async () => {
+  const db = ctxFor(ALICE);
+  await assertFails(
+    setDoc(doc(db, 'change_requests/req-preaccepted'), {
+      characterId: 'c-alice',
+      characterName: 'Alicja',
+      requesterUid: ALICE.uid,
+      requesterEmail: ALICE.email,
+      status: 'accepted',
+      changes: { current_xp: 50 },
+      createdAt: serverTimestamp(),
+    })
+  );
+});
+
+test('a user may not create a request with no changes at all', async () => {
+  const db = ctxFor(ALICE);
+  await assertFails(
+    setDoc(doc(db, 'change_requests/req-empty-changes'), {
+      characterId: 'c-alice',
+      characterName: 'Alicja',
+      requesterUid: ALICE.uid,
+      requesterEmail: ALICE.email,
+      status: 'pending',
+      changes: {},
+      createdAt: serverTimestamp(),
+    })
+  );
+});
+
+test('a user may not create a request with only a reason and no changes', async () => {
+  const db = ctxFor(ALICE);
+  await assertFails(
+    setDoc(doc(db, 'change_requests/req-reason-only'), {
+      characterId: 'c-alice',
+      characterName: 'Alicja',
+      requesterUid: ALICE.uid,
+      requesterEmail: ALICE.email,
+      status: 'pending',
+      reason: 'Posprzątałem garaż',
+      changes: {},
+      createdAt: serverTimestamp(),
+    })
+  );
+});
+
+test("a user may read their own requests but not somebody else's", async () => {
+  await seedRequest('req-alice-seeded', ALICE.uid);
+  await seedRequest('req-bob-seeded', BOB.uid);
+  const db = ctxFor(ALICE);
+
+  await assertSucceeds(getDoc(doc(db, 'change_requests/req-alice-seeded')));
+  await assertFails(getDoc(doc(db, 'change_requests/req-bob-seeded')));
+  await assertSucceeds(
+    getDocs(
+      query(
+        collection(db, 'change_requests'),
+        where('requesterUid', '==', ALICE.uid)
+      )
+    )
+  );
+  await assertFails(getDocs(collection(db, 'change_requests')));
+});
+
+test('an admin may read every request and decide it', async () => {
+  await seedRequest('req-for-admin', ALICE.uid);
+  const db = ctxFor(ADMIN);
+
+  await assertSucceeds(getDocs(collection(db, 'change_requests')));
+  await assertSucceeds(
+    updateDoc(doc(db, 'change_requests/req-for-admin'), {
+      status: 'accepted',
+      decidedBy: ADMIN.uid,
+      decidedAt: serverTimestamp(),
+      appliedChanges: { current_xp: 50 },
+    })
+  );
+});
+
+test('a non-admin may not decide a request, even their own', async () => {
+  await seedRequest('req-self-decide', ALICE.uid);
+  const db = ctxFor(ALICE);
+  await assertFails(
+    updateDoc(doc(db, 'change_requests/req-self-decide'), {
+      status: 'accepted',
+      decidedBy: ALICE.uid,
+    })
+  );
 });
