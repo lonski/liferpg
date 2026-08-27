@@ -64,4 +64,81 @@ void main() {
     expect(bumped.favour, 1);
     expect(bumped.name, 'Grommash');
   });
+
+  test('gold stored as the String "250" parses to 250 (reported crash)', () {
+    final c = Character.fromMap('abc', {...raw(), 'gold': '250'});
+    expect(c.gold, 250);
+  });
+
+  test('level, current_xp, next_level_xp, favour stored as Strings parse', () {
+    final c = Character.fromMap('abc', {
+      ...raw(),
+      'level': '3',
+      'current_xp': '40',
+      'next_level_xp': '100',
+      'favour': '-2',
+    });
+    expect(c.level, 3);
+    expect(c.currentXp, 40);
+    expect(c.nextLevelXp, 100);
+    expect(c.favour, -2);
+  });
+
+  test('gold_usd stored as the String "12.5" parses to 12.5', () {
+    final c = Character.fromMap('abc', {...raw(), 'gold_usd': '12.5'});
+    expect(c.goldUsd, 12.5);
+  });
+
+  test('a non-numeric String in a numeric field yields the fallback', () {
+    final c = Character.fromMap('abc', {
+      ...raw(),
+      'level': 'abc',
+      'gold': 'abc',
+      'current_xp': 'abc',
+      'favour': 'abc',
+    });
+    expect(c.level, isNull);
+    expect(c.gold, isNull);
+    expect(c.currentXp, 0);
+    expect(c.favour, 0);
+  });
+
+  test('a trait value stored as a number parses to a String', () {
+    final c = Character.fromMap('abc', {
+      ...raw(),
+      'traits': [
+        {'name': 'Siła', 'value': 18},
+      ],
+    });
+    expect(c.traits.single.value, '18');
+  });
+
+  test('traits present but not a List yields an empty trait list', () {
+    final asString = Character.fromMap('abc', {...raw(), 'traits': 'oops'});
+    expect(asString.traits, isEmpty);
+    final asMap = Character.fromMap('abc', {
+      ...raw(),
+      'traits': {'name': 'Siła', 'value': '18'},
+    });
+    expect(asMap.traits, isEmpty);
+  });
+
+  test('a traits List containing a non-Map element does not throw', () {
+    final c = Character.fromMap('abc', {
+      ...raw(),
+      'traits': [
+        'not a map',
+        {'name': 'Siła', 'value': '18'},
+      ],
+    });
+    expect(c.traits.length, 1);
+    expect(c.traits.single.name, 'Siła');
+  });
+
+  test('a String gold survives fromMap -> toMap as a numeric value', () {
+    final c = Character.fromMap('abc', {...raw(), 'gold': '250'});
+    final map = c.toMap();
+    expect(map['gold'], isA<num>());
+    expect(map['gold'], 250);
+  });
 }
