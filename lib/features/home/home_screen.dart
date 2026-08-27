@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../models/character.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/character_providers.dart';
 import '../../theme/app_theme.dart';
 import '../character/character_card.dart';
+import '../requests/change_requests_screen.dart';
+import '../requests/new_change_request_screen.dart';
 import '../users/user_management_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -26,6 +29,13 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(appUserProvider).value;
     final feed = ref.watch(charactersProvider);
+
+    // An admin viewing the whole roster still only posts requests for their
+    // own characters, so this counts by email rather than by roster size.
+    final ownsACharacter = user != null &&
+        (feed.value?.characters ?? const <Character>[]).any(
+          (c) => c.email.toLowerCase() == user.email.toLowerCase(),
+        );
 
     return Scaffold(
       backgroundColor: bgDark,
@@ -58,6 +68,31 @@ class HomeScreen extends ConsumerWidget {
               child: Tooltip(
                 message: 'Dane z pamięci urządzenia',
                 child: Icon(Icons.cloud_off, size: 16, color: parchmentFaint),
+              ),
+            ),
+          if (user?.admin ?? false)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: goldBorder),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: IconButton(
+                  key: const Key('open-change-requests'),
+                  tooltip: 'Prośby o zmiany',
+                  iconSize: 18,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  constraints: const BoxConstraints(),
+                  color: parchmentMuted,
+                  icon: const Icon(Icons.inbox),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ChangeRequestsScreen(),
+                    ),
+                  ),
+                ),
               ),
             ),
           if (user?.admin ?? false)
@@ -103,6 +138,23 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(width: 4),
         ],
       ),
+      floatingActionButton: ownsACharacter
+          ? FloatingActionButton(
+              key: const Key('new-change-request'),
+              tooltip: 'Poproś o zmianę',
+              backgroundColor: crimson,
+              foregroundColor: parchmentLight,
+              shape: const CircleBorder(
+                side: BorderSide(color: goldBorder),
+              ),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const NewChangeRequestScreen(),
+                ),
+              ),
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: feed.when(
         loading: () => const Center(child: CircularProgressIndicator(color: gold)),
         error: (error, _) => Center(
