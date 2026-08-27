@@ -7,7 +7,10 @@ import 'package:liferpg/data/firebase_providers.dart';
 import 'package:liferpg/features/character/edit_character_screen.dart';
 import 'package:liferpg/models/character.dart';
 
-Future<(FakeFirebaseFirestore, Character)> seed({num goldUsd = 12}) async {
+Future<(FakeFirebaseFirestore, Character)> seed({
+  num goldUsd = 12,
+  bool withGold = true,
+}) async {
   final db = FakeFirebaseFirestore();
   final ref = await db.collection('characters').add({
     'name': 'Grommash',
@@ -15,8 +18,8 @@ Future<(FakeFirebaseFirestore, Character)> seed({num goldUsd = 12}) async {
     'level': 3,
     'current_xp': 40,
     'next_level_xp': 100,
-    'gold': 250,
-    'gold_usd': goldUsd,
+    if (withGold) 'gold': 250,
+    if (withGold) 'gold_usd': goldUsd,
     'favour': 0,
     'traits': [
       {'name': 'Siła', 'value': '18'},
@@ -169,6 +172,50 @@ void main() {
 
     final snap = await db.collection('characters').doc(character.id).get();
     expect(snap.data()!['gold'], 0);
+  });
+
+  // I5: the "empty saves as 0" fix over-corrected. A character that never had
+  // a gold field must not acquire `gold: 0` just because the admin edited the
+  // level -- that made a "ZŁOTO 0 zł" row appear on a card that never had one.
+  testWidgets('a save that leaves an absent gold empty keeps it absent',
+      (tester) async {
+    final (db, character) = await seed(withGold: false);
+    await pumpEdit(tester, db, character);
+
+    await tester.enterText(find.byKey(const Key('field-level')), '7');
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    final data = (await db.collection('characters').doc(character.id).get())
+        .data()!;
+    expect(data['level'], 7, reason: 'the level the admin did edit must land');
+    expect(data['gold'], isNull, reason: 'absent gold must not become 0');
+    expect(data['gold_usd'], isNull);
+  });
+
+  testWidgets('a save that leaves an absent level empty keeps it absent',
+      (tester) async {
+    final (db, character) = await seed(withGold: false);
+    // Rebuild the character without a level, as documents in production have.
+    final noLevel = Character(
+      id: character.id,
+      name: character.name,
+      email: character.email,
+      currentXp: character.currentXp,
+      nextLevelXp: character.nextLevelXp,
+      favour: character.favour,
+      traits: character.traits,
+    );
+    await pumpEdit(tester, db, noLevel);
+
+    await tester.enterText(find.byKey(const Key('field-current_xp')), '55');
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    final data = (await db.collection('characters').doc(character.id).get())
+        .data()!;
+    expect(data['current_xp'], 55);
+    expect(data['level'], isNull);
   });
 
   // I4: the name box is owned by Autocomplete. With only a shadow controller
