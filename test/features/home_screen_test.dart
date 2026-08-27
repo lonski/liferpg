@@ -9,6 +9,7 @@ import 'package:liferpg/data/firebase_providers.dart';
 import 'package:liferpg/features/character/character_card.dart';
 import 'package:liferpg/data/character_repository.dart';
 import 'package:liferpg/features/home/home_screen.dart';
+import 'package:liferpg/features/requests/new_change_request_screen.dart';
 import 'package:liferpg/models/character.dart';
 import 'package:liferpg/providers/character_providers.dart';
 
@@ -126,5 +127,41 @@ void main() {
     await pumpHome(tester, await seed(),
         extraOverrides: [feedOverride(offline: false)]);
     expect(find.byIcon(Icons.cloud_off), findsNothing);
+  });
+
+  testWidgets('offers the change-request FAB when the user has a character',
+      (tester) async {
+    await pumpHome(tester, await seed());
+    expect(find.byKey(const Key('new-change-request')), findsOneWidget);
+  });
+
+  testWidgets('hides the change-request FAB when the user owns no character',
+      (tester) async {
+    final db = FakeFirebaseFirestore();
+    await db.collection('users').doc('u1').set({
+      'uid': 'u1',
+      'name': 'Ala',
+      'email': 'ala@example.com',
+      'admin': false,
+      'readOnlyOthers': false,
+    });
+    await pumpHome(tester, db);
+    expect(find.byKey(const Key('new-change-request')), findsNothing);
+  });
+
+  testWidgets('shows the change-request queue action only for admins',
+      (tester) async {
+    await pumpHome(tester, await seed());
+    expect(find.byKey(const Key('open-change-requests')), findsNothing);
+
+    await pumpHome(tester, await seed(admin: true));
+    expect(find.byKey(const Key('open-change-requests')), findsOneWidget);
+  });
+
+  testWidgets('the FAB opens the request screen', (tester) async {
+    await pumpHome(tester, await seed());
+    await tester.tap(find.byKey(const Key('new-change-request')));
+    await tester.pumpAndSettle();
+    expect(find.byType(NewChangeRequestScreen), findsOneWidget);
   });
 }
