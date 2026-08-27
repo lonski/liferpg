@@ -2,8 +2,8 @@ name: Android Release
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*'
 
 jobs:
   build_and_distribute:
@@ -47,16 +47,6 @@ jobs:
           printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS" >> android/key.properties
           printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD" >> android/key.properties
 
-      # pubspec.yaml's version is `<version>+<build>` (e.g. 1.0.0+1); tags
-      # and releases use it verbatim, prefixed with v. Bump it before pushing
-      # to master, or the "Create GitHub Release" step will fail on a
-      # duplicate tag.
-      - name: Extract app version
-        id: version
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: *//')
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
@@ -93,12 +83,11 @@ jobs:
           --dart-define=GOOGLE_SERVER_CLIENT_ID=$GOOGLE_SERVER_CLIENT_ID
 
       # Runs before Firebase distribution so a Firebase upload failure
-      # doesn't prevent the release from being published.
+      # doesn't prevent the release from being published. tag_name/name
+      # default to the pushed tag (github.ref_name).
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
           files: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Distribute to testers
