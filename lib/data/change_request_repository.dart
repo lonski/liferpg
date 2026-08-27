@@ -13,6 +13,17 @@ class ChangeRequestNoLongerPending implements Exception {
   String toString() => 'Ta prośba została już rozpatrzona';
 }
 
+/// Thrown when `accept` re-reads the character mid-transaction and it has
+/// vanished (deleted by another admin, say). Distinct from
+/// [ChangeRequestNoLongerPending] -- a different failure mode with its own
+/// Polish message, not a stale-status race.
+class ChangeRequestCharacterGone implements Exception {
+  const ChangeRequestCharacterGone();
+
+  @override
+  String toString() => 'Postać już nie istnieje';
+}
+
 class ChangeRequestRepository {
   ChangeRequestRepository(this._db);
 
@@ -110,7 +121,7 @@ class ChangeRequestRepository {
       final characterSnap = await tx.get(characterRef);
       final character = characterSnap.data();
       if (character == null) {
-        throw StateError('Character ${request.characterId} no longer exists');
+        throw const ChangeRequestCharacterGone();
       }
 
       tx.update(characterRef, _applyTo(character, applied));

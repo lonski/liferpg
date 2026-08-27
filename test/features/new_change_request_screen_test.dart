@@ -59,8 +59,7 @@ void main() {
   testWidgets('submit is disabled until something is entered', (tester) async {
     await pumpScreen(tester, await seed());
 
-    // ignore: prefer_function_declarations_over_variables
-    final button = () => tester
+    ElevatedButton button() => tester
         .widget<ElevatedButton>(find.byKey(const Key('submit-request')));
     expect(button().onPressed, isNull);
 
