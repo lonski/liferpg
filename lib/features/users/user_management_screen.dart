@@ -86,7 +86,11 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                       style: TextStyle(
                         fontFamily: fontDisplay,
                         fontSize: 12,
-                        color: crimson,
+                        // Drawn directly on the dark scaffold (bgDark), not a
+                        // parchment surface, so it needs a light ink -- see
+                        // CLAUDE.md contrast notes. Matches the error-state
+                        // text above.
+                        color: parchmentLight,
                       ),
                     ),
                   )
@@ -227,7 +231,13 @@ class _LabelledSwitch extends StatelessWidget {
                 fontFamily: fontDisplay,
                 fontSize: 9,
                 letterSpacing: 2,
-                color: crimson,
+                // This row sits directly on the dark scaffold (bgDark), not
+                // the parchment surface `crimson` was designed for in the
+                // React dialog -- crimson-on-bgDark is ~1.6:1 contrast,
+                // effectively invisible. parchmentMuted matches the muted
+                // tone used for other controls/icons on this background
+                // (e.g. the AppBar iconTheme) and clears WCAG AA.
+                color: parchmentMuted,
               ),
             ),
           ),
