@@ -14,27 +14,34 @@ const TextStyle _fieldLabel = TextStyle(
   color: crimson,
 );
 
-// The "Cechy" divider heading uses a distinct, smaller style from the field
-// labels above it -- see EditCharacterDialog.jsx's separate divider label.
-const TextStyle _traitsDividerLabel = TextStyle(
-  fontFamily: fontDisplay,
-  fontSize: 8,
-  letterSpacing: 3,
-  color: crimson,
-);
+// `level`, `current_xp` and `next_level_xp` are ints in Firestore; `gold` and
+// `gold_usd` are `num` and legitimately hold decimals in production documents
+// (the React editor wrote `Number(e.target.value)`), so those two must accept
+// "12.5" rather than rejecting the character outright.
+String? _validateOptionalInt(String? value) =>
+    _validateOptionalNumber(value, decimal: false);
 
-String? _validateOptionalInt(String? value) {
+String? _validateOptionalDecimal(String? value) =>
+    _validateOptionalNumber(value, decimal: true);
+
+String? _validateOptionalNumber(String? value, {required bool decimal}) {
   final text = (value ?? '').trim();
+  // Empty is allowed and saves as 0, matching React's `Number('') === 0`.
   if (text.isEmpty) return null;
-  return int.tryParse(text) == null ? 'Podaj liczbę' : null;
+  final parsed = decimal ? num.tryParse(text) : int.tryParse(text);
+  return parsed == null ? 'Podaj liczbę' : null;
 }
 
-Widget _numberField(String fieldKey, TextEditingController controller) =>
+Widget _numberField(
+  String fieldKey,
+  TextEditingController controller, {
+  bool decimal = false,
+}) =>
     TextFormField(
       key: Key('field-$fieldKey'),
       controller: controller,
-      keyboardType: TextInputType.number,
-      validator: _validateOptionalInt,
+      keyboardType: TextInputType.numberWithOptions(decimal: decimal),
+      validator: decimal ? _validateOptionalDecimal : _validateOptionalInt,
     );
 
 class EditCharacterScreen extends ConsumerStatefulWidget {
@@ -61,7 +68,12 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
   late List<int> _traitKeys;
   int _nextTraitKey = 0;
   late int _favour;
-  final _newTraitName = TextEditingController();
+  // Owned by the Autocomplete below, not by us: we capture the instance it
+  // hands to fieldViewBuilder so that _addTrait can actually clear the box.
+  // (A shadow controller synced via onChanged cannot -- the widget keeps
+  // showing the stale text and every later add early-returns.) Because the
+  // Autocomplete owns it, we must not dispose it.
+  TextEditingController? _traitNameController;
   final _newTraitValue = TextEditingController();
   bool _saving = false;
 
@@ -86,23 +98,30 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
     for (final c in _controllers.values) {
       c.dispose();
     }
-    _newTraitName.dispose();
     _newTraitValue.dispose();
     super.dispose();
   }
 
-  int? _intOf(String key) => int.tryParse(_controllers[key]!.text.trim());
+  // An empty field saves as 0 rather than null: `copyWith` reads null as
+  // "leave unchanged", which made clearing a field a silent no-op, and React
+  // wrote `Number('') === 0` for every one of these fields.
+  int _intOf(String key) => int.tryParse(_controllers[key]!.text.trim()) ?? 0;
+
+  num _numOf(String key) => num.tryParse(_controllers[key]!.text.trim()) ?? 0;
 
   void _addTrait() {
-    final name = _newTraitName.text.trim();
+    final nameController = _traitNameController;
+    // React enabled the + button on a non-empty name alone; an empty value is
+    // a legitimate trait.
+    final name = (nameController?.text ?? '').trim();
+    if (name.isEmpty) return;
     final value = _newTraitValue.text.trim();
-    if (name.isEmpty || value.isEmpty) return;
     setState(() {
       _traits = [..._traits, Trait(name: name, value: value)];
       _traitKeys = [..._traitKeys, _nextTraitKey++];
-      _newTraitName.clear();
-      _newTraitValue.clear();
     });
+    nameController?.clear();
+    _newTraitValue.clear();
   }
 
   Future<void> _save() async {
@@ -111,10 +130,10 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
     try {
       final updated = widget.character.copyWith(
         level: _intOf('level'),
-        gold: _intOf('gold'),
-        goldUsd: _intOf('gold_usd'),
-        currentXp: _intOf('current_xp') ?? 0,
-        nextLevelXp: _intOf('next_level_xp') ?? 0,
+        gold: _numOf('gold'),
+        goldUsd: _numOf('gold_usd'),
+        currentXp: _intOf('current_xp'),
+        nextLevelXp: _intOf('next_level_xp'),
         favour: _favour,
         traits: _traits,
       );
@@ -224,12 +243,14 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                 _LabelledField(
                                   label: 'Złoto',
                                   child:
-                                      _numberField('gold', _controllers['gold']!),
+                                      _numberField('gold', _controllers['gold']!,
+                                          decimal: true),
                                 ),
                                 _LabelledField(
                                   label: 'Dolary',
                                   child: _numberField(
-                                      'gold_usd', _controllers['gold_usd']!),
+                                      'gold_usd', _controllers['gold_usd']!,
+                                      decimal: true),
                                 ),
                                 Row(
                                   mainAxisAlignment:
@@ -316,7 +337,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
         children: [
           Text(
             'Cechy'.toUpperCase(),
-            style: _traitsDividerLabel,
+            style: traitsDividerLabel,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
@@ -368,17 +389,16 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                           n.toLowerCase().contains(value.text.toLowerCase())),
                   fieldViewBuilder:
                       (context, controller, focusNode, onSubmitted) {
+                    _traitNameController = controller;
                     return TextField(
                       key: const Key('new-trait-name'),
                       controller: controller,
                       focusNode: focusNode,
-                      onChanged: (v) => _newTraitName.text = v,
                       onSubmitted: (_) => onSubmitted(),
                       decoration:
                           const InputDecoration(labelText: 'Nowa cecha...'),
                     );
                   },
-                  onSelected: (v) => _newTraitName.text = v,
                 ),
               ),
               const SizedBox(width: 8),

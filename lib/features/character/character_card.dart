@@ -6,7 +6,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
 import 'edit_character_screen.dart';
 
-const TextStyle kStatLabel = TextStyle(
+const TextStyle _statLabel = TextStyle(
   fontFamily: fontDisplay,
   fontSize: 10,
   letterSpacing: 2,
@@ -19,14 +19,6 @@ const TextStyle _xpMetaText = TextStyle(
   fontFamily: fontBody,
   fontSize: 10,
   fontStyle: FontStyle.italic,
-  color: crimson,
-);
-
-// .traitsDividerLabel
-const TextStyle _traitsDividerLabel = TextStyle(
-  fontFamily: fontDisplay,
-  fontSize: 8,
-  letterSpacing: 3,
   color: crimson,
 );
 
@@ -147,6 +139,10 @@ class _CharacterCardState extends State<CharacterCard> {
 }
 
 /// Mood glyph, matching the React FavourEmoji thresholds exactly.
+///
+/// Deliberately public despite having no other in-app caller: `kShowFavour`
+/// is a compile-time constant that is false in tests, so the glyph is never
+/// rendered there and the mapping can only be covered by calling it directly.
 String favourEmoji(int favour) {
   if (favour < -1) return '😠';
   if (favour == -1) return '😕';
@@ -196,7 +192,7 @@ class _LevelRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Poziom'.toUpperCase(), style: kStatLabel),
+          Text('Poziom'.toUpperCase(), style: _statLabel),
           Container(
             decoration: BoxDecoration(
               color: crimsonFaint,
@@ -306,7 +302,7 @@ class _GoldRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Złoto'.toUpperCase(), style: kStatLabel),
+          Text('Złoto'.toUpperCase(), style: _statLabel),
           Row(
             children: [
               Text('${character.gold} zł', style: _goldValue),
@@ -329,7 +325,7 @@ class _TraitsHeading extends StatelessWidget {
           const Expanded(child: Divider(color: crimsonBorderStrong, height: 1)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text('Cechy'.toUpperCase(), style: _traitsDividerLabel),
+            child: Text('Cechy'.toUpperCase(), style: traitsDividerLabel),
           ),
           const Expanded(child: Divider(color: crimsonBorderStrong, height: 1)),
         ],

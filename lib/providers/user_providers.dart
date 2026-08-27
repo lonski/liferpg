@@ -1,13 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/firebase_providers.dart';
 import '../data/user_repository.dart';
 import '../models/app_user.dart';
 import 'auth_providers.dart';
 
-final userRepositoryProvider = Provider<UserRepository>(
-  (ref) => UserRepository(ref.watch(firestoreProvider)),
-);
+// Defined in the data layer so auth_providers.dart can reach it without an
+// import cycle; re-exported here because this is where callers expect it.
+export '../data/user_repository.dart' show userRepositoryProvider;
 
 /// Non-admins get an empty list rather than a permission error: the Firestore
 /// rules would reject the collection read anyway.

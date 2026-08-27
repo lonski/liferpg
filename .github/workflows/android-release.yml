@@ -21,11 +21,12 @@ jobs:
           channel: stable
           cache: true
 
+      # The generated Firebase config files are gitignored, so CI restores
+      # them from secrets. Nothing here needs the firebase/flutterfire CLIs.
       - name: Restore Firebase config
         run: |
           echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
-          dart pub global activate flutterfire_cli
-          flutterfire configure --project=liferpg-f3bab --platforms=android --yes
+          echo '${{ secrets.FIREBASE_OPTIONS_DART }}' > lib/firebase_options.dart
 
       - name: Restore signing keystore
         run: |
@@ -38,7 +39,20 @@ jobs:
           EOF
 
       - run: flutter pub get
+      - run: flutter analyze
       - run: flutter test
+
+      # Firestore rules suite. --legacy-peer-deps is required:
+      # @firebase/rules-unit-testing@3 declares a peer of firebase@^10 while
+      # the suite runs against firebase@12.
+      - name: Install Firestore rules test deps
+        run: npm --prefix tools/rules-test ci --legacy-peer-deps
+
+      - name: Run Firestore rules tests
+        run: >
+          npx --yes firebase-tools emulators:exec
+          --only firestore --project liferpg-rules-test
+          "npm --prefix tools/rules-test test"
 
       - name: Build release APK
         run: >

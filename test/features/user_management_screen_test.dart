@@ -88,4 +88,20 @@ void main() {
     await pumpScreen(tester, db);
     expect(find.text('Bez nazwy'), findsOneWidget);
   });
+
+  // I8: the two labelled switches used to sit in ListTile.trailing, roughly
+  // 290dp of fixed-width content on a 360dp phone. The suite's default
+  // 800x600 surface hid it; at a real phone size the RenderFlex overflow
+  // throws and fails this test.
+  testWidgets('a user row fits a phone-sized screen', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+
+    await pumpScreen(tester, await seed());
+
+    expect(find.byKey(const Key('admin-u2')), findsOneWidget);
+    expect(find.byKey(const Key('readonly-u2')), findsOneWidget);
+    expect(find.text('bob@example.com'), findsOneWidget);
+  });
 }

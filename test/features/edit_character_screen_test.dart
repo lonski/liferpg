@@ -7,7 +7,7 @@ import 'package:liferpg/data/firebase_providers.dart';
 import 'package:liferpg/features/character/edit_character_screen.dart';
 import 'package:liferpg/models/character.dart';
 
-Future<(FakeFirebaseFirestore, Character)> seed() async {
+Future<(FakeFirebaseFirestore, Character)> seed({num goldUsd = 12}) async {
   final db = FakeFirebaseFirestore();
   final ref = await db.collection('characters').add({
     'name': 'Grommash',
@@ -16,7 +16,7 @@ Future<(FakeFirebaseFirestore, Character)> seed() async {
     'current_xp': 40,
     'next_level_xp': 100,
     'gold': 250,
-    'gold_usd': 12,
+    'gold_usd': goldUsd,
     'favour': 0,
     'traits': [
       {'name': 'Siła', 'value': '18'},
@@ -124,5 +124,103 @@ void main() {
     expect(find.text('Podaj liczbę'), findsOneWidget);
     final snap = await db.collection('characters').doc(character.id).get();
     expect(snap.data()!['level'], 3, reason: 'nothing may be written');
+  });
+
+  // I2: gold/gold_usd are `num`, not `int`. Before the fix, int.tryParse
+  // rejected "12.5" and every save was blocked by a validation error on a
+  // field the admin never touched.
+  testWidgets('a fractional gold_usd loads and survives an unchanged save',
+      (tester) async {
+    final (db, character) = await seed(goldUsd: 12.5);
+    await pumpEdit(tester, db, character);
+
+    expect(find.widgetWithText(TextFormField, '12.5'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Podaj liczbę'), findsNothing);
+    final snap = await db.collection('characters').doc(character.id).get();
+    expect(snap.data()!['gold_usd'], 12.5);
+  });
+
+  testWidgets('a decimal typed into gold is persisted', (tester) async {
+    final (db, character) = await seed();
+    await pumpEdit(tester, db, character);
+
+    await tester.enterText(find.byKey(const Key('field-gold')), '7.5');
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    final snap = await db.collection('characters').doc(character.id).get();
+    expect(snap.data()!['gold'], 7.5);
+  });
+
+  // I3: an empty field used to parse to null, which copyWith reads as "keep
+  // the old value" -- so clearing a field popped the screen having written
+  // nothing at all.
+  testWidgets('clearing gold writes 0', (tester) async {
+    final (db, character) = await seed();
+    await pumpEdit(tester, db, character);
+
+    await tester.enterText(find.byKey(const Key('field-gold')), '');
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    final snap = await db.collection('characters').doc(character.id).get();
+    expect(snap.data()!['gold'], 0);
+  });
+
+  // I4: the name box is owned by Autocomplete. With only a shadow controller
+  // it never cleared, so the second add saw a stale-looking but internally
+  // empty field and silently did nothing.
+  testWidgets('two traits can be added in a row, clearing the name each time',
+      (tester) async {
+    final (db, character) = await seed();
+    await pumpEdit(tester, db, character);
+
+    String nameFieldText() => tester
+        .widget<TextField>(find.byKey(const Key('new-trait-name')))
+        .controller!
+        .text;
+
+    await tester.enterText(find.byKey(const Key('new-trait-name')), 'Spryt');
+    await tester.enterText(find.byKey(const Key('new-trait-value')), '14');
+    await tester.tap(find.byKey(const Key('add-trait')));
+    await tester.pumpAndSettle();
+    expect(nameFieldText(), isEmpty);
+
+    await tester.enterText(find.byKey(const Key('new-trait-name')), 'Charyzma');
+    await tester.enterText(find.byKey(const Key('new-trait-value')), '9');
+    await tester.tap(find.byKey(const Key('add-trait')));
+    await tester.pumpAndSettle();
+    expect(nameFieldText(), isEmpty);
+
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    final snap = await db.collection('characters').doc(character.id).get();
+    final traits = (snap.data()!['traits'] as List<dynamic>)
+        .map((t) => Map<String, dynamic>.from(t as Map))
+        .toList();
+    expect(traits.map((t) => t['name']), containsAll(['Spryt', 'Charyzma']));
+  });
+
+  // M15: React's + button only required a non-empty name.
+  testWidgets('a trait with an empty value can still be added', (tester) async {
+    final (db, character) = await seed();
+    await pumpEdit(tester, db, character);
+
+    await tester.enterText(find.byKey(const Key('new-trait-name')), 'Honor');
+    await tester.tap(find.byKey(const Key('add-trait')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    final snap = await db.collection('characters').doc(character.id).get();
+    final traits = (snap.data()!['traits'] as List<dynamic>)
+        .map((t) => Map<String, dynamic>.from(t as Map))
+        .toList();
+    expect(traits.map((t) => t['name']), contains('Honor'));
   });
 }
