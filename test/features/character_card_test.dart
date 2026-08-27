@@ -76,6 +76,56 @@ void main() {
     expect(find.byKey(const Key('edit-character')), findsOneWidget);
   });
 
+  testWidgets(
+      'the XP track spans the full available width regardless of fraction',
+      (tester) async {
+    // Regression test for a bug where the track Container had no width
+    // constraint: FractionallySizedBox sizes itself to widthFactor *
+    // maxWidth, so the unconstrained Container shrink-wrapped to the FILL
+    // instead of spanning the track. A fraction of 1.0 would hide this (the
+    // fill and the track are the same width then), so this uses a character
+    // partway to their next level (915 / 2500 -> 36.6%).
+    final partial = Character(
+      id: 'c1',
+      name: 'Grommash',
+      clazz: 'Wojownik',
+      email: 'g@example.com',
+      level: 3,
+      currentXp: 915,
+      nextLevelXp: 2500,
+      gold: 250,
+      goldUsd: 12,
+      favour: 0,
+      traits: const [],
+    );
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 400,
+            child: SingleChildScrollView(
+              child: CharacterCard(character: partial, canEdit: false),
+            ),
+          ),
+        ),
+      ),
+    ));
+
+    final trackWidth =
+        tester.getSize(find.byKey(const Key('xp-bar'))).width;
+    final fillWidth =
+        tester.getSize(find.byKey(const Key('xp-fill'))).width;
+
+    // The fill should reflect the ~36.6% fraction of the track...
+    expect(fillWidth / trackWidth, closeTo(0.366, 0.01));
+    // ...and the track itself must span the width available to the card,
+    // not shrink-wrap to the fill. Before the fix these were nearly equal
+    // (track=124.98, fill=122.98 at this same 400-wide surface).
+    expect(trackWidth, greaterThan(300));
+    expect(trackWidth - fillWidth, greaterThan(150));
+  });
+
   // T3: kShowFavour is a compile-time constant that is false under
   // `flutter test`, so the glyph is never rendered and the mapping can only
   // be covered by calling it directly. Swapping the `< -1` and `== -1`

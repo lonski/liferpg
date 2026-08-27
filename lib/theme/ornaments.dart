@@ -88,7 +88,7 @@ class TopBand extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontFamily: fontDisplay,
-                fontSize: 8,
+                fontSize: 12,
                 letterSpacing: 4,
                 color: bandLabelColor,
               ),

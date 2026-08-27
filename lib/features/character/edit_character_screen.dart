@@ -228,10 +228,15 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                 clipBehavior: Clip.antiAlias,
                 child: Column(
                   children: [
-                    const TopBand(label: '✦ Edycja Postaci ✦'),
                     Container(
                       decoration: const BoxDecoration(gradient: cardGradient),
-                      padding: const EdgeInsets.all(16),
+                      // The TopBand that used to open this card was dropped
+                      // to avoid duplicating the AppBar's "Edycja Postaci"
+                      // title; this extra top padding (the band's old
+                      // vertical footprint: 7 + 7 padding plus its text
+                      // line) keeps the parchment from sitting flush against
+                      // the AppBar.
+                      padding: const EdgeInsets.fromLTRB(16, 30, 16, 16),
                       child: Stack(
                         children: [
                           Container(

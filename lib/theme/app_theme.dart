@@ -77,7 +77,7 @@ const String fontBody = 'LibreBaskerville';
 // stat/field labels around it.
 const TextStyle traitsDividerLabel = TextStyle(
   fontFamily: fontDisplay,
-  fontSize: 8,
+  fontSize: 12,
   letterSpacing: 3,
   color: crimson,
 );
