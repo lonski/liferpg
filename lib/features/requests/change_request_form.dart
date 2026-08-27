@@ -58,10 +58,12 @@ class _ChangeRequestFormState extends ConsumerState<ChangeRequestForm> {
     final initial = widget.initial;
     _controllers = {
       'current_xp': TextEditingController(
-          text: initial?.currentXp?.toString() ?? ''),
+        text: initial?.currentXp?.toString() ?? '',
+      ),
       'gold': TextEditingController(text: initial?.gold?.toString() ?? ''),
-      'gold_usd':
-          TextEditingController(text: initial?.goldUsd?.toString() ?? ''),
+      'gold_usd': TextEditingController(
+        text: initial?.goldUsd?.toString() ?? '',
+      ),
     };
     _reasonController = TextEditingController(text: widget.reason ?? '');
     _traits = List<TraitChange>.from(initial?.traits ?? const <TraitChange>[]);
@@ -88,11 +90,11 @@ class _ChangeRequestFormState extends ConsumerState<ChangeRequestForm> {
   }
 
   ChangeSet get _changes => ChangeSet(
-        currentXp: _deltaOf('current_xp', decimal: false),
-        gold: _deltaOf('gold', decimal: true),
-        goldUsd: _deltaOf('gold_usd', decimal: true),
-        traits: _traits,
-      );
+    currentXp: _deltaOf('current_xp', decimal: false),
+    gold: _deltaOf('gold', decimal: true),
+    goldUsd: _deltaOf('gold_usd', decimal: true),
+    traits: _traits,
+  );
 
   void _emit() {
     final reason = _reasonController.text.trim();
@@ -133,96 +135,108 @@ class _ChangeRequestFormState extends ConsumerState<ChangeRequestForm> {
   }
 
   Widget _deltaField(String key, {required bool decimal}) => TextFormField(
-        key: Key('field-$key'),
-        controller: _controllers[key],
-        keyboardType:
-            TextInputType.numberWithOptions(decimal: decimal, signed: true),
-        validator: (v) => _validateOptionalDelta(v, decimal: decimal),
-        decoration: const InputDecoration(hintText: 'np. +50'),
-      );
+    key: Key('field-$key'),
+    controller: _controllers[key],
+    keyboardType: TextInputType.numberWithOptions(
+      decimal: decimal,
+      signed: true,
+    ),
+    validator: (v) => _validateOptionalDelta(v, decimal: decimal),
+    decoration: const InputDecoration(hintText: 'np. +50'),
+  );
 
   @override
   Widget build(BuildContext context) {
     final traitNames = ref.watch(traitNamesProvider);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _Labelled(
-            label: 'XP', child: _deltaField('current_xp', decimal: false)),
-        _Labelled(label: 'Złoto', child: _deltaField('gold', decimal: true)),
-        _Labelled(
-            label: 'Dolary', child: _deltaField('gold_usd', decimal: true)),
-        const SizedBox(height: 12),
-        Text('Cechy'.toUpperCase(), style: _fieldLabel),
-        for (final trait in _traits)
+    return Form(
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Labelled(
+            label: 'XP',
+            child: _deltaField('current_xp', decimal: false),
+          ),
+          _Labelled(label: 'Złoto', child: _deltaField('gold', decimal: true)),
+          _Labelled(
+            label: 'Dolary',
+            child: _deltaField('gold_usd', decimal: true),
+          ),
+          const SizedBox(height: 12),
+          Text('Cechy'.toUpperCase(), style: _fieldLabel),
+          for (final trait in _traits)
+            Row(
+              key: Key('trait-row-${trait.name}'),
+              children: [
+                Expanded(
+                  child: Text(
+                    '${trait.name}: ${trait.value}',
+                    style: const TextStyle(color: traitNameInk),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Usuń',
+                  icon: const Icon(Icons.close, size: 16, color: crimson),
+                  onPressed: () => _removeTrait(trait.name),
+                ),
+              ],
+            ),
           Row(
-            key: Key('trait-row-${trait.name}'),
             children: [
               Expanded(
-                child: Text(
-                  '${trait.name}: ${trait.value}',
-                  style: const TextStyle(color: traitNameInk),
+                child: Autocomplete<String>(
+                  optionsBuilder: (value) {
+                    final text = value.text.trim().toLowerCase();
+                    if (text.isEmpty) return const Iterable<String>.empty();
+                    return traitNames.where(
+                      (n) => n.toLowerCase().contains(text),
+                    );
+                  },
+                  fieldViewBuilder:
+                      (context, controller, focusNode, onFieldSubmitted) {
+                        _traitNameController = controller;
+                        return TextFormField(
+                          key: const Key('trait-name'),
+                          controller: controller,
+                          focusNode: focusNode,
+                          decoration: const InputDecoration(
+                            hintText: 'Nazwa cechy',
+                          ),
+                        );
+                      },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  key: const Key('trait-value'),
+                  controller: _newTraitValue,
+                  decoration: const InputDecoration(hintText: 'Wartość'),
                 ),
               ),
               IconButton(
-                tooltip: 'Usuń',
-                icon: const Icon(Icons.close, size: 16, color: crimson),
-                onPressed: () => _removeTrait(trait.name),
+                key: const Key('add-trait'),
+                tooltip: 'Dodaj cechę',
+                icon: const Icon(Icons.add, color: crimson),
+                onPressed: _addTrait,
               ),
             ],
           ),
-        Row(
-          children: [
-            Expanded(
-              child: Autocomplete<String>(
-                optionsBuilder: (value) {
-                  final text = value.text.trim().toLowerCase();
-                  if (text.isEmpty) return const Iterable<String>.empty();
-                  return traitNames.where(
-                      (n) => n.toLowerCase().contains(text));
-                },
-                fieldViewBuilder:
-                    (context, controller, focusNode, onFieldSubmitted) {
-                  _traitNameController = controller;
-                  return TextFormField(
-                    key: const Key('trait-name'),
-                    controller: controller,
-                    focusNode: focusNode,
-                    decoration: const InputDecoration(hintText: 'Nazwa cechy'),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
+          if (widget.showReason) ...[
+            const SizedBox(height: 12),
+            _Labelled(
+              label: 'Powód',
               child: TextFormField(
-                key: const Key('trait-value'),
-                controller: _newTraitValue,
-                decoration: const InputDecoration(hintText: 'Wartość'),
+                key: const Key('field-reason'),
+                controller: _reasonController,
+                maxLines: 2,
+                decoration: const InputDecoration(hintText: 'Opcjonalnie'),
               ),
-            ),
-            IconButton(
-              key: const Key('add-trait'),
-              tooltip: 'Dodaj cechę',
-              icon: const Icon(Icons.add, color: crimson),
-              onPressed: _addTrait,
             ),
           ],
-        ),
-        if (widget.showReason) ...[
-          const SizedBox(height: 12),
-          _Labelled(
-            label: 'Powód',
-            child: TextFormField(
-              key: const Key('field-reason'),
-              controller: _reasonController,
-              maxLines: 2,
-              decoration: const InputDecoration(hintText: 'Opcjonalnie'),
-            ),
-          ),
         ],
-      ],
+      ),
     );
   }
 }
@@ -235,13 +249,13 @@ class _Labelled extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label.toUpperCase(), style: _fieldLabel),
-            SizedBox(width: 120, child: child),
-          ],
-        ),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label.toUpperCase(), style: _fieldLabel),
+        SizedBox(width: 120, child: child),
+      ],
+    ),
+  );
 }

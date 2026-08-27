@@ -49,6 +49,7 @@ void main() {
 
     await tester.enterText(find.byKey(const Key('field-current_xp')), '50');
     await tester.pump();
+    expect((await latest()).currentXp, 50);
     await tester.enterText(find.byKey(const Key('field-current_xp')), '');
     await tester.pump();
 
@@ -73,6 +74,10 @@ void main() {
   testWidgets('a trait with an empty name is not added', (tester) async {
     final latest = await pumpForm(tester);
     await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('field-current_xp')), '50');
+    await tester.pump();
+    expect((await latest()).currentXp, 50);
 
     await tester.enterText(find.byKey(const Key('trait-value')), '12');
     await tester.tap(find.byKey(const Key('add-trait')));
@@ -99,5 +104,16 @@ void main() {
       '50',
     );
     expect(find.byKey(const Key('trait-row-Siła')), findsOneWidget);
+  });
+
+  testWidgets('shows the Polish validation message for non-numeric input',
+      (tester) async {
+    await pumpForm(tester);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('field-current_xp')), 'abc');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Podaj liczbę'), findsOneWidget);
   });
 }
