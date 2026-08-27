@@ -12,6 +12,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-java@v4
+        id: setup-java-17
         with:
           distribution: temurin
           java-version: '17'
@@ -54,11 +55,23 @@ jobs:
       - name: Install Firestore rules test deps
         run: npm --prefix tools/rules-test ci --legacy-peer-deps
 
+      # firebase-tools' emulator runtime requires JDK 21+, but the Android/Flutter
+      # build steps need JDK 17 (see checker-qual gotcha in CLAUDE.md), so swap
+      # JAVA_HOME to 21 only for this step and restore it right after.
+      - uses: actions/setup-java@v4
+        id: setup-java-21
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Run Firestore rules tests
         run: >
           npx --yes firebase-tools@15 emulators:exec
           --only firestore --project liferpg-rules-test
           "npm --prefix tools/rules-test test"
+
+      - name: Restore JDK 17 for Flutter/Gradle build
+        run: echo "JAVA_HOME=${{ steps.setup-java-17.outputs.path }}" >> "$GITHUB_ENV"
 
       - name: Build release APK
         env:
