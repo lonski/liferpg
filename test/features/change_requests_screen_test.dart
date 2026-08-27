@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -62,6 +63,27 @@ void main() {
     expect(find.byKey(Key('request-$requestId')), findsOneWidget);
     expect(find.text('Grommash'), findsOneWidget);
     expect(find.text('Posprzątałem garaż'), findsOneWidget);
+  });
+
+  testWidgets('renders the request timestamp when createdAt is known',
+      (tester) async {
+    final db = await seed();
+    await db.collection('change_requests').doc(requestId).update({
+      'createdAt': Timestamp.fromDate(DateTime(2026, 3, 4, 9, 5)),
+    });
+    await pumpScreen(tester, db);
+
+    expect(find.text('2026-03-04 09:05'), findsOneWidget);
+  });
+
+  testWidgets('renders without throwing when createdAt is null',
+      (tester) async {
+    // seed() never sets createdAt, so the fake document's field is simply
+    // absent -- the same "server timestamp still pending" state the real
+    // repository models as a null createdAt.
+    await pumpScreen(tester, await seed());
+
+    expect(find.byKey(Key('request-$requestId')), findsOneWidget);
   });
 
   testWidgets('accepting applies the change and clears the queue',

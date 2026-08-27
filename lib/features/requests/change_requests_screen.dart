@@ -10,6 +10,12 @@ import 'change_request_form.dart';
 
 String _signed(num v) => v > 0 ? '+$v' : '$v';
 
+/// Plain interpolation and zero-padding, deliberately — no `intl` dependency.
+String _formatTimestamp(DateTime t) {
+  String pad(int n) => n.toString().padLeft(2, '0');
+  return '${t.year}-${pad(t.month)}-${pad(t.day)} ${pad(t.hour)}:${pad(t.minute)}';
+}
+
 class ChangeRequestsScreen extends ConsumerStatefulWidget {
   const ChangeRequestsScreen({super.key});
 
@@ -152,7 +158,6 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: _RequestCard(
                                   request: request,
-                                  adminUid: adminUid,
                                   onAccept: () => _decide(
                                     () => ref
                                         .read(changeRequestRepositoryProvider)
@@ -182,14 +187,12 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
 class _RequestCard extends StatelessWidget {
   const _RequestCard({
     required this.request,
-    required this.adminUid,
     required this.onAccept,
     required this.onReject,
     required this.onEdit,
   });
 
   final ChangeRequest request;
-  final String adminUid;
   final VoidCallback onAccept;
   final VoidCallback onReject;
   final VoidCallback onEdit;
@@ -260,6 +263,13 @@ class _RequestCard extends StatelessWidget {
                         fontStyle: FontStyle.italic,
                         color: traitNameInk,
                       ),
+                    ),
+                  ],
+                  if (request.createdAt != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _formatTimestamp(request.createdAt!),
+                      style: const TextStyle(color: traitNameInk, fontSize: 12),
                     ),
                   ],
                   if (request.isPending) ...[
