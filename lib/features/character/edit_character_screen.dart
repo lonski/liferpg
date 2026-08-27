@@ -26,7 +26,8 @@ String? _validateOptionalDecimal(String? value) =>
 
 String? _validateOptionalNumber(String? value, {required bool decimal}) {
   final text = (value ?? '').trim();
-  // Empty is allowed and saves as 0, matching React's `Number('') === 0`.
+  // Empty is allowed: it saves as 0 for a field that had a value (React's
+  // `Number('') === 0`), or stays absent for one that was never set.
   if (text.isEmpty) return null;
   final parsed = decimal ? num.tryParse(text) : int.tryParse(text);
   return parsed == null ? 'Podaj liczbę' : null;
@@ -102,12 +103,28 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
     super.dispose();
   }
 
-  // An empty field saves as 0 rather than null: `copyWith` reads null as
-  // "leave unchanged", which made clearing a field a silent no-op, and React
-  // wrote `Number('') === 0` for every one of these fields.
+  // Non-nullable fields: an empty box saves as 0 rather than null, because
+  // `copyWith` reads null as "leave unchanged" (which made clearing a field a
+  // silent no-op) and React wrote `Number('') === 0`.
   int _intOf(String key) => int.tryParse(_controllers[key]!.text.trim()) ?? 0;
 
-  num _numOf(String key) => num.tryParse(_controllers[key]!.text.trim()) ?? 0;
+  // Nullable fields (`level`, `gold`, `gold_usd`): an empty box is ambiguous,
+  // and the character's original value disambiguates it. If the field was
+  // already absent, we return null — copyWith reads that as "leave unchanged"
+  // and the field stays absent, so a save that never touched gold no longer
+  // invents a `gold: 0` row on the card. If the field did hold a value, the
+  // empty box is a deliberate clear and we write 0.
+  int? _nullableIntOf(String key, int? original) {
+    final text = _controllers[key]!.text.trim();
+    if (text.isEmpty) return original == null ? null : 0;
+    return int.tryParse(text) ?? 0;
+  }
+
+  num? _nullableNumOf(String key, num? original) {
+    final text = _controllers[key]!.text.trim();
+    if (text.isEmpty) return original == null ? null : 0;
+    return num.tryParse(text) ?? 0;
+  }
 
   void _addTrait() {
     final nameController = _traitNameController;
@@ -128,10 +145,11 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      final updated = widget.character.copyWith(
-        level: _intOf('level'),
-        gold: _numOf('gold'),
-        goldUsd: _numOf('gold_usd'),
+      final original = widget.character;
+      final updated = original.copyWith(
+        level: _nullableIntOf('level', original.level),
+        gold: _nullableNumOf('gold', original.gold),
+        goldUsd: _nullableNumOf('gold_usd', original.goldUsd),
         currentXp: _intOf('current_xp'),
         nextLevelXp: _intOf('next_level_xp'),
         favour: _favour,
