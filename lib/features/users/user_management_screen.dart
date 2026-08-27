@@ -218,8 +218,12 @@ class _LabelledSwitch extends StatelessWidget {
           Switch(
             key: switchKey,
             value: value,
-            activeThumbColor: crimsonBright,
-            activeTrackColor: crimsonBright,
+            // Colours come from the app-wide SwitchThemeData in
+            // buildAppTheme() -- see the comment there for the on/off/
+            // disabled contrast rationale. Do not reintroduce
+            // activeThumbColor/activeTrackColor here: setting both to the
+            // same colour is exactly the bug that shipped (thumb invisible
+            // inside the track).
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             onChanged: onChanged,
           ),

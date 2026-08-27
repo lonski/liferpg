@@ -114,5 +114,49 @@ ThemeData buildAppTheme() {
       backgroundColor: crimsonDeep,
       contentTextStyle: TextStyle(fontFamily: fontBody, color: parchmentLight),
     ),
+    // App-wide switch styling (not screen-specific): the old
+    // activeThumbColor/activeTrackColor pairing on the user-management
+    // screen set both to crimsonBright, making an ON switch a solid crimson
+    // pill with the thumb invisible inside it, while the OFF state fell
+    // back to Material's light-theme defaults -- a bright near-white track
+    // that read as MORE prominent than "on". Every state below is spelled
+    // out explicitly against this dark (bgDark) scaffold so thumb and
+    // track are always distinguishable:
+    //  - ON: crimsonBright track (clearly the "hot"/active colour) with a
+    //    light parchmentLight thumb and a goldBorder ring -- unmistakably
+    //    lit up. Thumb-vs-track contrast ~9:1.
+    //  - OFF: a muted crimsonDeep track (recedes vs. the bright ON track)
+    //    with a dimmer parchmentMuted thumb and a goldBorderFaint outline
+    //    so the pill shape still reads against bgDark. Thumb-vs-track
+    //    contrast ~5.6:1.
+    //  - Disabled: both thumb and track drop to translucent/faint tokens
+    //    (ornamentInk / crimsonFaint tracks, parchmentFaint thumb) so the
+    //    control reads as visibly inert, while disabled-on vs disabled-off
+    //    stay distinguishable via track hue/opacity and thumb position.
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.disabled)) {
+          return parchmentFaint;
+        }
+        return states.contains(WidgetState.selected)
+            ? parchmentLight
+            : parchmentMuted;
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        final selected = states.contains(WidgetState.selected);
+        if (states.contains(WidgetState.disabled)) {
+          return selected ? ornamentInk : crimsonFaint;
+        }
+        return selected ? crimsonBright : crimsonDeep;
+      }),
+      trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.disabled)) {
+          return crimsonBorderFaint;
+        }
+        return states.contains(WidgetState.selected)
+            ? goldBorder
+            : goldBorderFaint;
+      }),
+    ),
   );
 }

@@ -143,4 +143,25 @@ void main() {
     expect(find.byKey(const Key('readonly-u2')), findsOneWidget);
     expect(find.text('bob@example.com'), findsOneWidget);
   });
+
+  // Regression for the bug that shipped: activeThumbColor and
+  // activeTrackColor were both set to crimsonBright, so an ON switch
+  // rendered as a solid crimson pill with the thumb invisible inside it.
+  // The styling now lives in SwitchThemeData (buildAppTheme), so resolve
+  // it for the ON (selected, enabled) state and assert thumb and track
+  // are different colours -- if they ever collide again, this fails.
+  test('the ON switch thumb and track colours are different', () {
+    final switchTheme = buildAppTheme().switchTheme;
+    const onStates = <WidgetState>{WidgetState.selected};
+
+    final thumb = switchTheme.thumbColor?.resolve(onStates);
+    final track = switchTheme.trackColor?.resolve(onStates);
+
+    expect(thumb, isNotNull);
+    expect(track, isNotNull);
+    expect(thumb, isNot(equals(track)),
+        reason: 'ON thumb and track resolved to the same colour ($thumb) -- '
+            'the thumb would be invisible inside the track, exactly like '
+            'the reported bug.');
+  });
 }
