@@ -11,6 +11,11 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true;
     }
 
+    function isReadOnlyOthers() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.readOnlyOthers == true;
+    }
+
     function isOwnUser(uid) {
       return isAuthenticated() && request.auth.uid == uid;
     }
@@ -24,7 +29,8 @@ service cloud.firestore {
     }
 
     match /characters/{characterId} {
-      allow read: if isAuthenticated();
+      allow read: if isAdmin() || isReadOnlyOthers()
+                     || (isAuthenticated() && resource.data.email == request.auth.token.email);
       allow write: if isAdmin();
     }
   }
