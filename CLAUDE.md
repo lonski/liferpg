@@ -120,7 +120,10 @@ The UI is in **Polish**. Labels (Poziom, Złoto, XP, Przychylność, etc.) are v
 
 - `.github/workflows/android-pr.yml` — analyze, test, debug APK as an artifact.
 - `.github/workflows/android-release.yml` — signed release APK to Firebase
-  App Distribution on push to `master`.
+  App Distribution on push to `master`, and also published as a GitHub
+  Release tagged `v<pubspec version>` (e.g. `v1.0.0+1`). Bump the `version:`
+  line in `pubspec.yaml` before pushing to master, or the release step fails
+  on a duplicate tag.
 
 ## Build gotchas (hard-won — read before debugging a build failure)
 
