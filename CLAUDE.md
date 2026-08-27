@@ -120,11 +120,15 @@ The UI is in **Polish**. Labels (Poziom, Złoto, XP, Przychylność, etc.) are v
 
 - `.github/workflows/android-pr.yml` — analyze, test, debug APK as an artifact.
 - `.github/workflows/android-release.yml` — triggered by pushing a tag
-  matching `v*` (e.g. `git tag v1.0.0+1 && git push origin v1.0.0+1`), not by
-  pushing to `master`. Builds a signed release APK and publishes it as a
-  GitHub Release under the pushed tag. Firebase App Distribution is
-  temporarily removed (service account was returning 403 on upload); re-add
-  it once that's fixed.
+  matching `v*` (e.g. `git tag v1.0.2 && git push origin v1.0.2`), not by
+  pushing to `master`. The tag is the semver part of `pubspec.yaml`'s
+  `version:` only — drop the `+build` suffix (that suffix is Android's
+  `versionCode`/iOS's `CFBundleVersion`, internal bookkeeping that must
+  strictly increase per build; it has no reason to appear in the tag name).
+  Builds a signed release APK and publishes it as a GitHub Release under the
+  pushed tag. Firebase App Distribution is temporarily removed (service
+  account was returning 403 on upload); re-add it once that's fixed. See
+  `.claude/skills/releasing-app/SKILL.md` for the full release checklist.
 
 ## Build gotchas (hard-won — read before debugging a build failure)
 
