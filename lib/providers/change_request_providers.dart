@@ -26,6 +26,18 @@ final pendingChangeRequestsProvider =
   yield* ref.watch(changeRequestRepositoryProvider).watchPending();
 });
 
+/// The admin queue filtered by status. `pendingChangeRequestsProvider` is the
+/// pending case, kept separate because the home screen's badge watches it.
+final changeRequestsByStatusProvider = StreamProvider.family<
+    List<ChangeRequest>, ChangeRequestStatus>((ref, status) async* {
+  final user = await ref.watch(appUserProvider.future);
+  if (user == null || !user.admin) {
+    yield const <ChangeRequest>[];
+    return;
+  }
+  yield* ref.watch(changeRequestRepositoryProvider).watchByStatus(status);
+});
+
 /// The signed-in user's own requests, with their outcomes.
 final myChangeRequestsProvider =
     StreamProvider<List<ChangeRequest>>((ref) async* {

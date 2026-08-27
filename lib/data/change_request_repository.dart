@@ -40,6 +40,11 @@ class ChangeRequestRepository {
   Stream<List<ChangeRequest>> watchForRequester(String uid) =>
       _watch(_requests.where('requesterUid', isEqualTo: uid));
 
+  /// The admin queue filtered by any status, for the accepted/rejected tabs
+  /// of the queue screen.
+  Stream<List<ChangeRequest>> watchByStatus(ChangeRequestStatus status) =>
+      _watch(_requests.where('status', isEqualTo: status.wire));
+
   Stream<List<ChangeRequest>> _watch(Query<Map<String, dynamic>> query) =>
       query.snapshots().map((snap) {
         final requests = snap.docs
