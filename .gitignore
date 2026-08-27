@@ -1,29 +1,39 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# production
+android/app/google-services.json
+android/key.properties
 /build
-
-# misc
+/coverage
+.dart_tool/
+# dependencies
+dist
 .DS_Store
 .env
-.env.local
 .env.development.local
-.env.test.local
+.env.local
 .env.production.local
-
+.env.test.local
+# Firebase (never commit)
+# Flutter/Dart/Pub related
+.flutter-plugins
+.flutter-plugins-dependencies
+.idea
+*.iml
+*.ipr
+*.iws
+lib/firebase_options.dart
+# misc
+/node_modules
 npm-debug.log*
+/.pnp
+.pnp.js
+# production
+.pub/
+.pub-cache/
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+.superpowers
+# testing
+.vscode
 yarn-debug.log*
 yarn-error.log*
-
-.vscode
-.idea
-.superpowers
-dist
+tools/rules-test/node_modules/
+firestore-debug.log

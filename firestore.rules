@@ -11,17 +11,26 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true;
     }
 
+    function isReadOnlyOthers() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.readOnlyOthers == true;
+    }
+
     function isOwnUser(uid) {
       return isAuthenticated() && request.auth.uid == uid;
     }
 
     match /users/{uid} {
       allow read: if isOwnUser(uid) || isAdmin();
-      allow write: if isAdmin();
+      allow create: if isOwnUser(uid)
+                    && request.resource.data.admin == false
+                    && request.resource.data.readOnlyOthers == false;
+      allow update, delete: if isAdmin();
     }
 
     match /characters/{characterId} {
-      allow read: if isAuthenticated();
+      allow read: if isAdmin() || isReadOnlyOthers()
+                     || (isAuthenticated() && resource.data.email.lower() == request.auth.token.email.lower());
       allow write: if isAdmin();
     }
   }

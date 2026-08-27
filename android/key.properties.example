@@ -1,0 +1,4 @@
+storeFile=/absolute/path/to/liferpg-release.jks
+storePassword=
+keyAlias=liferpg
+keyPassword=
