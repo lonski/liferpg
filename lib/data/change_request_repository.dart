@@ -67,6 +67,24 @@ class ChangeRequestRepository {
         return requests;
       });
 
+  /// Re-reads the request inside the transaction and returns its data, or
+  /// throws if somebody has already decided it. The re-read is the point:
+  /// the caller's copy may be stale, and this is what makes a double-tap a
+  /// no-op rather than a second application.
+  Future<Map<String, dynamic>> _readPending(
+    Transaction tx,
+    DocumentReference<Map<String, dynamic>> ref,
+  ) async {
+    final snap = await tx.get(ref);
+    final data = snap.data();
+    if (data == null ||
+        ChangeRequestStatus.parse(data['status']) !=
+            ChangeRequestStatus.pending) {
+      throw const ChangeRequestNoLongerPending();
+    }
+    return data;
+  }
+
   /// Applies [overrides] if the admin edited the request before accepting,
   /// otherwise the request as posted. The character write and the status flip
   /// share one transaction, so either both land or neither does, and the
@@ -82,13 +100,7 @@ class ChangeRequestRepository {
     final characterRef = _db.collection('characters').doc(request.characterId);
 
     await _db.runTransaction((tx) async {
-      final requestSnap = await tx.get(requestRef);
-      final requestData = requestSnap.data();
-      if (requestData == null ||
-          ChangeRequestStatus.parse(requestData['status']) !=
-              ChangeRequestStatus.pending) {
-        throw const ChangeRequestNoLongerPending();
-      }
+      await _readPending(tx, requestRef);
 
       final characterSnap = await tx.get(characterRef);
       final character = characterSnap.data();
@@ -112,13 +124,7 @@ class ChangeRequestRepository {
   }) async {
     final requestRef = _requests.doc(request.id);
     await _db.runTransaction((tx) async {
-      final snap = await tx.get(requestRef);
-      final data = snap.data();
-      if (data == null ||
-          ChangeRequestStatus.parse(data['status']) !=
-              ChangeRequestStatus.pending) {
-        throw const ChangeRequestNoLongerPending();
-      }
+      await _readPending(tx, requestRef);
       tx.update(requestRef, {
         'status': ChangeRequestStatus.rejected.wire,
         'decidedBy': adminUid,
