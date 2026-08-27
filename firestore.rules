@@ -52,6 +52,7 @@ service cloud.firestore {
                     && !('decidedBy' in request.resource.data)
                     && !('decidedAt' in request.resource.data)
                     && !('appliedChanges' in request.resource.data)
+                    && request.resource.data.changes.keys().size() > 0
                     && get(/databases/$(database)/documents/characters/$(request.resource.data.characterId))
                          .data.email.lower() == request.auth.token.email.lower();
 

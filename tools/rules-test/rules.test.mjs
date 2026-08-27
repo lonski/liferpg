@@ -320,6 +320,37 @@ test('a user may not create a request that is already accepted', async () => {
   );
 });
 
+test('a user may not create a request with no changes at all', async () => {
+  const db = ctxFor(ALICE);
+  await assertFails(
+    setDoc(doc(db, 'change_requests/req-empty-changes'), {
+      characterId: 'c-alice',
+      characterName: 'Alicja',
+      requesterUid: ALICE.uid,
+      requesterEmail: ALICE.email,
+      status: 'pending',
+      changes: {},
+      createdAt: serverTimestamp(),
+    })
+  );
+});
+
+test('a user may not create a request with only a reason and no changes', async () => {
+  const db = ctxFor(ALICE);
+  await assertFails(
+    setDoc(doc(db, 'change_requests/req-reason-only'), {
+      characterId: 'c-alice',
+      characterName: 'Alicja',
+      requesterUid: ALICE.uid,
+      requesterEmail: ALICE.email,
+      status: 'pending',
+      reason: 'Posprzątałem garaż',
+      changes: {},
+      createdAt: serverTimestamp(),
+    })
+  );
+});
+
 test("a user may read their own requests but not somebody else's", async () => {
   await seedRequest('req-alice-seeded', ALICE.uid);
   await seedRequest('req-bob-seeded', BOB.uid);
