@@ -231,7 +231,6 @@ class _ChangeRequestFormState extends ConsumerState<ChangeRequestForm> {
                 key: const Key('field-reason'),
                 controller: _reasonController,
                 maxLines: 2,
-                decoration: const InputDecoration(hintText: 'Opcjonalnie'),
               ),
             ),
           ],

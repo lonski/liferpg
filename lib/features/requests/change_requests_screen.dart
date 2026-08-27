@@ -84,12 +84,38 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
     );
   }
 
-  Widget _filterChip(ChangeRequestStatus status, String label) => FilterChip(
+  // Built from Containers rather than Material's FilterChip: the stock chip
+  // brings its own light-scheme surface and checkmark, which read as a
+  // foreign widget dropped onto the dark scaffold. This mirrors the gold-bordered
+  // AppBar action treatment instead, which is how the rest of the app renders a
+  // control on a dark surface.
+  Widget _filterChip(ChangeRequestStatus status, String label) {
+    final selected = _filter == status;
+    return Expanded(
+      child: GestureDetector(
         key: Key('filter-${status.wire}'),
-        label: Text(label),
-        selected: _filter == status,
-        onSelected: (_) => setState(() => _filter = status),
-      );
+        onTap: () => setState(() => _filter = status),
+        child: Container(
+          decoration: BoxDecoration(
+            color: selected ? crimson : Colors.transparent,
+            border: Border.all(color: selected ? goldBorder : goldBorderFaint),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+          child: Text(
+            label.toUpperCase(),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: fontDisplay,
+              fontSize: 9,
+              letterSpacing: 1.5,
+              color: selected ? parchmentLight : parchmentMuted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

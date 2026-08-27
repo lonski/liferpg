@@ -159,6 +159,33 @@ class _NewChangeRequestScreenState
                                     width: double.infinity,
                                     child: ElevatedButton(
                                       key: const Key('submit-request'),
+                                      // Left as an ElevatedButton (rather than
+                                      // the login screen's InkWell) so the
+                                      // disabled state stays a real
+                                      // `onPressed: null`, but restyled: the
+                                      // stock Material surface reads as a
+                                      // foreign widget on the parchment card.
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: crimson,
+                                        foregroundColor: parchmentLight,
+                                        disabledBackgroundColor: crimsonFaint,
+                                        disabledForegroundColor: crimson,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(3),
+                                          side: const BorderSide(
+                                              color: goldGlyph),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 12),
+                                        textStyle: const TextStyle(
+                                          fontFamily: fontDisplay,
+                                          fontSize: 10,
+                                          letterSpacing: 2,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
                                       onPressed: canSubmit
                                           ? () => _submit(selected, user)
                                           : null,
