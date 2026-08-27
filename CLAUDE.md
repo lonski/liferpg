@@ -45,12 +45,14 @@ traits: [{ name: string, value: string }]  (optional)
 
 - Characters are linked to users via `email`.
 - Admin users see **all** characters and can edit any; `readOnlyOthers` users see all characters but cannot edit any; regular users see only their own.
+- **This split is enforced server-side in `firestore.rules`, not just by the client query.** `/characters` reads require `isAdmin() || isReadOnlyOthers() || resource.data.email == request.auth.token.email`; writes require `isAdmin()`. A regular user's unconstrained collection query is therefore *rejected* by Firestore — the client must keep issuing `where('email', isEqualTo: <own email>)` (see `lib/data/character_repository.dart`), otherwise the home screen breaks with PERMISSION_DENIED.
+- **Case-sensitivity caveat (measured, not theoretical):** Firestore string comparison is case-sensitive. A character document whose `email` differs in case from the owner's Google auth email (e.g. `Ala@Example.com` vs `ala@example.com`) is **denied** to that owner — a direct `get` fails and their own-email query returns zero documents, so the character is invisible to them. Admins and `readOnlyOthers` users still see it. The rule deliberately does **not** lowercase-normalise; the data must be cleaned instead.
 
 ## Key Behaviors
 
 - **Auth**: auth state is driven by `firebaseAuthProvider`; unauthenticated users are routed to the login screen.
 - **Admin**: `user.admin === true` unlocks the edit button on each character card and shows all characters.
-- **ReadOnlyOthers**: `user.readOnlyOthers === true` allows viewing all characters but cannot edit any.
+- **ReadOnlyOthers**: `user.readOnlyOthers === true` allows viewing all characters but cannot edit any. Both roles are resolved in the rules by a `get()` on the caller's own `users/{uid}` document, so every signed-in user needs that document to exist.
 - **Favour**: integer; rendered as mood emoji (< -1 = very unhappy, -1 = unhappy, 0 = neutral, > 0 = happy).
 - **Currency**: `gold` = PLN (złoty), `gold_usd` = USD. Both displayed as chips if present.
 - **XP badge**: tapping the XP progress bar toggles a chip showing XP remaining to next level.
