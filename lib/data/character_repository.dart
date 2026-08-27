@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/app_user.dart';
 import '../models/character.dart';
@@ -34,8 +35,17 @@ class CharacterRepository {
 
     return query.snapshots(includeMetadataChanges: true).map(
           (snap) => CharacterFeed(
-            characters:
-                snap.docs.map((d) => Character.fromMap(d.id, d.data())).toList(),
+            characters: snap.docs
+                .map((d) {
+                  try {
+                    return Character.fromMap(d.id, d.data());
+                  } catch (e) {
+                    debugPrint('Skipping malformed character ${d.id}: $e');
+                    return null;
+                  }
+                })
+                .whereType<Character>()
+                .toList(),
             isFromCache: snap.metadata.isFromCache,
             hasPendingWrites: snap.metadata.hasPendingWrites,
           ),
