@@ -70,6 +70,18 @@ const RadialGradient cardGradient = RadialGradient(
 const String fontDisplay = 'Cinzel';
 const String fontBody = 'LibreBaskerville';
 
+// Shared text roles.
+
+// .traitsDividerLabel -- the "Cechy" divider heading, on both the character
+// card and the edit screen. Deliberately smaller and wider-tracked than the
+// stat/field labels around it.
+const TextStyle traitsDividerLabel = TextStyle(
+  fontFamily: fontDisplay,
+  fontSize: 8,
+  letterSpacing: 3,
+  color: crimson,
+);
+
 ThemeData buildAppTheme() {
   final base = ThemeData(brightness: Brightness.light, useMaterial3: true);
   return base.copyWith(

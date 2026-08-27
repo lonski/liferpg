@@ -10,6 +10,18 @@ import '../users/user_management_screen.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
+  // Awaited rather than fired and forgotten: a failing sign-out used to
+  // vanish into an unhandled async error with no feedback at all.
+  static Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(authRepositoryProvider).signOut();
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Wylogowanie nieudane: $error')));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(appUserProvider).value;
@@ -85,7 +97,7 @@ class HomeScreen extends ConsumerWidget {
               constraints: const BoxConstraints(),
               color: parchmentMuted,
               icon: const Icon(Icons.logout),
-              onPressed: () => ref.read(authRepositoryProvider).signOut(),
+              onPressed: () => _signOut(context, ref),
             ),
           ),
           const SizedBox(width: 4),

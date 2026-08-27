@@ -75,4 +75,17 @@ void main() {
     );
     expect(find.byKey(const Key('edit-character')), findsOneWidget);
   });
+
+  // T3: kShowFavour is a compile-time constant that is false under
+  // `flutter test`, so the glyph is never rendered and the mapping can only
+  // be covered by calling it directly. Swapping the `< -1` and `== -1`
+  // branches would otherwise go unnoticed.
+  test('favourEmoji maps every threshold', () {
+    expect(favourEmoji(-5), '😠');
+    expect(favourEmoji(-2), '😠');
+    expect(favourEmoji(-1), '😕');
+    expect(favourEmoji(0), '😐');
+    expect(favourEmoji(1), '😊');
+    expect(favourEmoji(9), '😊');
+  });
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/auth_repository.dart';
 import '../data/firebase_providers.dart';
+import '../data/user_repository.dart';
 import '../models/app_user.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) => AuthRepository(
@@ -19,10 +20,5 @@ final authStateProvider = StreamProvider<User?>(
 final appUserProvider = StreamProvider<AppUser?>((ref) {
   final authUser = ref.watch(authStateProvider).value;
   if (authUser == null) return Stream<AppUser?>.value(null);
-  return ref
-      .watch(firestoreProvider)
-      .collection('users')
-      .doc(authUser.uid)
-      .snapshots()
-      .map((doc) => doc.exists ? AppUser.fromMap(doc.id, doc.data()!) : null);
+  return ref.watch(userRepositoryProvider).watchUser(authUser.uid);
 });

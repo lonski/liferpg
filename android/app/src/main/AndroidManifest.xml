@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Firestore and Google Sign-In both need this. Release builds only
+         inherited it from firebase-firestore's AAR via manifest merging;
+         declare it explicitly so it does not depend on a transitive dep. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="liferpg"
         android:name="${applicationName}"
