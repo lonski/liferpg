@@ -244,6 +244,7 @@ class _XpSection extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             onTap: onToggle,
             child: Container(
+              width: double.infinity,
               height: 8,
               decoration: BoxDecoration(
                 color: crimsonFaint,
@@ -255,6 +256,7 @@ class _XpSection extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 widthFactor: character.xpFraction,
                 child: const DecoratedBox(
+                  key: Key('xp-fill'),
                   decoration: BoxDecoration(gradient: xpGradient),
                 ),
               ),
