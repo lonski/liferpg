@@ -121,9 +121,10 @@ The UI is in **Polish**. Labels (Poziom, Złoto, XP, Przychylność, etc.) are v
 - `.github/workflows/android-pr.yml` — analyze, test, debug APK as an artifact.
 - `.github/workflows/android-release.yml` — triggered by pushing a tag
   matching `v*` (e.g. `git tag v1.0.0+1 && git push origin v1.0.0+1`), not by
-  pushing to `master`. Builds a signed release APK, publishes it as a GitHub
-  Release under the pushed tag, then distributes it to Firebase App
-  Distribution testers.
+  pushing to `master`. Builds a signed release APK and publishes it as a
+  GitHub Release under the pushed tag. Firebase App Distribution is
+  temporarily removed (service account was returning 403 on upload); re-add
+  it once that's fixed.
 
 ## Build gotchas (hard-won — read before debugging a build failure)
 

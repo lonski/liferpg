@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  build_and_distribute:
+  build_and_release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -82,18 +82,8 @@ jobs:
           flutter build apk --release
           --dart-define=GOOGLE_SERVER_CLIENT_ID=$GOOGLE_SERVER_CLIENT_ID
 
-      # Runs before Firebase distribution so a Firebase upload failure
-      # doesn't prevent the release from being published. tag_name/name
-      # default to the pushed tag (github.ref_name).
+      # tag_name/name default to the pushed tag (github.ref_name).
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Distribute to testers
-        uses: wzieba/Firebase-Distribution-Github-Action@v1
-        with:
-          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
-          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LIFERPG_F3BAB }}
-          groups: testers
-          file: build/app/outputs/flutter-apk/app-release.apk
