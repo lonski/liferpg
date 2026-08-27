@@ -9,7 +9,7 @@ import '../../theme/ornaments.dart';
 
 const TextStyle _fieldLabel = TextStyle(
   fontFamily: fontDisplay,
-  fontSize: 9,
+  fontSize: 12,
   letterSpacing: 2,
   color: crimson,
 );
