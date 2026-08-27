@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_user.dart';
@@ -18,18 +19,31 @@ class UserRepository {
 
   final FirebaseFirestore _db;
 
-  Stream<List<AppUser>> watchUsers() => _db
-      .collection('users')
-      .snapshots()
-      .map((snap) =>
-          snap.docs.map((d) => AppUser.fromMap(d.id, d.data())).toList());
+  Stream<List<AppUser>> watchUsers() => _db.collection('users').snapshots().map(
+        (snap) => snap.docs
+            .map((d) {
+              try {
+                return AppUser.fromMap(d.id, d.data());
+              } catch (e) {
+                debugPrint('Skipping malformed user ${d.id}: $e');
+                return null;
+              }
+            })
+            .whereType<AppUser>()
+            .toList(),
+      );
 
   /// The single users/{uid} document, live. A missing document yields null.
-  Stream<AppUser?> watchUser(String uid) => _db
-      .collection('users')
-      .doc(uid)
-      .snapshots()
-      .map((doc) => doc.exists ? AppUser.fromMap(doc.id, doc.data()!) : null);
+  Stream<AppUser?> watchUser(String uid) =>
+      _db.collection('users').doc(uid).snapshots().map((doc) {
+        if (!doc.exists) return null;
+        try {
+          return AppUser.fromMap(doc.id, doc.data()!);
+        } catch (e) {
+          debugPrint('Skipping malformed user ${doc.id}: $e');
+          return null;
+        }
+      });
 
   Future<void> updateUserFlags(String uid, Map<String, Object?> flags) =>
       _db.collection('users').doc(uid).update(flags);

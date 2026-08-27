@@ -13,12 +13,24 @@ class AppUser {
   final bool admin;
   final bool readOnlyOthers;
 
+  /// The live Firestore database was populated by a React web app that wrote
+  /// booleans and strings interchangeably, so this coerces whatever type
+  /// actually landed there rather than trusting the schema.
+  static bool _asBool(Object? v) {
+    if (v is bool) return v;
+    if (v is String) return v.toLowerCase() == 'true';
+    if (v is num) return v != 0;
+    return false;
+  }
+
+  static String? _asString(Object? v) => v is String ? v : v?.toString();
+
   factory AppUser.fromMap(String uid, Map<String, dynamic> data) => AppUser(
         uid: uid,
-        name: data['name'] as String? ?? '',
-        email: data['email'] as String? ?? '',
-        admin: data['admin'] as bool? ?? false,
-        readOnlyOthers: data['readOnlyOthers'] as bool? ?? false,
+        name: _asString(data['name']) ?? '',
+        email: _asString(data['email']) ?? '',
+        admin: _asBool(data['admin']),
+        readOnlyOthers: _asBool(data['readOnlyOthers']),
       );
 
   /// Admins and readOnlyOthers users see the whole roster; everyone else sees

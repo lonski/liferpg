@@ -86,7 +86,11 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                       style: TextStyle(
                         fontFamily: fontDisplay,
                         fontSize: 12,
-                        color: crimson,
+                        // Drawn directly on the dark scaffold (bgDark), not a
+                        // parchment surface, so it needs a light ink -- see
+                        // CLAUDE.md contrast notes. Matches the error-state
+                        // text above.
+                        color: parchmentLight,
                       ),
                     ),
                   )
@@ -214,8 +218,12 @@ class _LabelledSwitch extends StatelessWidget {
           Switch(
             key: switchKey,
             value: value,
-            activeThumbColor: crimsonBright,
-            activeTrackColor: crimsonBright,
+            // Colours come from the app-wide SwitchThemeData in
+            // buildAppTheme() -- see the comment there for the on/off/
+            // disabled contrast rationale. Do not reintroduce
+            // activeThumbColor/activeTrackColor here: setting both to the
+            // same colour is exactly the bug that shipped (thumb invisible
+            // inside the track).
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             onChanged: onChanged,
           ),
@@ -227,7 +235,13 @@ class _LabelledSwitch extends StatelessWidget {
                 fontFamily: fontDisplay,
                 fontSize: 9,
                 letterSpacing: 2,
-                color: crimson,
+                // This row sits directly on the dark scaffold (bgDark), not
+                // the parchment surface `crimson` was designed for in the
+                // React dialog -- crimson-on-bgDark is ~1.6:1 contrast,
+                // effectively invisible. parchmentMuted matches the muted
+                // tone used for other controls/icons on this background
+                // (e.g. the AppBar iconTheme) and clears WCAG AA.
+                color: parchmentMuted,
               ),
             ),
           ),

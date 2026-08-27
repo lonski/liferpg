@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/data/firebase_providers.dart';
 import 'package:liferpg/features/users/user_management_screen.dart';
+import 'package:liferpg/theme/app_theme.dart';
 
 Future<FakeFirebaseFirestore> seed() async {
   final db = FakeFirebaseFirestore();
@@ -89,6 +90,44 @@ void main() {
     expect(find.text('Bez nazwy'), findsOneWidget);
   });
 
+  // This screen's whole body sits directly on the dark scaffold (bgDark),
+  // not the parchment dialog the React source's crimson labels were designed
+  // for. Regression for the switch labels rendering as dark crimson-on-dark
+  // (~1.6:1 contrast, effectively invisible on a real phone) -- fails if
+  // someone reintroduces `crimson` (or any other dark-ink token) here.
+  testWidgets('the ADMIN/TYLKO DO ODCZYTU switch labels use a light colour',
+      (tester) async {
+    await pumpScreen(tester, await seed());
+
+    final darkInkColors = <Color>{crimson, inkDark, inkHeading, traitNameInk};
+    final lightParchmentColors = <Color>{
+      parchmentLight,
+      parchmentMuted,
+      parchmentFaint,
+      parchmentSoft,
+      parchmentMedium,
+      parchmentGhost,
+      gold,
+    };
+
+    for (final label in ['ADMIN', 'TYLKO DO ODCZYTU']) {
+      final finder = find.text(label);
+      expect(finder, findsWidgets, reason: 'label "$label" not found');
+      for (final element in finder.evaluate()) {
+        final widget = element.widget as Text;
+        final color = widget.style?.color;
+        expect(color, isNotNull, reason: '"$label" has no explicit color');
+        expect(darkInkColors.contains(color), isFalse,
+            reason: '"$label" is drawn in a dark ink colour ($color) on the '
+                'dark scaffold background -- it would be unreadable on a '
+                'real phone.');
+        expect(lightParchmentColors.contains(color), isTrue,
+            reason: '"$label" uses an unexpected colour ($color); expected '
+                'one of the light parchment/gold tokens.');
+      }
+    }
+  });
+
   // I8: the two labelled switches used to sit in ListTile.trailing, roughly
   // 290dp of fixed-width content on a 360dp phone. The suite's default
   // 800x600 surface hid it; at a real phone size the RenderFlex overflow
@@ -103,5 +142,26 @@ void main() {
     expect(find.byKey(const Key('admin-u2')), findsOneWidget);
     expect(find.byKey(const Key('readonly-u2')), findsOneWidget);
     expect(find.text('bob@example.com'), findsOneWidget);
+  });
+
+  // Regression for the bug that shipped: activeThumbColor and
+  // activeTrackColor were both set to crimsonBright, so an ON switch
+  // rendered as a solid crimson pill with the thumb invisible inside it.
+  // The styling now lives in SwitchThemeData (buildAppTheme), so resolve
+  // it for the ON (selected, enabled) state and assert thumb and track
+  // are different colours -- if they ever collide again, this fails.
+  test('the ON switch thumb and track colours are different', () {
+    final switchTheme = buildAppTheme().switchTheme;
+    const onStates = <WidgetState>{WidgetState.selected};
+
+    final thumb = switchTheme.thumbColor?.resolve(onStates);
+    final track = switchTheme.trackColor?.resolve(onStates);
+
+    expect(thumb, isNotNull);
+    expect(track, isNotNull);
+    expect(thumb, isNot(equals(track)),
+        reason: 'ON thumb and track resolved to the same colour ($thumb) -- '
+            'the thumb would be invisible inside the track, exactly like '
+            'the reported bug.');
   });
 }
