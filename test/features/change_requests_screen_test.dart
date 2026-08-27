@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/data/firebase_providers.dart';
+import 'package:liferpg/features/requests/change_request_form.dart';
 import 'package:liferpg/features/requests/change_requests_screen.dart';
+import 'package:liferpg/theme/app_theme.dart';
 
 late String characterId;
 late String requestId;
@@ -140,6 +142,23 @@ void main() {
         (await db.collection('change_requests').doc(requestId).get()).data()!;
     expect(request['changes'], {'current_xp': 50});
     expect(request['appliedChanges'], {'current_xp': 20});
+  });
+
+  // buildAppTheme() is a LIGHT ThemeData (bodyColor inkDark, onSurface
+  // inkDark), so a Material surface painted bgDark inherits near-black text.
+  // ChangeRequestForm is a parchment-card widget — crimson labels, dark ink —
+  // and on a dark dialog every one of its colours was invisible. Pin the
+  // surface it renders on.
+  testWidgets('the edit dialog renders the form on a parchment surface',
+      (tester) async {
+    await pumpScreen(tester, await seed());
+
+    await tester.tap(find.byKey(Key('edit-$requestId')));
+    await tester.pumpAndSettle();
+
+    final dialog = tester.widget<AlertDialog>(find.byType(AlertDialog));
+    expect(dialog.backgroundColor, parchment);
+    expect(find.byType(ChangeRequestForm), findsOneWidget);
   });
 
   // The filter row is built from Containers rather than Material's FilterChip,

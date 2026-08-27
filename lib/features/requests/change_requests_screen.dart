@@ -10,6 +10,13 @@ import 'change_request_form.dart';
 
 String _signed(num v) => v > 0 ? '+$v' : '$v';
 
+const TextStyle _dialogAction = TextStyle(
+  fontFamily: fontDisplay,
+  fontSize: 10,
+  fontWeight: FontWeight.w700,
+  letterSpacing: 2,
+);
+
 /// Plain interpolation and zero-padding, deliberately — no `intl` dependency.
 String _formatTimestamp(DateTime t) {
   String pad(int n) => n.toString().padLeft(2, '0');
@@ -49,10 +56,31 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
     var edited = request.changes;
     final confirmed = await showDialog<bool>(
       context: context,
+      // Parchment, not bgDark. ChangeRequestForm is a parchment-card widget:
+      // its labels are `crimson` and its inputs inherit the app theme's
+      // `inkDark` body colour, both of which are near-invisible on a dark
+      // surface (buildAppTheme is a LIGHT ThemeData -- the same trap the
+      // user-management scaffold and the switch colours hit before). Putting
+      // the dialog on parchment makes those colours correct rather than
+      // duplicating a second palette, and it matches how the same form
+      // renders inside the requester's card.
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: bgDark,
-        title: const Text('Edytuj prośbę',
-            style: TextStyle(color: parchmentLight)),
+        backgroundColor: parchment,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+          side: const BorderSide(color: crimson, width: 2),
+        ),
+        title: Text(
+          'Edytuj prośbę'.toUpperCase(),
+          style: const TextStyle(
+            fontFamily: fontDisplay,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 2,
+            color: inkHeading,
+          ),
+        ),
         content: SingleChildScrollView(
           child: ChangeRequestForm(
             initial: request.changes,
@@ -63,12 +91,23 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Anuluj'),
+            style: TextButton.styleFrom(foregroundColor: crimson),
+            child: Text('Anuluj'.toUpperCase(), style: _dialogAction),
           ),
           TextButton(
             key: const Key('confirm-edit'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Zaakceptuj'),
+            style: TextButton.styleFrom(
+              backgroundColor: crimson,
+              foregroundColor: parchmentLight,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(3),
+                side: const BorderSide(color: goldGlyph),
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+            child: Text('Zaakceptuj'.toUpperCase(), style: _dialogAction),
           ),
         ],
       ),
