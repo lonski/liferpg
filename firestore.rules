@@ -30,7 +30,7 @@ service cloud.firestore {
 
     match /characters/{characterId} {
       allow read: if isAdmin() || isReadOnlyOthers()
-                     || (isAuthenticated() && resource.data.email == request.auth.token.email);
+                     || (isAuthenticated() && resource.data.email.lower() == request.auth.token.email.lower());
       allow write: if isAdmin();
     }
   }

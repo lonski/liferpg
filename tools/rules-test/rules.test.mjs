@@ -125,19 +125,25 @@ async function seedCharacters() {
     await setDoc(doc(db, 'characters/c-alice'), { name: 'Alicja', email: ALICE.email, level: 3 });
     await setDoc(doc(db, 'characters/c-bob'), { name: 'Bob', email: BOB.email, level: 5 });
     await setDoc(doc(db, 'characters/c-casey'), { name: 'Casey', email: 'Casey@Example.com', level: 1 });
+    // Deliberately has NO `email` field at all, to measure what `.lower()`
+    // does against a missing/undefined value.
+    await setDoc(doc(db, 'characters/c-noemail'), { name: 'NoEmail', level: 1 });
   });
 }
 
 test('an admin may run the unconstrained roster query', async () => {
   const db = ctxFor(ADMIN);
   const snap = await assertSucceeds(getDocs(collection(db, 'characters')));
-  assert.deepEqual(snap.docs.map((d) => d.id).sort(), ['c-alice', 'c-bob', 'c-casey']);
+  assert.deepEqual(
+    snap.docs.map((d) => d.id).sort(),
+    ['c-alice', 'c-bob', 'c-casey', 'c-noemail']
+  );
 });
 
 test('a readOnlyOthers user may run the unconstrained roster query', async () => {
   const db = ctxFor(RO);
   const snap = await assertSucceeds(getDocs(collection(db, 'characters')));
-  assert.equal(snap.size, 3);
+  assert.equal(snap.size, 4);
 });
 
 test('a regular user may query their own characters by email', async () => {
@@ -185,21 +191,54 @@ test('an admin may write any character', async () => {
   await assertSucceeds(setDoc(doc(db, 'characters/c-bob'), { level: 6 }, { merge: true }));
 });
 
-// THE LOCKOUT CASE. Firestore string comparison is case-sensitive, so a
-// character stored as 'Casey@Example.com' does NOT match an auth token email
-// of 'casey@example.com'. Measured behaviour, deliberately NOT worked around
-// in the rule: such a character becomes invisible to its own owner.
-test('LOCKOUT: a case-mismatched character is DENIED to its owner (get)', async () => {
+// THE FORMER LOCKOUT CASE. The rule now compares `.lower()` of both sides,
+// so a character stored as 'Casey@Example.com' DOES match an auth token
+// email of 'casey@example.com' at the rule-evaluation level: a direct get
+// is allowed.
+test('FIXED: a case-mismatched character is now allowed to its owner (get)', async () => {
   const db = ctxFor(CASEY);
-  await assertFails(getDoc(doc(db, 'characters/c-casey')));
+  await assertSucceeds(getDoc(doc(db, 'characters/c-casey')));
 });
 
-test('LOCKOUT: the owner\'s own-email query returns the case-mismatched character not at all', async () => {
+// MEASURED AND STILL BROKEN AT THE QUERY LEVEL. The rule change only affects
+// rule evaluation; it cannot change how Firestore's server-side index
+// compares values for a `where('email','==', ...)` filter, and that
+// comparison is exact-string / case-sensitive. So the owner's own-email
+// query (the one the app actually issues from
+// lib/data/character_repository.dart) still returns zero results for a
+// differently-cased character document, even though the rule would now
+// permit reading it directly. The rule fix alone does NOT make this
+// character appear in the owner's roster in the app; the document's stored
+// `email` value itself must be corrected to match the owner's login email.
+test("STILL BROKEN: the owner's own-email query still returns the case-mismatched character not at all", async () => {
   const db = ctxFor(CASEY);
-  // The query itself is permitted (it is constrained to the caller's own
-  // email), but it matches nothing: the document's email has different case.
   const snap = await assertSucceeds(
     getDocs(query(collection(db, 'characters'), where('email', '==', CASEY.email)))
   );
-  assert.equal(snap.size, 0, 'the owner sees an EMPTY roster, not their character');
+  assert.equal(snap.size, 0, 'the owner still sees an EMPTY roster from this query, not their character');
+});
+
+// --- missing `email` field --------------------------------------------------
+//
+// `.lower()` is called on `resource.data.email` in the rule. If that field
+// is absent, `resource.data.email` is undefined, and calling `.lower()` on
+// it is expected to be an evaluation error. In Firestore security rules, an
+// error during evaluation of an `allow` condition denies the request — but
+// this is measured here, not assumed, and separately for each of the three
+// clauses in the `||` chain (admin / readOnlyOthers / own-email) so that
+// short-circuit evaluation is also confirmed rather than assumed.
+
+test('an admin may getDoc a character document with no email field at all', async () => {
+  const db = ctxFor(ADMIN);
+  await assertSucceeds(getDoc(doc(db, 'characters/c-noemail')));
+});
+
+test('a readOnlyOthers user may getDoc a character document with no email field at all', async () => {
+  const db = ctxFor(RO);
+  await assertSucceeds(getDoc(doc(db, 'characters/c-noemail')));
+});
+
+test('a regular user is DENIED getDoc on a character document with no email field at all', async () => {
+  const db = ctxFor(ALICE);
+  await assertFails(getDoc(doc(db, 'characters/c-noemail')));
 });
