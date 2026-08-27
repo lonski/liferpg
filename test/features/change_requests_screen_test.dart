@@ -141,4 +141,53 @@ void main() {
     expect(request['changes'], {'current_xp': 50});
     expect(request['appliedChanges'], {'current_xp': 20});
   });
+
+  // The filter row is built from Containers rather than Material's FilterChip,
+  // whose light-scheme surface read as a foreign widget on the dark scaffold.
+  // These pin the behaviour that styling has to keep working.
+  testWidgets('switching the filter shows requests of that status',
+      (tester) async {
+    final db = await seed();
+    final decided = await db.collection('change_requests').add({
+      'characterId': characterId,
+      'characterName': 'Thrall',
+      'requesterUid': 'u2',
+      'requesterEmail': 'bob@example.com',
+      'status': 'rejected',
+      'changes': {'gold': 5},
+    });
+    await pumpScreen(tester, db);
+
+    // The pending tab is the default: the rejected request is not on it.
+    expect(find.byKey(Key('request-$requestId')), findsOneWidget);
+    expect(find.byKey(Key('request-${decided.id}')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('filter-rejected')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(Key('request-${decided.id}')), findsOneWidget);
+    expect(find.byKey(Key('request-$requestId')), findsNothing);
+  });
+
+  testWidgets('a decided request offers no accept/reject/edit actions',
+      (tester) async {
+    final db = await seed();
+    final decided = await db.collection('change_requests').add({
+      'characterId': characterId,
+      'characterName': 'Thrall',
+      'requesterUid': 'u2',
+      'requesterEmail': 'bob@example.com',
+      'status': 'rejected',
+      'changes': {'gold': 5},
+    });
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(const Key('filter-rejected')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(Key('request-${decided.id}')), findsOneWidget);
+    expect(find.byKey(Key('accept-${decided.id}')), findsNothing);
+    expect(find.byKey(Key('reject-${decided.id}')), findsNothing);
+    expect(find.byKey(Key('edit-${decided.id}')), findsNothing);
+  });
 }
