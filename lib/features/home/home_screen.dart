@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/character.dart';
 import '../../providers/auth_providers.dart';
+import '../../providers/change_request_providers.dart';
 import '../../providers/character_providers.dart';
 import '../../theme/app_theme.dart';
 import '../character/character_card.dart';
@@ -29,6 +30,8 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(appUserProvider).value;
     final feed = ref.watch(charactersProvider);
+    final pendingCount =
+        ref.watch(pendingChangeRequestsProvider).value?.length ?? 0;
 
     // An admin viewing the whole roster still only posts requests for their
     // own characters, so this counts by email rather than by roster size.
@@ -78,18 +81,25 @@ class HomeScreen extends ConsumerWidget {
                   border: Border.all(color: goldBorder),
                   borderRadius: BorderRadius.circular(3),
                 ),
-                child: IconButton(
-                  key: const Key('open-change-requests'),
-                  tooltip: 'Prośby o zmiany',
-                  iconSize: 18,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  constraints: const BoxConstraints(),
-                  color: parchmentMuted,
-                  icon: const Icon(Icons.inbox),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const ChangeRequestsScreen(),
+                child: Badge(
+                  key: const Key('pending-requests-badge'),
+                  backgroundColor: crimson,
+                  textColor: parchmentLight,
+                  label: Text('$pendingCount'),
+                  isLabelVisible: pendingCount > 0,
+                  child: IconButton(
+                    key: const Key('open-change-requests'),
+                    tooltip: 'Prośby o zmiany',
+                    iconSize: 18,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 4),
+                    constraints: const BoxConstraints(),
+                    color: parchmentMuted,
+                    icon: const Icon(Icons.inbox),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const ChangeRequestsScreen(),
+                      ),
                     ),
                   ),
                 ),
