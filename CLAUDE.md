@@ -79,6 +79,13 @@ decidedBy, decidedAt: written on accept/reject
 - `ChangeRequestRepository` sorts newest-first **client-side** rather than with
   `orderBy`. This is deliberate: a request whose server timestamp has not
   landed yet has a null `createdAt` and an `orderBy` query would drop it.
+- Applying a delta `.toInt()`s the resulting `current_xp` (XP is always
+  whole), while `gold` and `gold_usd` stay `num` so a fractional delta is
+  preserved. A non-numeric legacy value on the character (e.g. a stringly
+  `gold` field from the React era) is coerced to `0` before the delta is
+  added, per the same tolerant-parsing philosophy as `Character.fromMap` —
+  so a badly-typed legacy field silently absorbs the delta into a fresh
+  value rather than the transaction erroring.
 
 ## Key Behaviors
 
