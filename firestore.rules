@@ -33,5 +33,31 @@ service cloud.firestore {
                      || (isAuthenticated() && resource.data.email.lower() == request.auth.token.email.lower());
       allow write: if isAdmin();
     }
+
+    match /change_requests/{requestId} {
+      // A non-admin's read is only granted for their own requests, so the
+      // client must keep issuing where('requesterUid', isEqualTo: <own uid>)
+      // -- an unconstrained collection query is rejected outright, exactly as
+      // it is for /characters.
+      allow read: if isAdmin()
+                     || (isAuthenticated()
+                         && resource.data.requesterUid == request.auth.uid);
+
+      // A request must be posted in your own name, against your own
+      // character, and as pending: the decision fields are the admin's to
+      // write, never the requester's.
+      allow create: if isAuthenticated()
+                    && request.resource.data.requesterUid == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && !('decidedBy' in request.resource.data)
+                    && !('decidedAt' in request.resource.data)
+                    && !('appliedChanges' in request.resource.data)
+                    && get(/databases/$(database)/documents/characters/$(request.resource.data.characterId))
+                         .data.email.lower() == request.auth.token.email.lower();
+
+      // Accepting also writes /characters/{id}, which is already admin-only,
+      // so the whole apply path runs as an admin.
+      allow update, delete: if isAdmin();
+    }
   }
 }
