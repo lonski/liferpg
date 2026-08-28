@@ -472,7 +472,7 @@ git commit -m "feat: add UpdateInstallerService and its plugin-backed implementa
 
 **Interfaces:**
 - Consumes: `UpdateRepository` (Task 3), `UpdateInstallerService` (Task 4), `UpdateInfo` (Task 2).
-- Produces: `updateHttpClientProvider` (`Provider<http.Client>`), `updateInstallerServiceProvider` (`Provider<UpdateInstallerService>`, throws `UnimplementedError` unless overridden — mirrors `changeRequestNotificationServiceProvider`), `updateRepositoryProvider` (`FutureProvider<UpdateRepository>`), `updateCheckProvider` (`FutureProvider<UpdateInfo?>`).
+- Produces: `updateHttpClientProvider` (`Provider<http.Client>`), `updateTempDirectoryProvider` (`Provider<Future<Directory> Function()>`, defaults to `path_provider`'s `getTemporaryDirectory`), `updateInstallerServiceProvider` (`Provider<UpdateInstallerService>`, throws `UnimplementedError` unless overridden — mirrors `changeRequestNotificationServiceProvider`), `updateRepositoryProvider` (`FutureProvider<UpdateRepository>`), `updateCheckProvider` (`FutureProvider<UpdateInfo?>`).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -553,9 +553,12 @@ Expected: FAIL — `lib/providers/update_providers.dart` doesn't exist yet.
 
 ```dart
 // lib/providers/update_providers.dart
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../data/update_installer_service.dart';
 import '../data/update_repository.dart';
@@ -563,6 +566,13 @@ import '../models/update_info.dart';
 
 final updateHttpClientProvider =
     Provider<http.Client>((ref) => http.Client());
+
+/// A seam around `path_provider`'s `getTemporaryDirectory()` so tests can
+/// override it instead of hitting a real platform channel (there is no
+/// platform channel in `flutter_test`, and unlike `package_info_plus` this
+/// plugin has no built-in test-mode fallback).
+final updateTempDirectoryProvider =
+    Provider<Future<Directory> Function()>((ref) => getTemporaryDirectory);
 
 /// Overridden in `main()` with a real, plugin-backed implementation.
 final updateInstallerServiceProvider = Provider<UpdateInstallerService>((ref) {
@@ -608,7 +618,7 @@ git commit -m "feat: add update-check providers"
 - Test: `test/providers/update_download_controller_test.dart`
 
 **Interfaces:**
-- Consumes: `updateHttpClientProvider`, `updateInstallerServiceProvider` (Task 5), `UpdateInfo` (Task 2), `UpdateInstallerService` (Task 4).
+- Consumes: `updateHttpClientProvider`, `updateTempDirectoryProvider`, `updateInstallerServiceProvider` (Task 5), `UpdateInfo` (Task 2), `UpdateInstallerService` (Task 4).
 - Produces: sealed `UpdateDownloadState` (`UpdateDownloadIdle`, `UpdateDownloadNeedsPermission`, `UpdateDownloadInProgress(int received, int? total)`, `UpdateDownloadInstalling`, `UpdateDownloadInstallerLaunched`, `UpdateDownloadFailed(String message)`); `UpdateDownloadController extends Notifier<UpdateDownloadState>` with `start(UpdateInfo)`, `retryAfterSettings(UpdateInfo)`, `openSettings()`, `retryDownload(UpdateInfo)`; `updateDownloadControllerProvider` (`NotifierProvider<UpdateDownloadController, UpdateDownloadState>`).
 
 - [ ] **Step 1: Write the failing tests**
@@ -661,6 +671,10 @@ ProviderContainer _containerWith({
   final container = ProviderContainer(overrides: [
     updateInstallerServiceProvider.overrideWithValue(installer),
     updateHttpClientProvider.overrideWithValue(client),
+    // getTemporaryDirectory() has no platform channel in flutter_test.
+    updateTempDirectoryProvider.overrideWithValue(
+      () async => Directory.systemTemp,
+    ),
   ]);
   addTearDown(container.dispose);
   return container;
@@ -779,7 +793,6 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 
 import '../models/update_info.dart';
 import 'update_providers.dart';
@@ -857,7 +870,8 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
         return;
       }
 
-      final dir = await getTemporaryDirectory();
+      final getTempDir = ref.read(updateTempDirectoryProvider);
+      final dir = await getTempDir();
       final file = File('${dir.path}/update.apk');
       final sink = file.openWrite();
       var received = 0;
@@ -908,7 +922,7 @@ git commit -m "feat: add UpdateDownloadController"
 - Test: `test/features/update_dialog_test.dart`
 
 **Interfaces:**
-- Consumes: `UpdateInfo` (Task 2), `updateDownloadControllerProvider` + `UpdateDownloadState` variants (Task 6), `updateInstallerServiceProvider` + `updateHttpClientProvider` (Task 5), theme constants `parchment`, `crimson`, `fontDisplay`, `inkHeading`, `parchmentLight`, `goldGlyph` and `dialogActionStyle` from `lib/theme/app_theme.dart` / `lib/theme/dialogs.dart`.
+- Consumes: `UpdateInfo` (Task 2), `updateDownloadControllerProvider` + `UpdateDownloadState` variants (Task 6), `updateInstallerServiceProvider` + `updateHttpClientProvider` + `updateTempDirectoryProvider` (Task 5), theme constants `parchment`, `crimson`, `fontDisplay`, `inkHeading`, `parchmentLight`, `goldGlyph` and `dialogActionStyle` from `lib/theme/app_theme.dart` / `lib/theme/dialogs.dart`.
 - Produces: `UpdateDialog` widget and `UpdateDialog.show(BuildContext, UpdateInfo)`, used by Task 8's `HomeScreen` wiring.
 
 - [ ] **Step 1: Write the failing tests**
@@ -965,6 +979,10 @@ Future<void> _pumpDialog(
     overrides: [
       updateInstallerServiceProvider.overrideWithValue(installer),
       updateHttpClientProvider.overrideWithValue(client),
+      // getTemporaryDirectory() has no platform channel in flutter_test.
+      updateTempDirectoryProvider.overrideWithValue(
+        () async => Directory.systemTemp,
+      ),
     ],
     child: MaterialApp(
       home: Scaffold(
