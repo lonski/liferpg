@@ -234,6 +234,49 @@ void main() {
     expect(find.byKey(Key('edit-${decided.id}')), findsNothing);
   });
 
+  testWidgets('a rejected request offers a restore action, not accept/reject',
+      (tester) async {
+    final db = await seed();
+    await db.collection('change_requests').doc(requestId).update({
+      'status': 'rejected',
+      'decidedBy': 'a1',
+    });
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(const Key('filter-rejected')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(Key('request-$requestId')), findsOneWidget);
+    expect(find.byKey(Key('restore-$requestId')), findsOneWidget);
+    expect(find.byKey(Key('accept-$requestId')), findsNothing);
+    expect(find.byKey(Key('reject-$requestId')), findsNothing);
+  });
+
+  testWidgets('restoring a rejected request returns it to the pending tab',
+      (tester) async {
+    final db = await seed();
+    await db.collection('change_requests').doc(requestId).update({
+      'status': 'rejected',
+      'decidedBy': 'a1',
+    });
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(const Key('filter-rejected')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(Key('restore-$requestId')));
+    await tester.pumpAndSettle();
+
+    final request =
+        (await db.collection('change_requests').doc(requestId).get()).data()!;
+    expect(request['status'], 'pending');
+    expect(request.containsKey('decidedBy'), isFalse);
+
+    expect(find.byKey(Key('request-$requestId')), findsNothing);
+    await tester.tap(find.byKey(const Key('filter-pending')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(Key('request-$requestId')), findsOneWidget);
+  });
+
   testWidgets(
       'a decided request card spans the same width as a pending one',
       (tester) async {

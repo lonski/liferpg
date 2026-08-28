@@ -251,6 +251,12 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
                                       _confirmAndReject(request, adminUid),
                                   onEdit: () =>
                                       _editThenAccept(request, adminUid),
+                                  onRestore: () => _decide(
+                                    () => ref
+                                        .read(changeRequestRepositoryProvider)
+                                        .restoreToPending(request),
+                                    'Prośba przywrócona do oczekujących',
+                                  ),
                                 ),
                               ),
                           ],
@@ -269,12 +275,14 @@ class _RequestCard extends StatelessWidget {
     required this.onAccept,
     required this.onReject,
     required this.onEdit,
+    required this.onRestore,
   });
 
   final ChangeRequest request;
   final VoidCallback onAccept;
   final VoidCallback onReject;
   final VoidCallback onEdit;
+  final VoidCallback onRestore;
 
   @override
   Widget build(BuildContext context) {
@@ -371,6 +379,19 @@ class _RequestCard extends StatelessWidget {
                           key: Key('edit-${request.id}'),
                           onPressed: onEdit,
                           child: const Text('Edytuj'),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (request.status == ChangeRequestStatus.rejected) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          key: Key('restore-${request.id}'),
+                          onPressed: onRestore,
+                          child: const Text('Przywróć'),
                         ),
                       ],
                     ),

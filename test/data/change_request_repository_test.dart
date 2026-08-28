@@ -255,4 +255,32 @@ void main() {
         (await db.collection('characters').doc(characterId).get()).data()!;
     expect(character['current_xp'], 40, reason: 'untouched');
   });
+
+  test('restoreToPending flips a rejected request back to pending',
+      () async {
+    final db = FakeFirebaseFirestore();
+    final repo = ChangeRequestRepository(db);
+    final characterId = await seedCharacter(db);
+    await repo.create(_request(characterId: characterId));
+    await repo.reject(await onlyRequest(db), adminUid: 'admin1');
+
+    await repo.restoreToPending(await onlyRequest(db));
+
+    final restored = await onlyRequest(db);
+    expect(restored.status, ChangeRequestStatus.pending);
+    expect(restored.decidedBy, isNull);
+    expect(restored.decidedAt, isNull);
+  });
+
+  test('restoreToPending throws if the request is not rejected', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = ChangeRequestRepository(db);
+    final characterId = await seedCharacter(db);
+    await repo.create(_request(characterId: characterId));
+
+    await expectLater(
+      repo.restoreToPending(await onlyRequest(db)),
+      throwsA(isA<ChangeRequestNotRejected>()),
+    );
+  });
 }

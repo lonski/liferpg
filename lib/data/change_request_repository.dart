@@ -24,6 +24,16 @@ class ChangeRequestCharacterGone implements Exception {
   String toString() => 'Postać już nie istnieje';
 }
 
+/// Thrown when `restoreToPending` finds the request is not currently
+/// rejected -- someone already restored or re-decided it since the admin's
+/// list last refreshed.
+class ChangeRequestNotRejected implements Exception {
+  const ChangeRequestNotRejected();
+
+  @override
+  String toString() => 'Ta prośba nie jest już odrzucona';
+}
+
 class ChangeRequestRepository {
   ChangeRequestRepository(this._db);
 
@@ -145,6 +155,27 @@ class ChangeRequestRepository {
         'status': ChangeRequestStatus.rejected.wire,
         'decidedBy': adminUid,
         'decidedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
+  /// Puts a rejected request back in the queue, as if it had never been
+  /// decided. There is no `decidedBy`/`decidedAt` afterwards -- restoring is
+  /// not itself a decision.
+  Future<void> restoreToPending(ChangeRequest request) async {
+    final requestRef = _requests.doc(request.id);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(requestRef);
+      final data = snap.data();
+      if (data == null ||
+          ChangeRequestStatus.parse(data['status']) !=
+              ChangeRequestStatus.rejected) {
+        throw const ChangeRequestNotRejected();
+      }
+      tx.update(requestRef, {
+        'status': ChangeRequestStatus.pending.wire,
+        'decidedBy': FieldValue.delete(),
+        'decidedAt': FieldValue.delete(),
       });
     });
   }
