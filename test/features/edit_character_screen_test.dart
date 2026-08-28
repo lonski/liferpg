@@ -8,7 +8,6 @@ import 'package:liferpg/features/character/edit_character_screen.dart';
 import 'package:liferpg/models/character.dart';
 
 Future<(FakeFirebaseFirestore, Character)> seed({
-  num goldUsd = 12,
   bool withGold = true,
 }) async {
   final db = FakeFirebaseFirestore();
@@ -19,7 +18,6 @@ Future<(FakeFirebaseFirestore, Character)> seed({
     'current_xp': 40,
     'next_level_xp': 100,
     if (withGold) 'gold': 250,
-    if (withGold) 'gold_usd': goldUsd,
     'favour': 0,
     'traits': [
       {'name': 'Siła', 'value': '18'},
@@ -129,24 +127,6 @@ void main() {
     expect(snap.data()!['level'], 3, reason: 'nothing may be written');
   });
 
-  // I2: gold/gold_usd are `num`, not `int`. Before the fix, int.tryParse
-  // rejected "12.5" and every save was blocked by a validation error on a
-  // field the admin never touched.
-  testWidgets('a fractional gold_usd loads and survives an unchanged save',
-      (tester) async {
-    final (db, character) = await seed(goldUsd: 12.5);
-    await pumpEdit(tester, db, character);
-
-    expect(find.widgetWithText(TextFormField, '12.5'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('save-character')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Podaj liczbę'), findsNothing);
-    final snap = await db.collection('characters').doc(character.id).get();
-    expect(snap.data()!['gold_usd'], 12.5);
-  });
-
   testWidgets('a decimal typed into gold is persisted', (tester) async {
     final (db, character) = await seed();
     await pumpEdit(tester, db, character);
@@ -190,7 +170,6 @@ void main() {
         .data()!;
     expect(data['level'], 7, reason: 'the level the admin did edit must land');
     expect(data['gold'], isNull, reason: 'absent gold must not become 0');
-    expect(data['gold_usd'], isNull);
   });
 
   testWidgets('a save that leaves an absent level empty keeps it absent',

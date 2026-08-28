@@ -14,10 +14,10 @@ const TextStyle _fieldLabel = TextStyle(
   color: crimson,
 );
 
-// `level`, `current_xp` and `next_level_xp` are ints in Firestore; `gold` and
-// `gold_usd` are `num` and legitimately hold decimals in production documents
-// (the React editor wrote `Number(e.target.value)`), so those two must accept
-// "12.5" rather than rejecting the character outright.
+// `level`, `current_xp` and `next_level_xp` are ints in Firestore; `gold` is
+// `num` and legitimately holds decimals in production documents (the React
+// editor wrote `Number(e.target.value)`), so it must accept "12.5" rather
+// than rejecting the character outright.
 String? _validateOptionalInt(String? value) =>
     _validateOptionalNumber(value, decimal: false);
 
@@ -85,7 +85,6 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
     _controllers = {
       'level': TextEditingController(text: c.level?.toString() ?? ''),
       'gold': TextEditingController(text: c.gold?.toString() ?? ''),
-      'gold_usd': TextEditingController(text: c.goldUsd?.toString() ?? ''),
       'current_xp': TextEditingController(text: c.currentXp.toString()),
       'next_level_xp': TextEditingController(text: c.nextLevelXp.toString()),
     };
@@ -108,12 +107,12 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
   // silent no-op) and React wrote `Number('') === 0`.
   int _intOf(String key) => int.tryParse(_controllers[key]!.text.trim()) ?? 0;
 
-  // Nullable fields (`level`, `gold`, `gold_usd`): an empty box is ambiguous,
-  // and the character's original value disambiguates it. If the field was
-  // already absent, we return null — copyWith reads that as "leave unchanged"
-  // and the field stays absent, so a save that never touched gold no longer
-  // invents a `gold: 0` row on the card. If the field did hold a value, the
-  // empty box is a deliberate clear and we write 0.
+  // Nullable fields (`level`, `gold`): an empty box is ambiguous, and the
+  // character's original value disambiguates it. If the field was already
+  // absent, we return null — copyWith reads that as "leave unchanged" and the
+  // field stays absent, so a save that never touched gold no longer invents a
+  // `gold: 0` row on the card. If the field did hold a value, the empty box is
+  // a deliberate clear and we write 0.
   int? _nullableIntOf(String key, int? original) {
     final text = _controllers[key]!.text.trim();
     if (text.isEmpty) return original == null ? null : 0;
@@ -149,7 +148,6 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
       final updated = original.copyWith(
         level: _nullableIntOf('level', original.level),
         gold: _nullableNumOf('gold', original.gold),
-        goldUsd: _nullableNumOf('gold_usd', original.goldUsd),
         currentXp: _intOf('current_xp'),
         nextLevelXp: _intOf('next_level_xp'),
         favour: _favour,
@@ -268,12 +266,6 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                   child:
                                       _numberField('gold', _controllers['gold']!,
                                           decimal: true),
-                                ),
-                                _LabelledField(
-                                  label: 'Dolary',
-                                  child: _numberField(
-                                      'gold_usd', _controllers['gold_usd']!,
-                                      decimal: true),
                                 ),
                                 Row(
                                   mainAxisAlignment:

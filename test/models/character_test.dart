@@ -9,7 +9,6 @@ Map<String, dynamic> raw() => {
       'current_xp': 40,
       'next_level_xp': 100,
       'gold': 250,
-      'gold_usd': 12,
       'favour': -2,
       'traits': [
         {'name': 'Siła', 'value': '18'},
@@ -23,7 +22,6 @@ void main() {
     expect(c.clazz, 'Wojownik');
     expect(c.currentXp, 40);
     expect(c.nextLevelXp, 100);
-    expect(c.goldUsd, 12);
     expect(c.favour, -2);
     expect(c.traits.single.name, 'Siła');
   });
@@ -82,11 +80,6 @@ void main() {
     expect(c.currentXp, 40);
     expect(c.nextLevelXp, 100);
     expect(c.favour, -2);
-  });
-
-  test('gold_usd stored as the String "12.5" parses to 12.5', () {
-    final c = Character.fromMap('abc', {...raw(), 'gold_usd': '12.5'});
-    expect(c.goldUsd, 12.5);
   });
 
   test('a non-numeric String in a numeric field yields the fallback', () {

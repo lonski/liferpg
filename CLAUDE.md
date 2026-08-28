@@ -39,7 +39,7 @@ uid, name, email, authProvider, admin (bool), readOnlyOthers (bool)
 
 **`characters/{id}`**
 ```
-name, clazz, email, level, current_xp, next_level_xp, gold, gold_usd, favour
+name, clazz, email, level, current_xp, next_level_xp, gold, favour
 traits: [{ name: string, value: string }]  (optional)
 ```
 
@@ -53,7 +53,7 @@ traits: [{ name: string, value: string }]  (optional)
 characterId, characterName, requesterUid, requesterEmail
 status: 'pending' | 'accepted' | 'rejected'
 reason (optional), createdAt (server timestamp)
-changes:        { current_xp?, gold?, gold_usd?, traits?: [{name, value}] }
+changes:        { current_xp?, gold?, traits?: [{name, value}] }
 appliedChanges: same shape, written on accept
 decidedBy, decidedAt: written on accept/reject
 ```
@@ -80,8 +80,8 @@ decidedBy, decidedAt: written on accept/reject
   `orderBy`. This is deliberate: a request whose server timestamp has not
   landed yet has a null `createdAt` and an `orderBy` query would drop it.
 - Applying a delta `.toInt()`s the resulting `current_xp` (XP is always
-  whole), while `gold` and `gold_usd` stay `num` so a fractional delta is
-  preserved. A non-numeric legacy value on the character (e.g. a stringly
+  whole), while `gold` stays `num` so a fractional delta is preserved. A
+  non-numeric legacy value on the character (e.g. a stringly
   `gold` field from the React era) is coerced to `0` before the delta is
   added, per the same tolerant-parsing philosophy as `Character.fromMap` —
   so a badly-typed legacy field silently absorbs the delta into a fresh
@@ -93,7 +93,7 @@ decidedBy, decidedAt: written on accept/reject
 - **Admin**: `user.admin === true` unlocks the edit button on each character card and shows all characters.
 - **ReadOnlyOthers**: `user.readOnlyOthers === true` allows viewing all characters but cannot edit any. Both roles are resolved in the rules by a `get()` on the caller's own `users/{uid}` document, so every signed-in user needs that document to exist.
 - **Favour**: integer; rendered as mood emoji (< -1 = very unhappy, -1 = unhappy, 0 = neutral, > 0 = happy).
-- **Currency**: `gold` = PLN (złoty), `gold_usd` = USD. Both displayed as chips if present.
+- **Currency**: `gold` = PLN (złoty), displayed as a chip if present.
 - **XP badge**: tapping the XP progress bar toggles a chip showing XP remaining to next level.
 - **Change requests**: a round `+` FAB on the home screen (shown to any user
   who owns a character) opens a form for requesting XP / gold / trait changes.
@@ -111,8 +111,8 @@ The UI is in **Polish**. Labels (Poziom, Złoto, XP, Przychylność, etc.) are v
   exception is `main()`, which sets Firestore persistence before any `ProviderScope`
   exists and therefore cannot route through a provider.
 - Colours are `const Color(0xAARRGGBB)` literals with alpha baked in.
-- Firestore field names stay snake_case (`current_xp`, `next_level_xp`,
-  `gold_usd`); Dart-side names are camelCase and mapped in the models.
+- Firestore field names stay snake_case (`current_xp`, `next_level_xp`);
+  Dart-side names are camelCase and mapped in the models.
 - `google-services.json`, `firebase_options.dart` and `android/key.properties`
   are gitignored; CI restores them from secrets.
 

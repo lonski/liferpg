@@ -15,7 +15,6 @@ void main() {
       'changes': {
         'current_xp': 50,
         'gold': -10,
-        'gold_usd': 2.5,
         'traits': [
           {'name': 'Siła', 'value': '12'},
         ],
@@ -30,7 +29,6 @@ void main() {
     expect(r.reason, 'Posprzątałem garaż');
     expect(r.changes.currentXp, 50);
     expect(r.changes.gold, -10);
-    expect(r.changes.goldUsd, 2.5);
     expect(r.changes.traits.single.name, 'Siła');
     expect(r.changes.traits.single.value, '12');
     expect(r.appliedChanges, isNull);

@@ -12,7 +12,6 @@ Character sample({List<Trait> traits = const []}) => Character(
       currentXp: 40,
       nextLevelXp: 100,
       gold: 250,
-      goldUsd: 12,
       favour: 0,
       traits: traits,
     );
@@ -21,7 +20,7 @@ Widget wrap(Widget child) =>
     MaterialApp(home: Scaffold(body: SingleChildScrollView(child: child)));
 
 void main() {
-  testWidgets('renders name, class, level, XP and gold in both currencies',
+  testWidgets('renders name, class, level, XP and gold',
       (tester) async {
     await tester.pumpWidget(
       wrap(CharacterCard(character: sample(), canEdit: false)),
@@ -32,7 +31,6 @@ void main() {
     expect(find.text('POZIOM'), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
     expect(find.text('250 zł'), findsOneWidget);
-    expect(find.text('12 \$'), findsOneWidget);
     expect(find.text('40 / 100 XP'), findsOneWidget);
   });
 
@@ -94,7 +92,6 @@ void main() {
       currentXp: 915,
       nextLevelXp: 2500,
       gold: 250,
-      goldUsd: 12,
       favour: 0,
       traits: const [],
     );

@@ -40,7 +40,6 @@ void main() {
     final changes = await latest();
     expect(changes.currentXp, 50);
     expect(changes.gold, -10);
-    expect(changes.goldUsd, isNull);
   });
 
   testWidgets('an empty field reports null rather than zero', (tester) async {

@@ -61,9 +61,6 @@ class _ChangeRequestFormState extends ConsumerState<ChangeRequestForm> {
         text: initial?.currentXp?.toString() ?? '',
       ),
       'gold': TextEditingController(text: initial?.gold?.toString() ?? ''),
-      'gold_usd': TextEditingController(
-        text: initial?.goldUsd?.toString() ?? '',
-      ),
     };
     _reasonController = TextEditingController(text: widget.reason ?? '');
     _traits = List<TraitChange>.from(initial?.traits ?? const <TraitChange>[]);
@@ -92,7 +89,6 @@ class _ChangeRequestFormState extends ConsumerState<ChangeRequestForm> {
   ChangeSet get _changes => ChangeSet(
     currentXp: _deltaOf('current_xp', decimal: false),
     gold: _deltaOf('gold', decimal: true),
-    goldUsd: _deltaOf('gold_usd', decimal: true),
     traits: _traits,
   );
 
@@ -159,10 +155,6 @@ class _ChangeRequestFormState extends ConsumerState<ChangeRequestForm> {
             child: _deltaField('current_xp', decimal: false),
           ),
           _Labelled(label: 'Złoto', child: _deltaField('gold', decimal: true)),
-          _Labelled(
-            label: 'Dolary',
-            child: _deltaField('gold_usd', decimal: true),
-          ),
           const SizedBox(height: 12),
           Text('Cechy'.toUpperCase(), style: _fieldLabel),
           for (final trait in _traits)

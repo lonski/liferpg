@@ -290,7 +290,6 @@ class _RequestCard extends StatelessWidget {
     final deltaLines = <String>[
       if (changes.currentXp != null) 'XP: ${_signed(changes.currentXp!)}',
       if (changes.gold != null) 'Złoto: ${_signed(changes.gold!)}',
-      if (changes.goldUsd != null) 'Dolary: ${_signed(changes.goldUsd!)}',
     ];
 
     return Container(

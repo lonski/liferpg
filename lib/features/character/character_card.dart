@@ -308,10 +308,6 @@ class _GoldRow extends StatelessWidget {
           Row(
             children: [
               Text('${character.gold} zł', style: _goldValue),
-              if (character.goldUsd != null) ...[
-                const Text(' · ', style: TextStyle(color: crimson)),
-                Text('${character.goldUsd} \$', style: _goldValue),
-              ],
             ],
           ),
         ],

@@ -36,7 +36,6 @@ class Character {
     required this.currentXp,
     required this.nextLevelXp,
     this.gold,
-    this.goldUsd,
     required this.favour,
     required this.traits,
   });
@@ -49,7 +48,6 @@ class Character {
   final int currentXp;
   final int nextLevelXp;
   final num? gold;
-  final num? goldUsd;
   final int favour;
   final List<Trait> traits;
 
@@ -71,7 +69,6 @@ class Character {
       currentXp: _asInt(data['current_xp']) ?? 0,
       nextLevelXp: _asInt(data['next_level_xp']) ?? 0,
       gold: _asNum(data['gold']),
-      goldUsd: _asNum(data['gold_usd']),
       favour: _asInt(data['favour']) ?? 0,
       traits: traits,
     );
@@ -85,7 +82,6 @@ class Character {
         'current_xp': currentXp,
         'next_level_xp': nextLevelXp,
         'gold': gold,
-        'gold_usd': goldUsd,
         'favour': favour,
         'traits': traits.map((t) => t.toMap()).toList(),
       };
@@ -97,7 +93,6 @@ class Character {
     int? currentXp,
     int? nextLevelXp,
     num? gold,
-    num? goldUsd,
     int? favour,
     List<Trait>? traits,
   }) =>
@@ -110,7 +105,6 @@ class Character {
         currentXp: currentXp ?? this.currentXp,
         nextLevelXp: nextLevelXp ?? this.nextLevelXp,
         gold: gold ?? this.gold,
-        goldUsd: goldUsd ?? this.goldUsd,
         favour: favour ?? this.favour,
         traits: traits ?? this.traits,
       );

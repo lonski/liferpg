@@ -212,8 +212,6 @@ class ChangeRequestRepository {
       if (changes.currentXp != null)
         'current_xp': (current('current_xp') + changes.currentXp!).toInt(),
       if (changes.gold != null) 'gold': current('gold') + changes.gold!,
-      if (changes.goldUsd != null)
-        'gold_usd': current('gold_usd') + changes.goldUsd!,
     };
 
     if (changes.traits.isNotEmpty) {

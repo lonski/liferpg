@@ -145,11 +145,11 @@ void main() {
   test('a delta against an absent field materialises it from zero', () async {
     final db = FakeFirebaseFirestore();
     final repo = ChangeRequestRepository(db);
-    // No `gold` and no `gold_usd` key at all on this character.
+    // No `gold` key at all on this character.
     final characterId = await seedCharacter(db);
     await repo.create(_request(
       characterId: characterId,
-      changes: const ChangeSet(gold: 10, goldUsd: 2.5),
+      changes: const ChangeSet(gold: 10),
     ));
 
     await repo.accept(await onlyRequest(db), adminUid: 'admin1');
@@ -157,7 +157,6 @@ void main() {
     final character =
         (await db.collection('characters').doc(characterId).get()).data()!;
     expect(character['gold'], 10);
-    expect(character['gold_usd'], 2.5);
   });
 
   test('trait upserts overwrite an existing name and append a new one',

@@ -42,24 +42,21 @@ class ChangeSet {
   const ChangeSet({
     this.currentXp,
     this.gold,
-    this.goldUsd,
     this.traits = const [],
   });
 
   final num? currentXp;
   final num? gold;
-  final num? goldUsd;
   final List<TraitChange> traits;
 
   bool get isEmpty =>
-      currentXp == null && gold == null && goldUsd == null && traits.isEmpty;
+      currentXp == null && gold == null && traits.isEmpty;
 
   factory ChangeSet.fromMap(Map<String, dynamic> data) {
     final rawTraits = data['traits'];
     return ChangeSet(
       currentXp: _asNum(data['current_xp']),
       gold: _asNum(data['gold']),
-      goldUsd: _asNum(data['gold_usd']),
       traits: rawTraits is List
           ? rawTraits
               .whereType<Map>()
@@ -72,7 +69,6 @@ class ChangeSet {
   Map<String, dynamic> toMap() => {
         if (currentXp != null) 'current_xp': currentXp,
         if (gold != null) 'gold': gold,
-        if (goldUsd != null) 'gold_usd': goldUsd,
         if (traits.isNotEmpty)
           'traits': traits.map((t) => t.toMap()).toList(),
       };
