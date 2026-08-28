@@ -106,7 +106,7 @@ void main() {
     expect(find.byKey(Key('request-$requestId')), findsNothing);
   });
 
-  testWidgets('rejecting marks the request without touching the character',
+  testWidgets('rejecting asks for confirmation before marking the request',
       (tester) async {
     final db = await seed();
     await pumpScreen(tester, db);
@@ -114,12 +114,36 @@ void main() {
     await tester.tap(find.byKey(Key('reject-$requestId')));
     await tester.pumpAndSettle();
 
-    final request =
+    // Not yet decided -- the confirm dialog is up, nothing has happened.
+    var request =
+        (await db.collection('change_requests').doc(requestId).get()).data()!;
+    expect(request['status'], 'pending');
+
+    await tester.tap(find.byKey(Key('confirm-reject-$requestId')));
+    await tester.pumpAndSettle();
+
+    request =
         (await db.collection('change_requests').doc(requestId).get()).data()!;
     expect(request['status'], 'rejected');
     final character =
         (await db.collection('characters').doc(characterId).get()).data()!;
     expect(character['current_xp'], 40);
+  });
+
+  testWidgets('backing out of the reject confirmation changes nothing',
+      (tester) async {
+    final db = await seed();
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(Key('reject-$requestId')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ANULUJ'));
+    await tester.pumpAndSettle();
+
+    final request =
+        (await db.collection('change_requests').doc(requestId).get()).data()!;
+    expect(request['status'], 'pending');
+    expect(find.byKey(Key('request-$requestId')), findsOneWidget);
   });
 
   testWidgets('editing before accepting applies the edited value',

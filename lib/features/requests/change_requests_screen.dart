@@ -5,6 +5,7 @@ import '../../models/change_request.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/change_request_providers.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/dialogs.dart';
 import '../../theme/ornaments.dart';
 import 'change_request_form.dart';
 
@@ -50,6 +51,23 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('$error')));
     }
+  }
+
+  Future<void> _confirmAndReject(ChangeRequest request, String adminUid) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Odrzucić prośbę?',
+      cancelLabel: 'Anuluj',
+      confirmLabel: 'Odrzuć',
+      confirmKey: Key('confirm-reject-${request.id}'),
+    );
+    if (!confirmed) return;
+    await _decide(
+      () => ref
+          .read(changeRequestRepositoryProvider)
+          .reject(request, adminUid: adminUid),
+      'Prośba odrzucona',
+    );
   }
 
   Future<void> _editThenAccept(ChangeRequest request, String adminUid) async {
@@ -229,12 +247,8 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
                                         .accept(request, adminUid: adminUid),
                                     'Prośba zaakceptowana',
                                   ),
-                                  onReject: () => _decide(
-                                    () => ref
-                                        .read(changeRequestRepositoryProvider)
-                                        .reject(request, adminUid: adminUid),
-                                    'Prośba odrzucona',
-                                  ),
+                                  onReject: () =>
+                                      _confirmAndReject(request, adminUid),
                                   onEdit: () =>
                                       _editThenAccept(request, adminUid),
                                 ),
