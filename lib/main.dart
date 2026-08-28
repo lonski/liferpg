@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/flutter_local_notifications_change_request_service.dart';
+import 'data/plugin_update_installer_service.dart';
 import 'data/shared_preferences_provider.dart';
 import 'features/home/home_screen.dart';
 import 'features/login/login_screen.dart';
@@ -14,6 +15,7 @@ import 'features/requests/new_change_request_screen.dart';
 import 'firebase_options.dart';
 import 'providers/auth_providers.dart';
 import 'providers/change_request_notification_providers.dart';
+import 'providers/update_providers.dart';
 import 'theme/app_theme.dart';
 
 /// Lets a tapped system-tray notification open a screen without threading a
@@ -57,6 +59,8 @@ Future<void> main() async {
       sharedPreferencesProvider.overrideWithValue(prefs),
       changeRequestNotificationServiceProvider
           .overrideWithValue(notificationService),
+      updateInstallerServiceProvider
+          .overrideWithValue(PluginUpdateInstallerService()),
     ],
     child: const LifeRpgApp(),
   ));

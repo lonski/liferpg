@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/character.dart';
+import '../../models/update_info.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/change_request_providers.dart';
 import '../../providers/character_providers.dart';
 import '../../providers/hidden_characters_providers.dart';
+import '../../providers/update_providers.dart';
 import '../../theme/app_theme.dart';
 import '../character/character_card.dart';
 import '../requests/change_requests_screen.dart';
 import '../requests/new_change_request_screen.dart';
+import '../update/update_dialog.dart';
 import '../users/user_management_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -46,6 +49,14 @@ class HomeScreen extends ConsumerWidget {
         (feed.value?.characters ?? const <Character>[]).any(
           (c) => c.email.toLowerCase() == user.email.toLowerCase(),
         );
+
+    // Checked once per app launch (see updateCheckProvider); shows at most
+    // once here too, since the provider only transitions loading -> data
+    // once per process.
+    ref.listen<AsyncValue<UpdateInfo?>>(updateCheckProvider, (previous, next) {
+      final info = next.value;
+      if (info != null) UpdateDialog.show(context, info);
+    });
 
     return Scaffold(
       backgroundColor: bgDark,

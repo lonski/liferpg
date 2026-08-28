@@ -12,9 +12,12 @@ import 'package:liferpg/features/character/character_card.dart';
 import 'package:liferpg/data/character_repository.dart';
 import 'package:liferpg/features/home/home_screen.dart';
 import 'package:liferpg/features/requests/new_change_request_screen.dart';
+import 'package:liferpg/features/update/update_dialog.dart';
 import 'package:liferpg/models/character.dart';
+import 'package:liferpg/models/update_info.dart';
 import 'package:liferpg/providers/character_providers.dart';
 import 'package:liferpg/providers/hidden_characters_providers.dart';
+import 'package:liferpg/providers/update_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<FakeFirebaseFirestore> seed({
@@ -334,5 +337,37 @@ void main() {
     final badge =
         tester.widget<Badge>(find.byKey(const Key('pending-requests-badge')));
     expect(badge.isLabelVisible, isFalse);
+  });
+
+  testWidgets('shows the update dialog when a newer version is found',
+      (tester) async {
+    await pumpHome(
+      tester,
+      await seed(),
+      extraOverrides: [
+        updateCheckProvider.overrideWith(
+          (ref) async => const UpdateInfo(
+            version: '9.9.9',
+            releaseNotes: '',
+            apkUrl: 'https://example.com/app.apk',
+          ),
+        ),
+      ],
+    );
+
+    expect(find.byType(UpdateDialog), findsOneWidget);
+  });
+
+  testWidgets('shows no update dialog when already up to date',
+      (tester) async {
+    await pumpHome(
+      tester,
+      await seed(),
+      extraOverrides: [
+        updateCheckProvider.overrideWith((ref) async => null),
+      ],
+    );
+
+    expect(find.byType(UpdateDialog), findsNothing);
   });
 }
