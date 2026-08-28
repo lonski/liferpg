@@ -15,16 +15,18 @@ Future<Future<ChangeSet> Function()> pumpForm(
   ChangeSet? initial,
 }) async {
   var latest = const ChangeSet();
-  await tester.pumpWidget(ProviderScope(
-    child: MaterialApp(
-      home: Scaffold(
-        body: ChangeRequestForm(
-          initial: initial,
-          onChanged: (changes, _) => latest = changes,
+  await tester.pumpWidget(
+    ProviderScope(
+      child: MaterialApp(
+        home: Scaffold(
+          body: ChangeRequestForm(
+            initial: initial,
+            onChanged: (changes, _) => latest = changes,
+          ),
         ),
       ),
     ),
-  ));
+  );
   return () async => latest;
 }
 
@@ -66,8 +68,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('trait-row-Siła')), findsOneWidget);
-    expect((await latest()).traits.single,
-        const TraitChange(name: 'Siła', value: '12'));
+    expect(
+      (await latest()).traits.single,
+      const TraitChange(name: 'Siła', value: '12'),
+    );
   });
 
   testWidgets('a trait with an empty name is not added', (tester) async {
@@ -105,8 +109,9 @@ void main() {
     expect(find.byKey(const Key('trait-row-Siła')), findsOneWidget);
   });
 
-  testWidgets('shows the Polish validation message for non-numeric input',
-      (tester) async {
+  testWidgets('shows the Polish validation message for non-numeric input', (
+    tester,
+  ) async {
     await pumpForm(tester);
     await tester.pumpAndSettle();
 
@@ -116,8 +121,8 @@ void main() {
     expect(find.text('Podaj liczbę'), findsOneWidget);
   });
 
-  testWidgets('shows a validation message when reason is left empty',
-      (tester) async {
+  testWidgets('does not show a validation hint when reason is left empty '
+      '(the submit button explains what is missing instead)', (tester) async {
     await pumpForm(tester);
     await tester.pumpAndSettle();
 
@@ -125,6 +130,6 @@ void main() {
     await tester.enterText(find.byKey(const Key('field-reason')), '');
     await tester.pump();
 
-    expect(find.text('Podaj powód'), findsOneWidget);
+    expect(find.text('Podaj powód'), findsNothing);
   });
 }

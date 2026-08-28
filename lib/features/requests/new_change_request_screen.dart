@@ -35,6 +35,63 @@ class _NewChangeRequestScreenState
   String? _selectedCharacterId;
   bool _submitting = false;
 
+  // What the submit button's tooltip explains when tapped while disabled --
+  // the field validation hints this replaced only ever pointed at one thing
+  // at a time, so this keeps that same single-message behaviour.
+  String? _missingRequirement(Character? selected, AppUser? user) {
+    if (_submitting) return null;
+    if (selected == null || user == null) return 'Wybierz postać';
+    if (_changes.isEmpty) return 'Wprowadź przynajmniej jedną zmianę';
+    if (_reason == null) return 'Podaj powód';
+    return null;
+  }
+
+  Widget _buildSubmitButton({
+    required bool canSubmit,
+    required Character? selected,
+    required AppUser? user,
+  }) {
+    Widget button = ElevatedButton(
+      key: const Key('submit-request'),
+      // Left as an ElevatedButton (rather than the login screen's InkWell)
+      // so the disabled state stays a real `onPressed: null`, but restyled:
+      // the stock Material surface reads as a foreign widget on the
+      // parchment card.
+      style: ElevatedButton.styleFrom(
+        backgroundColor: crimson,
+        foregroundColor: parchmentLight,
+        disabledBackgroundColor: crimsonFaint,
+        disabledForegroundColor: crimson,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(3),
+          side: const BorderSide(color: goldGlyph),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        textStyle: const TextStyle(
+          fontFamily: fontDisplay,
+          fontSize: 10,
+          letterSpacing: 2,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      onPressed: canSubmit && selected != null && user != null
+          ? () => _submit(selected, user)
+          : null,
+      child: Text(_submitting ? '...' : 'Wyślij prośbę'.toUpperCase()),
+    );
+    final missing = _missingRequirement(selected, user);
+    if (missing == null) return button;
+    // A disabled ElevatedButton has no tap recognizer of its own
+    // (onPressed is null), so a tap on it falls through to this Tooltip
+    // instead of being silently swallowed.
+    return Tooltip(
+      message: missing,
+      triggerMode: TooltipTriggerMode.tap,
+      child: button,
+    );
+  }
+
   List<Character> _ownCharacters(WidgetRef ref, AppUser? user) {
     final feed = ref.watch(charactersProvider).value;
     if (feed == null || user == null) return const [];
@@ -48,16 +105,20 @@ class _NewChangeRequestScreenState
   Future<void> _submit(Character character, AppUser user) async {
     setState(() => _submitting = true);
     try {
-      await ref.read(changeRequestRepositoryProvider).create(ChangeRequest(
-            id: '',
-            characterId: character.id,
-            characterName: character.name,
-            requesterUid: user.uid,
-            requesterEmail: user.email,
-            status: ChangeRequestStatus.pending,
-            changes: _changes,
-            reason: _reason,
-          ));
+      await ref
+          .read(changeRequestRepositoryProvider)
+          .create(
+            ChangeRequest(
+              id: '',
+              characterId: character.id,
+              characterName: character.name,
+              requesterUid: user.uid,
+              requesterEmail: user.email,
+              status: ChangeRequestStatus.pending,
+              changes: _changes,
+              reason: _reason,
+            ),
+          );
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
@@ -164,9 +225,8 @@ class _NewChangeRequestScreenState
     try {
       await ref.read(changeRequestRepositoryProvider).cancel(request);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Prośba anulowana')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Prośba anulowana')));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -186,7 +246,8 @@ class _NewChangeRequestScreenState
             (c) => c.id == _selectedCharacterId,
             orElse: () => characters.first,
           );
-    final canSubmit = !_submitting &&
+    final canSubmit =
+        !_submitting &&
         selected != null &&
         user != null &&
         !_changes.isEmpty &&
@@ -238,8 +299,7 @@ class _NewChangeRequestScreenState
                   child: Column(
                     children: [
                       Container(
-                        decoration:
-                            const BoxDecoration(gradient: cardGradient),
+                        decoration: const BoxDecoration(gradient: cardGradient),
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                         child: Container(
                           decoration: BoxDecoration(
@@ -260,12 +320,11 @@ class _NewChangeRequestScreenState
                                         child: Text(c.name),
                                       ),
                                   ],
-                                  onChanged: (id) => setState(
-                                      () => _selectedCharacterId = id),
+                                  onChanged: (id) =>
+                                      setState(() => _selectedCharacterId = id),
                                 ),
                               ChangeRequestForm(
-                                onChanged: (changes, reason) =>
-                                    setState(() {
+                                onChanged: (changes, reason) => setState(() {
                                   _changes = changes;
                                   _reason = reason;
                                 }),
@@ -273,41 +332,10 @@ class _NewChangeRequestScreenState
                               const SizedBox(height: 12),
                               SizedBox(
                                 width: double.infinity,
-                                child: ElevatedButton(
-                                  key: const Key('submit-request'),
-                                  // Left as an ElevatedButton (rather than
-                                  // the login screen's InkWell) so the
-                                  // disabled state stays a real
-                                  // `onPressed: null`, but restyled: the
-                                  // stock Material surface reads as a
-                                  // foreign widget on the parchment card.
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: crimson,
-                                    foregroundColor: parchmentLight,
-                                    disabledBackgroundColor: crimsonFaint,
-                                    disabledForegroundColor: crimson,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(3),
-                                      side: const BorderSide(
-                                          color: goldGlyph),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12),
-                                    textStyle: const TextStyle(
-                                      fontFamily: fontDisplay,
-                                      fontSize: 10,
-                                      letterSpacing: 2,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  onPressed: canSubmit
-                                      ? () => _submit(selected, user)
-                                      : null,
-                                  child: Text(_submitting
-                                      ? '...'
-                                      : 'Wyślij prośbę'.toUpperCase()),
+                                child: _buildSubmitButton(
+                                  canSubmit: canSubmit,
+                                  selected: selected,
+                                  user: user,
                                 ),
                               ),
                             ],
@@ -341,9 +369,12 @@ class _NewChangeRequestScreenState
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
-                                  child: Text(r.characterName,
-                                      style: const TextStyle(
-                                          color: parchmentMuted)),
+                                  child: Text(
+                                    r.characterName,
+                                    style: const TextStyle(
+                                      color: parchmentMuted,
+                                    ),
+                                  ),
                                 ),
                                 Text(
                                   changeRequestStatusLabel(r.status),
@@ -366,8 +397,11 @@ class _NewChangeRequestScreenState
                           IconButton(
                             key: Key('cancel-request-${r.id}'),
                             tooltip: 'Anuluj',
-                            icon: const Icon(Icons.close,
-                                size: 16, color: crimson),
+                            icon: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: crimson,
+                            ),
                             onPressed: () => _cancel(r),
                           ),
                       ],

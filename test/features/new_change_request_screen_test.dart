@@ -89,6 +89,26 @@ void main() {
     expect(button().onPressed, isNotNull);
   });
 
+  testWidgets(
+      'tapping the disabled submit button explains what is missing',
+      (tester) async {
+    await pumpScreen(tester, await seed());
+
+    await tester.tap(find.byKey(const Key('submit-request')));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Wprowadź przynajmniej jedną zmianę'), findsOneWidget);
+
+    // Dismiss, then satisfy that requirement and check the tooltip moves on
+    // to the next missing one.
+    await tester.tap(find.byKey(const Key('submit-request')));
+    await tester.enterText(find.byKey(const Key('field-current_xp')), '50');
+    await tester.pump();
+
+    await tester.tap(find.byKey(const Key('submit-request')));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Podaj powód'), findsOneWidget);
+  });
+
   testWidgets('submitting writes a pending request', (tester) async {
     final db = await seed();
     await pumpScreen(tester, db);
