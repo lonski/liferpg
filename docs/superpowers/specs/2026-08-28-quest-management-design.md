@@ -61,15 +61,24 @@ Numeric/trait entries in `reward` follow the exact same delta/upsert
 semantics as `ChangeSet.currentXp`/`ChangeSet.traits` today — no new
 semantics to learn.
 
-### `ChangeRequest` gets one new optional field
+### `ChangeRequest` gets two new optional fields
 
 ```
-questId: string?   — set when this request was raised by completing a quest
+questId:    string?   — set when this request was raised by completing a quest
+questTitle: string?   — denormalised quest title, so the admin card and the
+                         requester's own history can show the link without
+                         an extra read
 ```
 
-Nothing else about `ChangeRequest`, `ChangeRequestRepository`, or the admin
-inbox screen changes shape — a quest's completion *is* a normal change
-request, just auto-filled and cross-linked.
+A quest-originated request's `reason` is left unset — the link to its
+quest is carried by `questId`/`questTitle`, not smuggled into free text, so
+it renders as its own line/chip rather than competing with a human-written
+reason. (The existing "reason required" validator lives on
+`ChangeRequestForm`/`NewChangeRequestScreen` and is not on this creation
+path, so an unset `reason` here is not a validation gap.) Otherwise nothing
+about `ChangeRequest`, `ChangeRequestRepository`, or the admin inbox
+screen's accept/reject/edit actions changes shape — a quest's completion
+*is* a normal change request, just pre-filled and cross-linked.
 
 ### `quest_roster/{characterId}`
 
@@ -320,6 +329,15 @@ Title, optional description, reward (XP delta plus the existing
 allowed). Leaving it empty posts to the board; picking a character assigns
 directly. Submit label follows the choice ("WYSTAW NA TABLICĘ" /
 "WYSTAW ZADANIE").
+
+### Existing change-request screens
+
+`ChangeRequestsScreen`'s `_RequestCard` and the requester's own-history
+dialog in `NewChangeRequestScreen` both gain a small "Zadanie: {title}"
+line, shown only when `questId`/`questTitle` are set, in the same position
+the reason line occupies today. Everything else on those screens —
+Zaakceptuj/Odrzuć/Edytuj, the filter chips, the accept/reject dialogs — is
+unchanged.
 
 ### Admin screens
 
