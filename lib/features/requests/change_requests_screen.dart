@@ -276,7 +276,11 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final changes = request.changes;
+    // Once accepted, appliedChanges is what actually landed on the character
+    // -- which can differ from the original ask if an admin edited it before
+    // accepting (see _editThenAccept). Falling back to `changes` covers the
+    // pending/rejected cases, where appliedChanges is still null.
+    final changes = request.appliedChanges ?? request.changes;
     final deltaLines = changeSetLines(changes);
 
     return Container(

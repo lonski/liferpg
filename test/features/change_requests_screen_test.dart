@@ -168,6 +168,27 @@ void main() {
     expect(request['appliedChanges'], {'current_xp': 20});
   });
 
+  testWidgets(
+      'an accepted request shows the applied change, not the original ask',
+      (tester) async {
+    final db = await seed();
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(Key('edit-$requestId')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('field-current_xp')), '20');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('confirm-edit')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('filter-accepted')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('XP: +20'), findsOneWidget);
+    expect(find.text('XP: +50'), findsNothing);
+  });
+
   // buildAppTheme() is a LIGHT ThemeData (bodyColor inkDark, onSurface
   // inkDark), so a Material surface painted bgDark inherits near-black text.
   // ChangeRequestForm is a parchment-card widget — crimson labels, dark ink —
