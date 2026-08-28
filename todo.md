@@ -1,0 +1,4 @@
+- when 'Powód' is not filled the button is disabled and there is hint below the textarea. it is not good ux. remove the hint and add a tooltip on the button or something like this, so that when user clicks 'send request' it shows what is missing (the reason field in this case)
+- add notifications. I want to see notifications when requests arrives or changes state
+- add a optional reason on request rejection so the user can see why it was rejected
+- explore possibilities of auto-update the application. downloading the apk from gh releases page is unconvinient
