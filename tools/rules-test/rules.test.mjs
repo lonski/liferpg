@@ -444,3 +444,212 @@ test('a user may not cancel a request that is no longer pending', async () => {
     })
   );
 });
+
+// --- /quests and /quest_roster ---------------------------------------------
+//
+// Self-contained: these seed their own fixtures rather than relying on
+// seedCharacters(), which was written for the /characters and
+// /change_requests tests above, not this feature.
+
+test('any signed-in user may read an open quest', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q1'), {
+      title: 'Posprzątaj garaż',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 50 },
+    });
+  });
+  const db = env.authenticatedContext('bob').firestore();
+  await assertSucceeds(getDoc(doc(db, 'quests/q1')));
+});
+
+test('a user may post an open board quest in their own name', async () => {
+  const db = env.authenticatedContext('alice', { email: 'alice@example.com' }).firestore();
+  await assertSucceeds(
+    setDoc(doc(db, 'quests/q2'), {
+      title: 'Ugotuj obiad',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 30 },
+    })
+  );
+});
+
+test('a user may not post a quest in somebody else\'s name', async () => {
+  const db = env.authenticatedContext('mallory', { email: 'mallory@example.com' }).firestore();
+  await assertFails(
+    setDoc(doc(db, 'quests/q3'), {
+      title: 'Ugotuj obiad',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 30 },
+    })
+  );
+});
+
+test('direct assignment requires the target character to be on the quest roster', async () => {
+  const db = env.authenticatedContext('alice', { email: 'alice@example.com' }).firestore();
+  await assertFails(
+    setDoc(doc(db, 'quests/q4'), {
+      title: 'Ugotuj obiad',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      assignedToCharacterId: 'not-on-roster',
+      assignedToCharacterName: 'Grommash',
+      assignedToEmail: 'grommash@example.com',
+      status: 'assigned',
+      reward: { current_xp: 30 },
+    })
+  );
+});
+
+test('direct assignment succeeds once the target is on the quest roster', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quest_roster/c1'), {
+      characterName: 'Grommash',
+      email: 'grommash@example.com',
+    });
+  });
+  const db = env.authenticatedContext('alice', { email: 'alice@example.com' }).firestore();
+  await assertSucceeds(
+    setDoc(doc(db, 'quests/q5'), {
+      title: 'Ugotuj obiad',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      assignedToCharacterId: 'c1',
+      assignedToCharacterName: 'Grommash',
+      assignedToEmail: 'grommash@example.com',
+      status: 'assigned',
+      reward: { current_xp: 30 },
+    })
+  );
+});
+
+test('a quest reward may not carry a gold delta', async () => {
+  const db = env.authenticatedContext('alice', { email: 'alice@example.com' }).firestore();
+  await assertFails(
+    setDoc(doc(db, 'quests/q6'), {
+      title: 'Ugotuj obiad',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 30, gold: 5 },
+    })
+  );
+});
+
+test('taking an open quest requires the taker to own the target character', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q7'), {
+      title: 'Posprzątaj garaż',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 50 },
+    });
+    await setDoc(doc(ctx.firestore(), 'characters/c-bob'), {
+      name: 'Bob the Bold',
+      email: 'bob@example.com',
+    });
+  });
+  const db = env.authenticatedContext('mallory', { email: 'mallory@example.com' }).firestore();
+  await assertFails(
+    updateDoc(doc(db, 'quests/q7'), {
+      status: 'assigned',
+      assignedToCharacterId: 'c-bob',
+      assignedToCharacterName: 'Bob the Bold',
+      assignedToEmail: 'mallory@example.com',
+    })
+  );
+});
+
+test('taking an open quest for your own character succeeds', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q8'), {
+      title: 'Posprzątaj garaż',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 50 },
+    });
+    await setDoc(doc(ctx.firestore(), 'characters/c-bob2'), {
+      name: 'Bob the Bold',
+      email: 'bob@example.com',
+    });
+  });
+  const db = env.authenticatedContext('bob', { email: 'bob@example.com' }).firestore();
+  await assertSucceeds(
+    updateDoc(doc(db, 'quests/q8'), {
+      status: 'assigned',
+      assignedToCharacterId: 'c-bob2',
+      assignedToCharacterName: 'Bob the Bold',
+      assignedToEmail: 'bob@example.com',
+    })
+  );
+});
+
+test('only the poster may withdraw an open quest', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q9'), {
+      title: 'Posprzątaj garaż',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 50 },
+    });
+  });
+  const mallory = env.authenticatedContext('mallory', { email: 'mallory@example.com' }).firestore();
+  await assertFails(updateDoc(doc(mallory, 'quests/q9'), { status: 'cancelled' }));
+
+  const alice = env.authenticatedContext('alice', { email: 'alice@example.com' }).firestore();
+  await assertSucceeds(updateDoc(doc(alice, 'quests/q9'), { status: 'cancelled' }));
+});
+
+test('only the current holder may abandon or mark an assigned quest complete', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q10'), {
+      title: 'Ugotuj obiad',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      assignedToCharacterId: 'c-bob3',
+      assignedToCharacterName: 'Bob the Bold',
+      assignedToEmail: 'bob@example.com',
+      status: 'assigned',
+      reward: { current_xp: 30 },
+    });
+  });
+  const mallory = env.authenticatedContext('mallory', { email: 'mallory@example.com' }).firestore();
+  await assertFails(updateDoc(doc(mallory, 'quests/q10'), { status: 'pending_review' }));
+
+  const bob = env.authenticatedContext('bob', { email: 'bob@example.com' }).firestore();
+  await assertSucceeds(updateDoc(doc(bob, 'quests/q10'), { status: 'pending_review' }));
+});
+
+test('only an admin may write to quest_roster', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'users/admin1'), { admin: true });
+  });
+  const mallory = env.authenticatedContext('mallory').firestore();
+  await assertFails(
+    setDoc(doc(mallory, 'quest_roster/c1'), { characterName: 'Grommash', email: 'g@example.com' })
+  );
+
+  const admin = env.authenticatedContext('admin1').firestore();
+  await assertSucceeds(
+    setDoc(doc(admin, 'quest_roster/c1'), { characterName: 'Grommash', email: 'g@example.com' })
+  );
+});

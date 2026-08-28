@@ -68,5 +68,66 @@ service cloud.firestore {
                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
       allow delete: if isAdmin();
     }
+
+    match /quests/{questId} {
+      // Board and log are visible to everyone signed in.
+      allow read: if isAuthenticated();
+
+      // Posted in your own name, either open with no assignment, or
+      // assigned directly to a character that is on the public roster
+      // (quest_roster) -- never a raw gold delta.
+      allow create: if isAuthenticated()
+                    && request.resource.data.posterUid == request.auth.uid
+                    && request.resource.data.posterEmail.lower() == request.auth.token.email.lower()
+                    && request.resource.data.reward.keys().hasAny(['current_xp', 'traits'])
+                    && !('gold' in request.resource.data.reward)
+                    && (
+                      (request.resource.data.status == 'open'
+                        && !('assignedToCharacterId' in request.resource.data))
+                      ||
+                      (request.resource.data.status == 'assigned'
+                        && exists(/databases/$(database)/documents/quest_roster/$(request.resource.data.assignedToCharacterId))
+                        && get(/databases/$(database)/documents/quest_roster/$(request.resource.data.assignedToCharacterId))
+                             .data.email.lower() == request.resource.data.assignedToEmail.lower())
+                    );
+
+      allow update: if isAdmin()
+                    // take: open -> assigned, by the taker, for their own character
+                    || (isAuthenticated()
+                        && resource.data.status == 'open'
+                        && request.resource.data.status == 'assigned'
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['status', 'assignedToCharacterId', 'assignedToCharacterName', 'assignedToEmail'])
+                        && request.resource.data.assignedToEmail.lower() == request.auth.token.email.lower()
+                        && get(/databases/$(database)/documents/characters/$(request.resource.data.assignedToCharacterId))
+                             .data.email.lower() == request.auth.token.email.lower())
+                    // abandon: assigned -> open, by the current holder
+                    || (isAuthenticated()
+                        && resource.data.status == 'assigned'
+                        && request.resource.data.status == 'open'
+                        && resource.data.assignedToEmail.lower() == request.auth.token.email.lower()
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['status', 'assignedToCharacterId', 'assignedToCharacterName', 'assignedToEmail']))
+                    // withdraw: open -> cancelled, by the poster
+                    || (isAuthenticated()
+                        && resource.data.status == 'open'
+                        && request.resource.data.status == 'cancelled'
+                        && resource.data.posterUid == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+                    // mark complete: assigned -> pending_review, by the current holder
+                    || (isAuthenticated()
+                        && resource.data.status == 'assigned'
+                        && request.resource.data.status == 'pending_review'
+                        && resource.data.assignedToEmail.lower() == request.auth.token.email.lower()
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['status', 'changeRequestId']));
+
+      allow delete: if false;
+    }
+
+    match /quest_roster/{characterId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
   }
 }
