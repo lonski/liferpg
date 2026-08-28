@@ -11,13 +11,6 @@ import 'change_request_form.dart';
 
 String _signed(num v) => v > 0 ? '+$v' : '$v';
 
-const TextStyle _dialogAction = TextStyle(
-  fontFamily: fontDisplay,
-  fontSize: 10,
-  fontWeight: FontWeight.w700,
-  letterSpacing: 2,
-);
-
 /// Plain interpolation and zero-padding, deliberately — no `intl` dependency.
 String _formatTimestamp(DateTime t) {
   String pad(int n) => n.toString().padLeft(2, '0');
@@ -110,7 +103,7 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             style: TextButton.styleFrom(foregroundColor: crimson),
-            child: Text('Anuluj'.toUpperCase(), style: _dialogAction),
+            child: Text('Anuluj'.toUpperCase(), style: dialogActionStyle),
           ),
           TextButton(
             key: const Key('confirm-edit'),
@@ -125,7 +118,7 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            child: Text('Zaakceptuj'.toUpperCase(), style: _dialogAction),
+            child: Text('Zaakceptuj'.toUpperCase(), style: dialogActionStyle),
           ),
         ],
       ),
@@ -211,6 +204,10 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // No `cancelled` chip: cancellation is the requester's
+                      // own business, not something an admin acts on, so it
+                      // is deliberately never surfaced in this queue (see
+                      // the design spec).
                       _filterChip(ChangeRequestStatus.pending, 'Oczekujące'),
                       const SizedBox(width: 8),
                       _filterChip(

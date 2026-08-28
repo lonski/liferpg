@@ -132,6 +132,7 @@ void main() {
             .data()!;
     expect(data['status'], 'cancelled');
     expect(find.text('Anulowana'), findsOneWidget);
+    expect(find.text('Prośba anulowana'), findsOneWidget);
   });
 
   testWidgets('backing out of the cancel confirmation changes nothing',

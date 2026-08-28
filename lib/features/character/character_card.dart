@@ -305,11 +305,7 @@ class _GoldRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text('Złoto'.toUpperCase(), style: _statLabel),
-          Row(
-            children: [
-              Text('${character.gold} zł', style: _goldValue),
-            ],
-          ),
+          Text('${character.gold} zł', style: _goldValue),
         ],
       );
 }

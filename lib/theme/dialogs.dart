@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
 
-const TextStyle _dialogAction = TextStyle(
+const TextStyle dialogActionStyle = TextStyle(
   fontFamily: fontDisplay,
   fontSize: 10,
   fontWeight: FontWeight.w700,
@@ -44,7 +44,7 @@ Future<bool> showConfirmDialog(
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
           style: TextButton.styleFrom(foregroundColor: crimson),
-          child: Text(cancelLabel.toUpperCase(), style: _dialogAction),
+          child: Text(cancelLabel.toUpperCase(), style: dialogActionStyle),
         ),
         TextButton(
           key: confirmKey,
@@ -58,7 +58,7 @@ Future<bool> showConfirmDialog(
             ),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           ),
-          child: Text(confirmLabel.toUpperCase(), style: _dialogAction),
+          child: Text(confirmLabel.toUpperCase(), style: dialogActionStyle),
         ),
       ],
     ),

@@ -71,6 +71,10 @@ class _NewChangeRequestScreenState
     if (!confirmed) return;
     try {
       await ref.read(changeRequestRepositoryProvider).cancel(request);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Prośba anulowana')),
+      );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)

@@ -51,7 +51,7 @@ traits: [{ name: string, value: string }]  (optional)
 **`change_requests/{id}`**
 ```
 characterId, characterName, requesterUid, requesterEmail
-status: 'pending' | 'accepted' | 'rejected'
+status: 'pending' | 'accepted' | 'rejected' | 'cancelled'
 reason (optional), createdAt (server timestamp)
 changes:        { current_xp?, gold?, traits?: [{name, value}] }
 appliedChanges: same shape, written on accept
@@ -67,8 +67,10 @@ decidedBy, decidedAt: written on accept/reject
   the request names the caller as `requesterUid` and is `pending` (with no
   `decidedBy`/`decidedAt`/`appliedChanges` fields — those are the admin's to
   write).
-- Only admins may read the whole collection or update a request. A regular
-  user's query must therefore carry
+- Only admins may read the whole collection or update a request to
+  accept/reject it; a requester may additionally flip their own still-pending
+  request to `cancelled` (and touch no other field) — see `firestore.rules`.
+  A regular user's query must therefore carry
   `where('requesterUid', isEqualTo: <own uid>)`, exactly like the roster's
   own-email query.
 - Accepting runs a `runTransaction` on the **admin's client** (there are no
@@ -98,7 +100,9 @@ decidedBy, decidedAt: written on accept/reject
 - **Change requests**: a round `+` FAB on the home screen (shown to any user
   who owns a character) opens a form for requesting XP / gold / trait changes.
   Admins get an inbox action in the AppBar opening the queue, where each
-  request can be accepted, edited-then-accepted, or rejected.
+  request can be accepted, edited-then-accepted, or rejected; a rejected
+  request can be restored to pending by an admin, and a requester can cancel
+  their own still-pending request.
 
 ## UI Language
 
