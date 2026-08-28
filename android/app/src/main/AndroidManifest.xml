@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Firestore and Google Sign-In both need this. Release builds only
          inherited it from firebase-firestore's AAR via manifest merging;
          declare it explicitly so it does not depend on a transitive dep. -->
@@ -10,6 +11,16 @@
     <!-- Lets the in-app updater hand a downloaded APK to Android's package
          installer (see UpdateInstallerService). -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <!-- open_filex (used for the install-APK handoff) declares these media
+         permissions in its own manifest for unrelated use cases; strip them
+         via manifest merging so the built APK doesn't request "Photos and
+         videos" / "Music and audio" access this app never uses.
+         READ_EXTERNAL_STORAGE is left alone: harmless here, and removing
+         it risks interfering with open_filex's file-access paths on older
+         API levels. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove"/>
     <application
         android:label="liferpg"
         android:name="${applicationName}"

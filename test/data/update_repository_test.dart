@@ -24,6 +24,7 @@ http.Response _releaseResponse({
       ],
     }),
     200,
+    headers: const {'content-type': 'application/json'},
   );
 }
 

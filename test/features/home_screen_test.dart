@@ -6,8 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // `Override` lives in flutter_riverpod's misc.dart, not its main barrel.
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:liferpg/data/firebase_providers.dart';
 import 'package:liferpg/data/shared_preferences_provider.dart';
+import 'package:liferpg/data/update_repository.dart';
 import 'package:liferpg/features/character/character_card.dart';
 import 'package:liferpg/data/character_repository.dart';
 import 'package:liferpg/features/home/home_screen.dart';
@@ -19,6 +22,17 @@ import 'package:liferpg/providers/character_providers.dart';
 import 'package:liferpg/providers/hidden_characters_providers.dart';
 import 'package:liferpg/providers/update_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// A deterministic stand-in for the real update check so tests don't
+// implicitly rely on PackageInfo.fromPlatform() throwing in flutter_test
+// (which is what currently keeps updateCheckProvider from firing a real
+// HTTPS request in every test that doesn't override it directly).
+Override _noUpdateRepositoryOverride() => updateRepositoryProvider.overrideWith(
+      (ref) async => UpdateRepository(
+        MockClient((_) async => http.Response('{}', 200)),
+        '99.0.0',
+      ),
+    );
 
 Future<FakeFirebaseFirestore> seed({
   bool admin = false,
@@ -60,6 +74,7 @@ Future<void> pumpHome(
       sharedPreferencesProvider.overrideWithValue(
         await SharedPreferences.getInstance(),
       ),
+      _noUpdateRepositoryOverride(),
       ...extraOverrides,
     ],
     child: const MaterialApp(home: HomeScreen()),
@@ -151,6 +166,7 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(
           await SharedPreferences.getInstance(),
         ),
+        _noUpdateRepositoryOverride(),
       ],
       child: const MaterialApp(home: HomeScreen()),
     ));

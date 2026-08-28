@@ -57,6 +57,7 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog>
     });
 
     return AlertDialog(
+      scrollable: true,
       backgroundColor: parchment,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
