@@ -20,7 +20,7 @@ flutter build apk --release --dart-define=GOOGLE_SERVER_CLIENT_ID=<id>
 
 Add `--dart-define=SHOW_FAVOUR=true` to enable the favour UI.
 
-`<web client id>` is the OAuth **web** client id from the Firebase console (Authentication → Sign-in method → Google → Web SDK configuration), not the Android client id. Every `flutter run`/`flutter build` invocation needs it or Google sign-in fails to initialize.
+`<web client id>` is the OAuth **web** client id from the Firebase console (Authentication → Sign-in method → Google → Web SDK configuration), not the Android client id. Every `flutter run`/`flutter build` invocation needs it or Google sign-in fails to initialize. It can also be read off a local `android/app/google-services.json` (the `client_type: 3` OAuth entry) without touching the Firebase console — see `.claude/skills/installing-app/SKILL.md` for a one-shot build+`adb install` recipe.
 
 ## Project Structure
 
