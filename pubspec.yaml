@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.2.0+4
+version: 1.2.1+5
 
 environment:
   sdk: ^3.13.1
@@ -125,3 +125,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# permission_handler_android 14.x requires compileSdk 37, which this
+# project's Flutter/AGP versions don't yet support (AGP 9.1.0's own max
+# recommended compileSdk is 36) -- pin to the 13.x line, which only needs
+# compileSdk 35, until the toolchain catches up.
+dependency_overrides:
+  permission_handler_android: ^13.0.1
