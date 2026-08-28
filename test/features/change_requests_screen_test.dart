@@ -130,6 +130,40 @@ void main() {
     expect(character['current_xp'], 40);
   });
 
+  testWidgets('rejecting with a typed reason records it on the request',
+      (tester) async {
+    final db = await seed();
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(Key('reject-$requestId')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+        find.byKey(const Key('reject-reason')), 'Za mało szczegółów');
+    await tester.tap(find.byKey(Key('confirm-reject-$requestId')));
+    await tester.pumpAndSettle();
+
+    final request =
+        (await db.collection('change_requests').doc(requestId).get()).data()!;
+    expect(request['status'], 'rejected');
+    expect(request['rejectionReason'], 'Za mało szczegółów');
+  });
+
+  testWidgets('rejecting with the reason left blank records no reason',
+      (tester) async {
+    final db = await seed();
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(Key('reject-$requestId')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(Key('confirm-reject-$requestId')));
+    await tester.pumpAndSettle();
+
+    final request =
+        (await db.collection('change_requests').doc(requestId).get()).data()!;
+    expect(request['status'], 'rejected');
+    expect(request.containsKey('rejectionReason'), isFalse);
+  });
+
   testWidgets('backing out of the reject confirmation changes nothing',
       (tester) async {
     final db = await seed();

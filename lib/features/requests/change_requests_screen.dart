@@ -40,18 +40,71 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
   }
 
   Future<void> _confirmAndReject(ChangeRequest request, String adminUid) async {
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Odrzucić prośbę?',
-      cancelLabel: 'Anuluj',
-      confirmLabel: 'Odrzuć',
-      confirmKey: Key('confirm-reject-${request.id}'),
+    final reasonController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: parchment,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+          side: const BorderSide(color: crimson, width: 2),
+        ),
+        title: Text(
+          'Odrzucić prośbę?'.toUpperCase(),
+          style: const TextStyle(
+            fontFamily: fontDisplay,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 2,
+            color: inkHeading,
+          ),
+        ),
+        content: TextField(
+          key: const Key('reject-reason'),
+          controller: reasonController,
+          maxLines: 2,
+          style: const TextStyle(color: inkHeading),
+          decoration: const InputDecoration(
+            hintText: 'Powód (opcjonalnie)',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            style: TextButton.styleFrom(foregroundColor: crimson),
+            child: Text('Anuluj'.toUpperCase(), style: dialogActionStyle),
+          ),
+          TextButton(
+            key: Key('confirm-reject-${request.id}'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(
+              backgroundColor: crimson,
+              foregroundColor: parchmentLight,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(3),
+                side: const BorderSide(color: goldGlyph),
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+            child: Text('Odrzuć'.toUpperCase(), style: dialogActionStyle),
+          ),
+        ],
+      ),
     );
-    if (!confirmed) return;
+    // Not disposed here: the dialog route is still animating its exit when
+    // showDialog's future completes, and disposing while the TextField that
+    // owns this controller is still in the tree throws. It is a short-lived,
+    // unattached-to-State controller, so leaving it for GC is fine.
+    final reason = reasonController.text.trim();
+    if (confirmed != true) return;
     await _decide(
-      () => ref
-          .read(changeRequestRepositoryProvider)
-          .reject(request, adminUid: adminUid),
+      () => ref.read(changeRequestRepositoryProvider).reject(
+            request,
+            adminUid: adminUid,
+            reason: reason.isEmpty ? null : reason,
+          ),
       'Prośba odrzucona',
     );
   }

@@ -81,6 +81,22 @@ void main() {
     expect(map.containsKey('appliedChanges'), isFalse);
     expect(map.containsKey('decidedBy'), isFalse);
     expect(map.containsKey('decidedAt'), isFalse);
+    expect(map.containsKey('rejectionReason'), isFalse);
+  });
+
+  test('parses and round-trips a rejection reason', () {
+    final r = ChangeRequest.fromMap('r1', {
+      'characterId': 'c1',
+      'characterName': 'Grommash',
+      'requesterUid': 'u1',
+      'requesterEmail': 'ala@example.com',
+      'status': 'rejected',
+      'changes': {'current_xp': 50},
+      'rejectionReason': 'Za mało szczegółów',
+    });
+
+    expect(r.rejectionReason, 'Za mało szczegółów');
+    expect(r.toMap()['rejectionReason'], 'Za mało szczegółów');
   });
 
   test('an empty ChangeSet is reported empty', () {

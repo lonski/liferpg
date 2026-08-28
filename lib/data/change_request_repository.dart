@@ -147,6 +147,7 @@ class ChangeRequestRepository {
   Future<void> reject(
     ChangeRequest request, {
     required String adminUid,
+    String? reason,
   }) async {
     final requestRef = _requests.doc(request.id);
     await _db.runTransaction((tx) async {
@@ -155,6 +156,7 @@ class ChangeRequestRepository {
         'status': ChangeRequestStatus.rejected.wire,
         'decidedBy': adminUid,
         'decidedAt': FieldValue.serverTimestamp(),
+        'rejectionReason': ?reason,
       });
     });
   }
@@ -188,6 +190,7 @@ class ChangeRequestRepository {
         'status': ChangeRequestStatus.pending.wire,
         'decidedBy': FieldValue.delete(),
         'decidedAt': FieldValue.delete(),
+        'rejectionReason': FieldValue.delete(),
       });
     });
   }

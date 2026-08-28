@@ -106,6 +106,7 @@ class ChangeRequest {
     this.appliedChanges,
     this.decidedBy,
     this.decidedAt,
+    this.rejectionReason,
   });
 
   final String id;
@@ -127,6 +128,10 @@ class ChangeRequest {
   final ChangeSet? appliedChanges;
   final String? decidedBy;
   final DateTime? decidedAt;
+
+  /// Set only on a reject decision. Cleared by [restoreToPending] along with
+  /// [decidedBy]/[decidedAt], since it belongs to the decision being undone.
+  final String? rejectionReason;
 
   bool get isPending => status == ChangeRequestStatus.pending;
 
@@ -150,6 +155,7 @@ class ChangeRequest {
         appliedChanges: _asChangeSet(data['appliedChanges']),
         decidedBy: _asString(data['decidedBy']),
         decidedAt: _asDate(data['decidedAt']),
+        rejectionReason: _asString(data['rejectionReason']),
       );
 
   /// `createdAt` is deliberately absent: the repository writes it as a server
@@ -165,5 +171,6 @@ class ChangeRequest {
         if (appliedChanges != null) 'appliedChanges': appliedChanges!.toMap(),
         if (decidedBy != null) 'decidedBy': decidedBy,
         if (decidedAt != null) 'decidedAt': Timestamp.fromDate(decidedAt!),
+        if (rejectionReason != null) 'rejectionReason': rejectionReason,
       };
 }

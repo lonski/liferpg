@@ -199,6 +199,24 @@ class _NewChangeRequestScreenState
                   ),
                 ],
               ],
+              if (request.status == ChangeRequestStatus.rejected) ...[
+                const SizedBox(height: 12),
+                const Divider(color: crimsonBorderFaint, height: 1),
+                const SizedBox(height: 12),
+                Text('Powód odrzucenia'.toUpperCase(),
+                    style: _detailSectionLabel),
+                Text(
+                  request.rejectionReason ?? 'Nie podano',
+                  style: const TextStyle(color: inkHeading),
+                ),
+                if (request.decidedAt != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Rozpatrzono: ${formatTimestamp(request.decidedAt!)}',
+                    style: const TextStyle(color: traitNameInk, fontSize: 12),
+                  ),
+                ],
+              ],
             ],
           ),
         ),

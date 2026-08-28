@@ -265,6 +265,28 @@ void main() {
     expect(find.textContaining('2026-03-05 10:00'), findsOneWidget);
   });
 
+  testWidgets('a rejected request\'s details show why it was rejected',
+      (tester) async {
+    final db = await seed();
+    final request = await db.collection('change_requests').add({
+      'characterId': 'whatever',
+      'characterName': 'Bohater 0',
+      'requesterUid': 'u1',
+      'requesterEmail': 'ala@example.com',
+      'status': 'rejected',
+      'changes': {'current_xp': 50},
+      'rejectionReason': 'Za mało szczegółów',
+      'decidedBy': 'admin1',
+      'decidedAt': Timestamp.fromDate(DateTime(2026, 3, 5, 10, 0)),
+    });
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(Key('my-request-${request.id}')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Za mało szczegółów'), findsOneWidget);
+  });
+
   testWidgets('tapping the cancel icon does not open the details dialog',
       (tester) async {
     final db = await seed();

@@ -249,10 +249,27 @@ void main() {
     expect(decided.status, ChangeRequestStatus.rejected);
     expect(decided.decidedBy, 'admin1');
     expect(decided.appliedChanges, isNull);
+    expect(decided.rejectionReason, isNull);
 
     final character =
         (await db.collection('characters').doc(characterId).get()).data()!;
     expect(character['current_xp'], 40, reason: 'untouched');
+  });
+
+  test('reject records an optional reason', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = ChangeRequestRepository(db);
+    final characterId = await seedCharacter(db);
+    await repo.create(_request(characterId: characterId));
+
+    await repo.reject(
+      await onlyRequest(db),
+      adminUid: 'admin1',
+      reason: 'Za mało szczegółów',
+    );
+
+    final decided = await onlyRequest(db);
+    expect(decided.rejectionReason, 'Za mało szczegółów');
   });
 
   test('restoreToPending flips a rejected request back to pending',
@@ -261,7 +278,11 @@ void main() {
     final repo = ChangeRequestRepository(db);
     final characterId = await seedCharacter(db);
     await repo.create(_request(characterId: characterId));
-    await repo.reject(await onlyRequest(db), adminUid: 'admin1');
+    await repo.reject(
+      await onlyRequest(db),
+      adminUid: 'admin1',
+      reason: 'Za mało szczegółów',
+    );
 
     await repo.restoreToPending(await onlyRequest(db));
 
@@ -269,6 +290,8 @@ void main() {
     expect(restored.status, ChangeRequestStatus.pending);
     expect(restored.decidedBy, isNull);
     expect(restored.decidedAt, isNull);
+    expect(restored.rejectionReason, isNull,
+        reason: 'a stale reason must not survive a restore');
   });
 
   test('restoreToPending throws if the request is not rejected', () async {
