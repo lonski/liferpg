@@ -113,6 +113,20 @@ decidedBy, decidedAt: written on accept/reject
   on a different device see. Hidden characters can be brought back from a
   "Ukryte postacie" section in the user management
   screen. `readOnlyOthers` users do not get this affordance.
+- **Change-request notifications**: a real Android system-tray notification
+  (via `flutter_local_notifications`) fires when a new pending request is
+  created (to admins) or when the signed-in user's own request is accepted or
+  rejected. There are no Cloud Functions in this project (see below), so this
+  rides the app's existing Firestore streams (`pendingChangeRequestsProvider`,
+  `myChangeRequestsProvider`) from `lib/providers/change_request_notification_providers.dart`
+  rather than true push — it only fires while the app process is alive
+  (foreground or backgrounded-but-not-killed), never when fully closed.
+  `ChangeRequestNotificationRepository` (SharedPreferences, per-uid, `null`
+  meaning "no baseline yet") records which pending ids and which own-request
+  statuses have already been surfaced, so the first snapshot after install
+  seeds silently instead of flooding notifications for requests that already
+  existed, and a request leaving the pending list is dropped from the
+  notified set so a later restore-to-pending notifies again.
 
 ## UI Language
 
@@ -164,6 +178,11 @@ The UI is in **Polish**. Labels (Poziom, Złoto, XP, Przychylność, etc.) are v
   tooling picks up whatever `java` resolves to on `PATH` — on this machine that's
   JDK 25, which fails. Export `JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64`
   before running `./gradlew` directly.
+- **Core library desugaring is required for `flutter_local_notifications`**:
+  `android/app/build.gradle.kts` sets `isCoreLibraryDesugaringEnabled = true`
+  and adds `coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")`.
+  Without both, `:app:checkDebugAarMetadata` fails with "requires core library
+  desugaring to be enabled". Do not remove either when touching that file.
 - **Riverpod 3 API differences from Riverpod 2 examples found online**:
   `AsyncValue.valueOrNull` does not exist in this version — use `.value` instead.
   A `StreamProvider` also stays paused (its stream is never subscribed) until it

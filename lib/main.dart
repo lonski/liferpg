@@ -1,15 +1,41 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'data/flutter_local_notifications_change_request_service.dart';
 import 'data/shared_preferences_provider.dart';
 import 'features/home/home_screen.dart';
 import 'features/login/login_screen.dart';
+import 'features/requests/change_requests_screen.dart';
+import 'features/requests/new_change_request_screen.dart';
 import 'firebase_options.dart';
 import 'providers/auth_providers.dart';
+import 'providers/change_request_notification_providers.dart';
 import 'theme/app_theme.dart';
+
+/// Lets a tapped system-tray notification open a screen without threading a
+/// BuildContext through the plugin's tap callback.
+final navigatorKey = GlobalKey<NavigatorState>();
+
+void _openNotificationTarget(String payload) {
+  final navigator = navigatorKey.currentState;
+  if (navigator == null) return;
+  switch (payload) {
+    case 'admin_queue':
+      navigator.push(
+        MaterialPageRoute<void>(builder: (_) => const ChangeRequestsScreen()),
+      );
+    case 'my_requests':
+      navigator.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const NewChangeRequestScreen(),
+        ),
+      );
+  }
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,8 +45,19 @@ Future<void> main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
   final prefs = await SharedPreferences.getInstance();
+
+  final notificationService = FlutterLocalNotificationsChangeRequestService(
+    FlutterLocalNotificationsPlugin(),
+    onTap: _openNotificationTarget,
+  );
+  await notificationService.init();
+
   runApp(ProviderScope(
-    overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      changeRequestNotificationServiceProvider
+          .overrideWithValue(notificationService),
+    ],
     child: const LifeRpgApp(),
   ));
 }
@@ -33,6 +70,7 @@ class LifeRpgApp extends StatelessWidget {
     return MaterialApp(
       title: 'LifeRPG',
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: buildAppTheme(),
       home: const AuthGate(),
     );
@@ -47,7 +85,13 @@ class AuthGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ref.watch(authStateProvider).when(
-          data: (user) => user == null ? const LoginScreen() : const HomeScreen(),
+          data: (user) {
+            if (user == null) return const LoginScreen();
+            // Kept alive for the session so the admin queue / own-requests
+            // streams are watched even while the user is elsewhere in the app.
+            ref.watch(changeRequestNotificationsProvider);
+            return const HomeScreen();
+          },
           loading: () => const Scaffold(
             backgroundColor: bgDark,
             body: Center(child: CircularProgressIndicator(color: gold)),

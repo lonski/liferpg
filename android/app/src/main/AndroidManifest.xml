@@ -3,6 +3,10 @@
          inherited it from firebase-firestore's AAR via manifest merging;
          declare it explicitly so it does not depend on a transitive dep. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Android 13+ requires this at runtime too (see requestPermission() in
+         FlutterLocalNotificationsChangeRequestService) for change-request
+         notifications to actually show. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="liferpg"
         android:name="${applicationName}"
