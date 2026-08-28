@@ -3,6 +3,26 @@ import 'package:flutter/foundation.dart';
 
 import '../models/quest.dart';
 
+/// Thrown when `take`/`withdraw` re-read the quest and it is no longer
+/// `open` -- someone else took it, or it was withdrawn, since the caller's
+/// copy was fetched. Mirrors `ChangeRequestNoLongerPending`.
+class QuestNotOpen implements Exception {
+  const QuestNotOpen();
+
+  @override
+  String toString() => 'To zadanie nie jest już dostępne';
+}
+
+/// Thrown when `abandon`/`markComplete` re-read the quest and it is no
+/// longer `assigned` -- it was already abandoned, completed, or the caller
+/// is stale.
+class QuestNotAssignedToCaller implements Exception {
+  const QuestNotAssignedToCaller();
+
+  @override
+  String toString() => 'To zadanie nie jest już przypisane';
+}
+
 class QuestRepository {
   QuestRepository(this._db);
 
@@ -69,4 +89,55 @@ class QuestRepository {
         });
         return quests;
       });
+
+  Future<void> take(
+    Quest quest, {
+    required String characterId,
+    required String characterName,
+    required String email,
+  }) async {
+    final ref = _quests.doc(quest.id);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      final data = snap.data();
+      if (data == null || QuestStatus.parse(data['status']) != QuestStatus.open) {
+        throw const QuestNotOpen();
+      }
+      tx.update(ref, {
+        'status': QuestStatus.assigned.wire,
+        'assignedToCharacterId': characterId,
+        'assignedToCharacterName': characterName,
+        'assignedToEmail': email,
+      });
+    });
+  }
+
+  Future<void> abandon(Quest quest) async {
+    final ref = _quests.doc(quest.id);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      final data = snap.data();
+      if (data == null || QuestStatus.parse(data['status']) != QuestStatus.assigned) {
+        throw const QuestNotAssignedToCaller();
+      }
+      tx.update(ref, {
+        'status': QuestStatus.open.wire,
+        'assignedToCharacterId': FieldValue.delete(),
+        'assignedToCharacterName': FieldValue.delete(),
+        'assignedToEmail': FieldValue.delete(),
+      });
+    });
+  }
+
+  Future<void> withdraw(Quest quest) async {
+    final ref = _quests.doc(quest.id);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      final data = snap.data();
+      if (data == null || QuestStatus.parse(data['status']) != QuestStatus.open) {
+        throw const QuestNotOpen();
+      }
+      tx.update(ref, {'status': QuestStatus.cancelled.wire});
+    });
+  }
 }

@@ -132,4 +132,81 @@ void main() {
     expect(log, hasLength(3));
     expect(log.every((q) => q.title.startsWith('Zakończone')), isTrue);
   });
+
+  test('take assigns an open quest and sets the taker fields', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await repo.create(_openQuest());
+    final quest = (await repo.watchOpen().first).single;
+
+    await repo.take(
+      quest,
+      characterId: 'c1',
+      characterName: 'Grommash',
+      email: 'ala@example.com',
+    );
+
+    final doc = await db.collection('quests').doc(quest.id).get();
+    expect(doc.data()!['status'], 'assigned');
+    expect(doc.data()!['assignedToCharacterId'], 'c1');
+  });
+
+  test('take throws QuestNotOpen on a quest already taken', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await repo.create(_openQuest());
+    final quest = (await repo.watchOpen().first).single;
+    await repo.take(quest, characterId: 'c1', characterName: 'Grommash', email: 'a@example.com');
+
+    expect(
+      () => repo.take(quest, characterId: 'c2', characterName: 'Bob', email: 'b@example.com'),
+      throwsA(isA<QuestNotOpen>()),
+    );
+  });
+
+  test('abandon returns an assigned quest to open and clears the taker', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await repo.create(_openQuest());
+    var quest = (await repo.watchOpen().first).single;
+    await repo.take(quest, characterId: 'c1', characterName: 'Grommash', email: 'a@example.com');
+    quest = (await repo.watchAssignedTo(['c1']).first).single;
+
+    await repo.abandon(quest);
+
+    final doc = await db.collection('quests').doc(quest.id).get();
+    expect(doc.data()!['status'], 'open');
+    expect(doc.data()!.containsKey('assignedToCharacterId'), isFalse);
+  });
+
+  test('abandon throws QuestNotAssignedToCaller on a quest not currently assigned', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await repo.create(_openQuest());
+    final quest = (await repo.watchOpen().first).single;
+
+    expect(() => repo.abandon(quest), throwsA(isA<QuestNotAssignedToCaller>()));
+  });
+
+  test('withdraw cancels an open quest', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await repo.create(_openQuest());
+    final quest = (await repo.watchOpen().first).single;
+
+    await repo.withdraw(quest);
+
+    final doc = await db.collection('quests').doc(quest.id).get();
+    expect(doc.data()!['status'], 'cancelled');
+  });
+
+  test('withdraw throws QuestNotOpen on a quest already taken', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await repo.create(_openQuest());
+    final quest = (await repo.watchOpen().first).single;
+    await repo.take(quest, characterId: 'c1', characterName: 'Grommash', email: 'a@example.com');
+
+    expect(() => repo.withdraw(quest), throwsA(isA<QuestNotOpen>()));
+  });
 }
