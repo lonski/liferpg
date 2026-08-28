@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../feature_flags.dart';
 import '../../models/character.dart';
 import '../../providers/character_providers.dart';
+import '../../providers/hidden_characters_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
 
@@ -140,6 +141,14 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
     _newTraitValue.clear();
   }
 
+  // Reachable only via the character card's edit icon, itself gated on
+  // canEdit (admin) -- see HomeScreen. No further admin check is needed
+  // here, matching _save()'s trust model.
+  void _hide() {
+    ref.read(hiddenCharacterIdsProvider.notifier).hide(widget.character.id);
+    Navigator.of(context).pop();
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
@@ -189,6 +198,19 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
           ),
         ),
         actions: [
+          TextButton(
+            key: const Key('hide-character'),
+            onPressed: _hide,
+            child: Text(
+              'Ukryj'.toUpperCase(),
+              style: const TextStyle(
+                fontFamily: fontDisplay,
+                fontSize: 9,
+                letterSpacing: 2,
+                color: parchmentLight,
+              ),
+            ),
+          ),
           TextButton(
             key: const Key('save-character'),
             onPressed: _saving ? null : _save,

@@ -27,15 +27,10 @@ class CharacterCard extends StatefulWidget {
     super.key,
     required this.character,
     required this.canEdit,
-    this.onHide,
   });
 
   final Character character;
   final bool canEdit;
-
-  /// Admin-only "declutter my own view" action. Null hides the affordance
-  /// entirely (a caller that never wires hiding, or a non-admin viewer).
-  final VoidCallback? onHide;
 
   @override
   State<CharacterCard> createState() => _CharacterCardState();
@@ -123,19 +118,6 @@ class _CharacterCardState extends State<CharacterCard> {
                         const _TraitsHeading(),
                         const SizedBox(height: 8),
                         _TraitPills(traits: c.traits),
-                      ],
-                      if (widget.onHide != null) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            TextButton(
-                              key: Key('hide-character-${c.id}'),
-                              onPressed: widget.onHide,
-                              child: const Text('Ukryj'),
-                            ),
-                          ],
-                        ),
                       ],
                     ],
                   ),

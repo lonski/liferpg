@@ -14,6 +14,7 @@ import 'package:liferpg/features/home/home_screen.dart';
 import 'package:liferpg/features/requests/new_change_request_screen.dart';
 import 'package:liferpg/models/character.dart';
 import 'package:liferpg/providers/character_providers.dart';
+import 'package:liferpg/providers/hidden_characters_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<FakeFirebaseFirestore> seed({
@@ -99,44 +100,25 @@ void main() {
     expect(find.byKey(const Key('edit-character')), findsOneWidget);
   });
 
-  testWidgets('an admin gets the hide affordance', (tester) async {
-    final db = await seed(admin: true);
-    final characterId =
-        (await db.collection('characters').get()).docs.single.id;
-    await pumpHome(tester, db);
-    expect(find.byKey(Key('hide-character-$characterId')), findsOneWidget);
-  });
-
-  testWidgets('a non-admin does not get the hide affordance', (tester) async {
-    final db = await seed();
-    final characterId =
-        (await db.collection('characters').get()).docs.single.id;
-    await pumpHome(tester, db);
-    expect(find.byKey(Key('hide-character-$characterId')), findsNothing);
-  });
-
-  // T4: the hide button is gated on admin, not canSeeAllCharacters --
-  // swapping the two would hand readOnlyOthers users a hide action that,
-  // per the design, is admin-only.
-  testWidgets('a readOnlyOthers user does not get the hide affordance',
-      (tester) async {
-    final db = await seed(readOnlyOthers: true);
-    final characterId =
-        (await db.collection('characters').get()).docs.single.id;
-    await pumpHome(tester, db);
-    expect(find.byKey(Key('hide-character-$characterId')), findsNothing);
-  });
-
-  testWidgets('hiding a character removes it from the roster',
+  // Hiding is now triggered from EditCharacterScreen (see
+  // edit_character_screen_test.dart), reachable only through the card's
+  // edit icon -- itself already gated on canEdit (admin), covered by 'a
+  // readOnlyOthers user sees characters but no edit affordance' and 'an
+  // admin gets the edit affordance' above. These tests exercise the
+  // roster-filtering side (hiddenCharacterIdsProvider -> HomeScreen) via
+  // the provider directly, the same seam EditCharacterScreen's hide action
+  // writes through.
+  testWidgets('a character hidden via the provider disappears for an admin',
       (tester) async {
     final db = await seed(admin: true);
     final characterId =
         (await db.collection('characters').get()).docs.single.id;
     await pumpHome(tester, db);
-
     expect(find.byType(CharacterCard), findsOneWidget);
 
-    await tester.tap(find.byKey(Key('hide-character-$characterId')));
+    final container =
+        ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
+    container.read(hiddenCharacterIdsProvider.notifier).hide(characterId);
     await tester.pumpAndSettle();
 
     expect(find.byType(CharacterCard), findsNothing);
@@ -181,7 +163,9 @@ void main() {
         (await db.collection('characters').get()).docs.single.id;
     await pumpHome(tester, db);
 
-    await tester.tap(find.byKey(Key('hide-character-$characterId')));
+    final container =
+        ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
+    container.read(hiddenCharacterIdsProvider.notifier).hide(characterId);
     await tester.pumpAndSettle();
 
     // A second character owned by somebody else stays visible: hiding is

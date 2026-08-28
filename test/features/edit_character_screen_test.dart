@@ -4,13 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/data/firebase_providers.dart';
+import 'package:liferpg/data/shared_preferences_provider.dart';
 import 'package:liferpg/features/character/edit_character_screen.dart';
 import 'package:liferpg/models/character.dart';
+import 'package:liferpg/providers/hidden_characters_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<(FakeFirebaseFirestore, Character)> seed({
   bool withGold = true,
 }) async {
   final db = FakeFirebaseFirestore();
+  await db.collection('users').doc('u1').set({
+    'uid': 'u1',
+    'name': 'Admin',
+    'email': 'admin@example.com',
+    'admin': true,
+    'readOnlyOthers': false,
+  });
   final ref = await db.collection('characters').add({
     'name': 'Grommash',
     'email': 'g@example.com',
@@ -32,8 +42,11 @@ Future<void> pumpEdit(
   FakeFirebaseFirestore db,
   Character character,
 ) async {
-  // Both seams must be overridden: the screen reads traitNamesProvider, which
-  // reaches back through charactersProvider to appUserProvider and auth.
+  // All three seams must be overridden: the screen reads traitNamesProvider
+  // (which reaches back through charactersProvider to appUserProvider and
+  // auth) and, for the hide action, hiddenCharacterIdsProvider (which needs
+  // both appUserProvider and shared_preferences).
+  SharedPreferences.setMockInitialValues({});
   await tester.pumpWidget(ProviderScope(
     overrides: [
       firestoreProvider.overrideWithValue(db),
@@ -41,6 +54,9 @@ Future<void> pumpEdit(
         signedIn: true,
         mockUser: MockUser(uid: 'u1', email: 'admin@example.com'),
       )),
+      sharedPreferencesProvider.overrideWithValue(
+        await SharedPreferences.getInstance(),
+      ),
     ],
     child: MaterialApp(home: EditCharacterScreen(character: character)),
   ));
@@ -71,6 +87,24 @@ void main() {
     final snap = await db.collection('characters').doc(character.id).get();
     expect(snap.data()!['level'], 7);
     expect(snap.data()!['current_xp'], 55);
+  });
+
+  // The hide action lives here rather than on the character card: this
+  // screen is only ever reached through the card's edit icon, which is
+  // already gated on admin (canEdit) -- readOnlyOthers never sees it, so no
+  // separate readOnlyOthers-can't-hide test is needed here.
+  testWidgets('tapping hide adds the character to the hidden set and closes',
+      (tester) async {
+    final (db, character) = await seed();
+    await pumpEdit(tester, db, character);
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(EditCharacterScreen)),
+    );
+
+    await tester.tap(find.byKey(const Key('hide-character')));
+    await tester.pumpAndSettle();
+
+    expect(container.read(hiddenCharacterIdsProvider), contains(character.id));
   });
 
   testWidgets('a trait can be removed and a new one added', (tester) async {

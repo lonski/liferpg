@@ -74,39 +74,6 @@ void main() {
     expect(find.byKey(const Key('edit-character')), findsOneWidget);
   });
 
-  testWidgets('the hide affordance appears only when onHide is provided',
-      (tester) async {
-    await tester.pumpWidget(
-      wrap(CharacterCard(character: sample(), canEdit: true)),
-    );
-    expect(find.byKey(const Key('hide-character-c1')), findsNothing);
-
-    await tester.pumpWidget(
-      wrap(CharacterCard(
-        character: sample(),
-        canEdit: true,
-        onHide: () {},
-      )),
-    );
-    expect(find.byKey(const Key('hide-character-c1')), findsOneWidget);
-  });
-
-  testWidgets('tapping the hide affordance invokes onHide', (tester) async {
-    var hidden = false;
-    await tester.pumpWidget(
-      wrap(CharacterCard(
-        character: sample(),
-        canEdit: true,
-        onHide: () => hidden = true,
-      )),
-    );
-
-    await tester.tap(find.byKey(const Key('hide-character-c1')));
-    await tester.pumpAndSettle();
-
-    expect(hidden, isTrue);
-  });
-
   testWidgets(
       'the XP track spans the full available width regardless of fraction',
       (tester) async {

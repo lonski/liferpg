@@ -195,11 +195,6 @@ class HomeScreen extends ConsumerWidget {
                     CharacterCard(
                       character: c,
                       canEdit: user?.canEdit ?? false,
-                      onHide: isAdmin
-                          ? () => ref
-                              .read(hiddenCharacterIdsProvider.notifier)
-                              .hide(c.id)
-                          : null,
                     ),
               ],
             ),
