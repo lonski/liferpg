@@ -30,6 +30,17 @@ Future<FakeFirebaseFirestore> seed({int characters = 1}) async {
 }
 
 Future<void> pumpScreen(WidgetTester tester, FakeFirebaseFirestore db) async {
+  // The default 800x600 test surface is too short to fit the request form
+  // card plus the own-requests list: with even a single request row present,
+  // the row (and anything tappable inside it, e.g. the cancel button added
+  // in Task 5) renders below the fold and tester.tap() cannot reach it. A
+  // taller surface -- restored after the test -- keeps the whole scroll
+  // view's content hit-testable without changing any actual widget layout.
+  tester.view.physicalSize = const Size(800, 1400);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
   await tester.pumpWidget(ProviderScope(
     overrides: [
       firestoreProvider.overrideWithValue(db),
@@ -95,5 +106,55 @@ void main() {
     expect(data['characterName'], 'Bohater 0');
     expect(data['reason'], 'Posprzątałem garaż');
     expect(data['changes'], {'current_xp': 50});
+  });
+
+  testWidgets('a pending request can be cancelled with confirmation',
+      (tester) async {
+    final db = await seed();
+    final request = await db.collection('change_requests').add({
+      'characterId': 'whatever',
+      'characterName': 'Bohater 0',
+      'requesterUid': 'u1',
+      'requesterEmail': 'ala@example.com',
+      'status': 'pending',
+      'changes': {'current_xp': 50},
+    });
+    await pumpScreen(tester, db);
+
+    expect(find.byKey(Key('cancel-request-${request.id}')), findsOneWidget);
+    await tester.tap(find.byKey(Key('cancel-request-${request.id}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(Key('confirm-cancel-${request.id}')));
+    await tester.pumpAndSettle();
+
+    final data =
+        (await db.collection('change_requests').doc(request.id).get())
+            .data()!;
+    expect(data['status'], 'cancelled');
+    expect(find.text('Anulowana'), findsOneWidget);
+  });
+
+  testWidgets('backing out of the cancel confirmation changes nothing',
+      (tester) async {
+    final db = await seed();
+    final request = await db.collection('change_requests').add({
+      'characterId': 'whatever',
+      'characterName': 'Bohater 0',
+      'requesterUid': 'u1',
+      'requesterEmail': 'ala@example.com',
+      'status': 'pending',
+      'changes': {'current_xp': 50},
+    });
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(Key('cancel-request-${request.id}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('NIE'));
+    await tester.pumpAndSettle();
+
+    final data =
+        (await db.collection('change_requests').doc(request.id).get())
+            .data()!;
+    expect(data['status'], 'pending');
   });
 }

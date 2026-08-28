@@ -394,3 +394,53 @@ test('a non-admin may not decide a request, even their own', async () => {
     })
   );
 });
+
+test('a user may cancel their own pending request', async () => {
+  await seedRequest('req-cancel-mine', ALICE.uid);
+  const db = ctxFor(ALICE);
+  await assertSucceeds(
+    updateDoc(doc(db, 'change_requests/req-cancel-mine'), {
+      status: 'cancelled',
+    })
+  );
+});
+
+test("a user may not cancel somebody else's request", async () => {
+  await seedRequest('req-cancel-other', BOB.uid);
+  const db = ctxFor(ALICE);
+  await assertFails(
+    updateDoc(doc(db, 'change_requests/req-cancel-other'), {
+      status: 'cancelled',
+    })
+  );
+});
+
+test('cancelling may not smuggle in other field changes', async () => {
+  await seedRequest('req-cancel-smuggle', ALICE.uid);
+  const db = ctxFor(ALICE);
+  await assertFails(
+    updateDoc(doc(db, 'change_requests/req-cancel-smuggle'), {
+      status: 'cancelled',
+      decidedBy: ALICE.uid,
+    })
+  );
+});
+
+test('a user may not cancel a request that is no longer pending', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'change_requests/req-cancel-decided'), {
+      characterId: 'c-alice',
+      characterName: 'Alicja',
+      requesterUid: ALICE.uid,
+      requesterEmail: ALICE.email,
+      status: 'rejected',
+      changes: { current_xp: 50 },
+    });
+  });
+  const db = ctxFor(ALICE);
+  await assertFails(
+    updateDoc(doc(db, 'change_requests/req-cancel-decided'), {
+      status: 'cancelled',
+    })
+  );
+});

@@ -81,7 +81,8 @@ class ChangeSet {
 enum ChangeRequestStatus {
   pending,
   accepted,
-  rejected;
+  rejected,
+  cancelled;
 
   String get wire => name;
 

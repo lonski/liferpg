@@ -283,4 +283,29 @@ void main() {
       throwsA(isA<ChangeRequestNotRejected>()),
     );
   });
+
+  test('cancel marks a pending request cancelled', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = ChangeRequestRepository(db);
+    final characterId = await seedCharacter(db);
+    await repo.create(_request(characterId: characterId));
+
+    await repo.cancel(await onlyRequest(db));
+
+    final cancelled = await onlyRequest(db);
+    expect(cancelled.status, ChangeRequestStatus.cancelled);
+  });
+
+  test('cancel throws if the request is already decided', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = ChangeRequestRepository(db);
+    final characterId = await seedCharacter(db);
+    await repo.create(_request(characterId: characterId));
+    await repo.reject(await onlyRequest(db), adminUid: 'admin1');
+
+    await expectLater(
+      repo.cancel(await onlyRequest(db)),
+      throwsA(isA<ChangeRequestNoLongerPending>()),
+    );
+  });
 }

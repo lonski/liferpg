@@ -8,6 +8,7 @@ import '../../providers/auth_providers.dart';
 import '../../providers/change_request_providers.dart';
 import '../../providers/character_providers.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/dialogs.dart';
 import '../../theme/ornaments.dart';
 import 'change_request_form.dart';
 
@@ -56,6 +57,24 @@ class _NewChangeRequestScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Nie udało się wysłać prośby: $error')),
       );
+    }
+  }
+
+  Future<void> _cancel(ChangeRequest request) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Anulować prośbę?',
+      cancelLabel: 'Nie',
+      confirmLabel: 'Tak, anuluj',
+      confirmKey: Key('confirm-cancel-${request.id}'),
+    );
+    if (!confirmed) return;
+    try {
+      await ref.read(changeRequestRepositoryProvider).cancel(request);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
     }
   }
 
@@ -224,13 +243,16 @@ class _NewChangeRequestScreenState
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(r.characterName,
-                            style: const TextStyle(color: parchmentMuted)),
+                        Expanded(
+                          child: Text(r.characterName,
+                              style: const TextStyle(color: parchmentMuted)),
+                        ),
                         Text(
                           switch (r.status) {
                             ChangeRequestStatus.pending => 'Oczekuje',
                             ChangeRequestStatus.accepted => 'Zaakceptowana',
                             ChangeRequestStatus.rejected => 'Odrzucona',
+                            ChangeRequestStatus.cancelled => 'Anulowana',
                           },
                           style: const TextStyle(
                             fontFamily: fontDisplay,
@@ -239,6 +261,14 @@ class _NewChangeRequestScreenState
                             color: parchmentFaint,
                           ),
                         ),
+                        if (r.status == ChangeRequestStatus.pending)
+                          IconButton(
+                            key: Key('cancel-request-${r.id}'),
+                            tooltip: 'Anuluj',
+                            icon: const Icon(Icons.close,
+                                size: 16, color: crimson),
+                            onPressed: () => _cancel(r),
+                          ),
                       ],
                     ),
                   ),

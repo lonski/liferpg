@@ -159,6 +159,18 @@ class ChangeRequestRepository {
     });
   }
 
+  /// The requester's own withdrawal of a request they no longer want acted
+  /// on. Reuses the pending guard from accept/reject: a request that has
+  /// already been decided (or already cancelled) throws
+  /// [ChangeRequestNoLongerPending], same as a double-tap on accept/reject.
+  Future<void> cancel(ChangeRequest request) async {
+    final requestRef = _requests.doc(request.id);
+    await _db.runTransaction((tx) async {
+      await _readPending(tx, requestRef);
+      tx.update(requestRef, {'status': ChangeRequestStatus.cancelled.wire});
+    });
+  }
+
   /// Puts a rejected request back in the queue, as if it had never been
   /// decided. There is no `decidedBy`/`decidedAt` afterwards -- restoring is
   /// not itself a decision.

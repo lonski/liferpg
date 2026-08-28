@@ -57,8 +57,16 @@ service cloud.firestore {
                          .data.email.lower() == request.auth.token.email.lower();
 
       // Accepting also writes /characters/{id}, which is already admin-only,
-      // so the whole apply path runs as an admin.
-      allow update, delete: if isAdmin();
+      // so the whole apply path runs as an admin. The one non-admin path is
+      // a requester withdrawing their own still-pending request: that may
+      // only flip status to 'cancelled' and touch no other field.
+      allow update: if isAdmin()
+                    || (isAuthenticated()
+                        && resource.data.requesterUid == request.auth.uid
+                        && resource.data.status == 'pending'
+                        && request.resource.data.status == 'cancelled'
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+      allow delete: if isAdmin();
     }
   }
 }
