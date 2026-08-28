@@ -103,6 +103,13 @@ decidedBy, decidedAt: written on accept/reject
   request can be accepted, edited-then-accepted, or rejected; a rejected
   request can be restored to pending by an admin, and a requester can cancel
   their own still-pending request.
+- **Hiding characters**: an admin can hide a character card from their own
+  roster view (an "Ukryj" action on the card). This is per-admin and
+  on-device only (`SharedPreferences`, keyed by uid) — it is never written to
+  Firestore, so it never affects what the owning player, other admins, or
+  this same admin on a different device see. Hidden characters can be
+  brought back from a "Ukryte postacie" section in the user management
+  screen. `readOnlyOthers` users do not get this affordance.
 
 ## UI Language
 

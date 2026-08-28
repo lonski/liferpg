@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/app_user.dart';
+import '../../models/character.dart';
+import '../../providers/character_providers.dart';
+import '../../providers/hidden_characters_providers.dart';
 import '../../providers/user_providers.dart';
 import '../../theme/app_theme.dart';
 
@@ -40,6 +43,9 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final users = ref.watch(usersProvider);
+    final characters = ref.watch(charactersProvider).value?.characters ??
+        const <Character>[];
+    final hiddenIds = ref.watch(hiddenCharacterIdsProvider);
 
     return Scaffold(
       backgroundColor: bgDark,
@@ -79,36 +85,49 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         data: (list) => Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
-            child: list.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Brak użytkowników',
-                      style: TextStyle(
-                        fontFamily: fontDisplay,
-                        fontSize: 12,
-                        // Drawn directly on the dark scaffold (bgDark), not a
-                        // parchment surface, so it needs a light ink -- see
-                        // CLAUDE.md contrast notes. Matches the error-state
-                        // text above.
-                        color: parchmentLight,
-                      ),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: list.length,
-                    separatorBuilder: (context, i) =>
-                        const Divider(color: crimsonBorderFaint, height: 1),
-                    itemBuilder: (context, i) {
-                      final user = list[i];
-                      return _UserRow(
-                        user: user,
-                        busy: _pending.contains(user.uid),
-                        onAdmin: (v) => _setAdmin(user, v),
-                        onReadOnly: (v) => _setReadOnly(user, v),
-                      );
-                    },
-                  ),
+            child: Column(
+              children: [
+                _HiddenCharactersSection(
+                  characters: characters,
+                  hiddenIds: hiddenIds,
+                  onUnhide: (id) => ref
+                      .read(hiddenCharacterIdsProvider.notifier)
+                      .unhide(id),
+                ),
+                Expanded(
+                  child: list.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'Brak użytkowników',
+                            style: TextStyle(
+                              fontFamily: fontDisplay,
+                              fontSize: 12,
+                              // Drawn directly on the dark scaffold (bgDark),
+                              // not a parchment surface, so it needs a light
+                              // ink -- see CLAUDE.md contrast notes. Matches
+                              // the error-state text above.
+                              color: parchmentLight,
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: list.length,
+                          separatorBuilder: (context, i) => const Divider(
+                              color: crimsonBorderFaint, height: 1),
+                          itemBuilder: (context, i) {
+                            final user = list[i];
+                            return _UserRow(
+                              user: user,
+                              busy: _pending.contains(user.uid),
+                              onAdmin: (v) => _setAdmin(user, v),
+                              onReadOnly: (v) => _setReadOnly(user, v),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -196,6 +215,66 @@ class _UserRow extends StatelessWidget {
           ],
         ),
       );
+}
+
+/// An admin's own on-device hide list, surfaced here so they have somewhere
+/// to bring a character back -- CharacterCard only offers the one-way hide
+/// action. Renders nothing when nothing is hidden.
+class _HiddenCharactersSection extends StatelessWidget {
+  const _HiddenCharactersSection({
+    required this.characters,
+    required this.hiddenIds,
+    required this.onUnhide,
+  });
+
+  final List<Character> characters;
+  final Set<String> hiddenIds;
+  final ValueChanged<String> onUnhide;
+
+  @override
+  Widget build(BuildContext context) {
+    final hidden = [
+      for (final c in characters)
+        if (hiddenIds.contains(c.id)) c,
+    ];
+    if (hidden.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Ukryte postacie',
+            style: TextStyle(
+              fontFamily: fontDisplay,
+              fontSize: 11,
+              letterSpacing: 2,
+              color: parchmentMuted,
+            ),
+          ),
+          const SizedBox(height: 6),
+          for (final c in hidden)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(c.name,
+                      style: const TextStyle(color: parchmentLight)),
+                  TextButton(
+                    key: Key('unhide-${c.id}'),
+                    onPressed: () => onUnhide(c.id),
+                    child: const Text('Pokaż'),
+                  ),
+                ],
+              ),
+            ),
+          const Divider(color: crimsonBorderFaint, height: 16),
+        ],
+      ),
+    );
+  }
 }
 
 class _LabelledSwitch extends StatelessWidget {

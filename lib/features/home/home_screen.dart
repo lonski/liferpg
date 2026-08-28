@@ -5,6 +5,7 @@ import '../../models/character.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/change_request_providers.dart';
 import '../../providers/character_providers.dart';
+import '../../providers/hidden_characters_providers.dart';
 import '../../theme/app_theme.dart';
 import '../character/character_card.dart';
 import '../requests/change_requests_screen.dart';
@@ -30,6 +31,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(appUserProvider).value;
     final feed = ref.watch(charactersProvider);
+    final hiddenIds = ref.watch(hiddenCharacterIdsProvider);
     final pendingCount =
         ref.watch(pendingChangeRequestsProvider).value?.length ?? 0;
 
@@ -184,7 +186,16 @@ class HomeScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               children: [
                 for (final c in data.characters)
-                  CharacterCard(character: c, canEdit: user?.canEdit ?? false),
+                  if (!hiddenIds.contains(c.id))
+                    CharacterCard(
+                      character: c,
+                      canEdit: user?.canEdit ?? false,
+                      onHide: user?.admin ?? false
+                          ? () => ref
+                              .read(hiddenCharacterIdsProvider.notifier)
+                              .hide(c.id)
+                          : null,
+                    ),
               ],
             ),
           ),

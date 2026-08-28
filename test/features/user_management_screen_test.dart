@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/data/firebase_providers.dart';
+import 'package:liferpg/data/shared_preferences_provider.dart';
 import 'package:liferpg/features/users/user_management_screen.dart';
+import 'package:liferpg/providers/hidden_characters_providers.dart';
 import 'package:liferpg/theme/app_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<FakeFirebaseFirestore> seed() async {
   final db = FakeFirebaseFirestore();
@@ -23,10 +26,20 @@ Future<FakeFirebaseFirestore> seed() async {
     'admin': false,
     'readOnlyOthers': false,
   });
+  await db.collection('characters').add({
+    'name': 'Grommash',
+    'email': 'bob@example.com',
+    'level': 3,
+    'current_xp': 40,
+    'next_level_xp': 100,
+    'favour': 0,
+    'traits': <dynamic>[],
+  });
   return db;
 }
 
 Future<void> pumpScreen(WidgetTester tester, FakeFirebaseFirestore db) async {
+  SharedPreferences.setMockInitialValues({});
   await tester.pumpWidget(ProviderScope(
     overrides: [
       firestoreProvider.overrideWithValue(db),
@@ -34,6 +47,9 @@ Future<void> pumpScreen(WidgetTester tester, FakeFirebaseFirestore db) async {
         signedIn: true,
         mockUser: MockUser(uid: 'u1', email: 'ala@example.com'),
       )),
+      sharedPreferencesProvider.overrideWithValue(
+        await SharedPreferences.getInstance(),
+      ),
     ],
     child: const MaterialApp(home: UserManagementScreen()),
   ));
@@ -74,6 +90,36 @@ void main() {
 
     final snap = await db.collection('users').doc('u2').get();
     expect(snap.data()!['admin'], isTrue);
+  });
+
+  testWidgets('shows no hidden-characters section when nothing is hidden',
+      (tester) async {
+    await pumpScreen(tester, await seed());
+    expect(find.text('Ukryte postacie'), findsNothing);
+  });
+
+  testWidgets('lists a hidden character with a way to bring it back',
+      (tester) async {
+    final db = await seed();
+    final characterId =
+        (await db.collection('characters').get()).docs.single.id;
+    await pumpScreen(tester, db);
+
+    // Hide it through the same provider HomeScreen uses, then rebuild.
+    final element = tester.element(find.byType(UserManagementScreen));
+    ProviderScope.containerOf(element)
+        .read(hiddenCharacterIdsProvider.notifier)
+        .hide(characterId);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ukryte postacie'), findsOneWidget);
+    expect(find.text('Grommash'), findsOneWidget);
+    expect(find.byKey(Key('unhide-$characterId')), findsOneWidget);
+
+    await tester.tap(find.byKey(Key('unhide-$characterId')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ukryte postacie'), findsNothing);
   });
 
   testWidgets('shows an empty state when there are no users', (tester) async {

@@ -7,12 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/data/firebase_providers.dart';
+import 'package:liferpg/data/shared_preferences_provider.dart';
 import 'package:liferpg/features/character/character_card.dart';
 import 'package:liferpg/data/character_repository.dart';
 import 'package:liferpg/features/home/home_screen.dart';
 import 'package:liferpg/features/requests/new_change_request_screen.dart';
 import 'package:liferpg/models/character.dart';
 import 'package:liferpg/providers/character_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<FakeFirebaseFirestore> seed({
   bool admin = false,
@@ -43,6 +45,7 @@ Future<void> pumpHome(
   FakeFirebaseFirestore db, {
   List<Override> extraOverrides = const [],
 }) async {
+  SharedPreferences.setMockInitialValues({});
   await tester.pumpWidget(ProviderScope(
     overrides: [
       firestoreProvider.overrideWithValue(db),
@@ -50,6 +53,9 @@ Future<void> pumpHome(
         signedIn: true,
         mockUser: MockUser(uid: 'u1', email: 'ala@example.com'),
       )),
+      sharedPreferencesProvider.overrideWithValue(
+        await SharedPreferences.getInstance(),
+      ),
       ...extraOverrides,
     ],
     child: const MaterialApp(home: HomeScreen()),
@@ -91,6 +97,56 @@ void main() {
     await pumpHome(tester, await seed(admin: true));
     expect(find.byType(CharacterCard), findsOneWidget);
     expect(find.byKey(const Key('edit-character')), findsOneWidget);
+  });
+
+  testWidgets('an admin gets the hide affordance, a non-admin does not',
+      (tester) async {
+    await pumpHome(tester, await seed());
+    expect(find.byKey(const Key('hide-character-c1')), findsNothing);
+  });
+
+  testWidgets('hiding a character removes it from the roster',
+      (tester) async {
+    final db = await seed(admin: true);
+    final characterId =
+        (await db.collection('characters').get()).docs.single.id;
+    await pumpHome(tester, db);
+
+    expect(find.byType(CharacterCard), findsOneWidget);
+
+    await tester.tap(find.byKey(Key('hide-character-$characterId')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CharacterCard), findsNothing);
+  });
+
+  testWidgets(
+      'a hidden character stays hidden across a rebuild of the same session',
+      (tester) async {
+    final db = await seed(admin: true);
+    final characterId =
+        (await db.collection('characters').get()).docs.single.id;
+    await pumpHome(tester, db);
+
+    await tester.tap(find.byKey(Key('hide-character-$characterId')));
+    await tester.pumpAndSettle();
+
+    // A second character owned by somebody else stays visible: hiding is
+    // per-character, not a blanket "hide everything" toggle.
+    await db.collection('characters').add({
+      'name': 'Cudza postać',
+      'email': 'ktos.inny@example.com',
+      'level': 1,
+      'current_xp': 0,
+      'next_level_xp': 100,
+      'favour': 0,
+      'traits': <dynamic>[],
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CharacterCard), findsOneWidget);
+    expect(find.text('Cudza postać'), findsOneWidget);
+    expect(find.text('Grommash'), findsNothing);
   });
 
   // T2: the offline indicator. Overriding charactersProvider with a fixed
