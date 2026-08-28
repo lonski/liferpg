@@ -209,4 +209,49 @@ void main() {
     expect(find.byKey(Key('reject-${decided.id}')), findsNothing);
     expect(find.byKey(Key('edit-${decided.id}')), findsNothing);
   });
+
+  testWidgets(
+      'a decided request card spans the same width as a pending one',
+      (tester) async {
+    final db = await seed();
+    final decided = await db.collection('change_requests').add({
+      'characterId': characterId,
+      'characterName': 'T',
+      'requesterUid': 'u2',
+      'requesterEmail': 'bob@example.com',
+      'status': 'rejected',
+      'changes': {'gold': 5},
+    });
+    await pumpScreen(tester, db);
+
+    final pendingWidth =
+        tester.getSize(find.byKey(Key('request-$requestId'))).width;
+
+    await tester.tap(find.byKey(const Key('filter-rejected')));
+    await tester.pumpAndSettle();
+
+    final rejectedWidth =
+        tester.getSize(find.byKey(Key('request-${decided.id}'))).width;
+
+    // Both cards live in the same ListView with the same horizontal padding,
+    // so their outer widths already match -- the bug shrank only the inner
+    // crimson-bordered content box. Measure that inner box directly via its
+    // decoration: it's the widget carrying `crimsonBorder`.
+    final innerBox = tester.widgetList<Container>(find.descendant(
+      of: find.byKey(Key('request-${decided.id}')),
+      matching: find.byType(Container),
+    )).firstWhere((c) {
+      final decoration = c.decoration;
+      return decoration is BoxDecoration &&
+          decoration.border == Border.all(color: crimsonBorder);
+    });
+    final innerWidth =
+        tester.renderObject<RenderBox>(find.byWidget(innerBox)).size.width;
+
+    expect(rejectedWidth, pendingWidth);
+    // Before the fix this was far smaller than the card (shrink-wrapped to
+    // "T" / the timestamp / "Złoto: +5" -- the widest line was well under
+    // half the card width on a typical test viewport).
+    expect(innerWidth, greaterThan(rejectedWidth * 0.9));
+  });
 }

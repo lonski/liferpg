@@ -296,6 +296,7 @@ class _RequestCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
               padding: const EdgeInsets.all(12),
+              width: double.infinity,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
