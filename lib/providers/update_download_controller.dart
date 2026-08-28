@@ -85,12 +85,15 @@ class UpdateDownloadController extends Notifier<UpdateDownloadState> {
       final sink = file.openWrite();
       var received = 0;
       final total = response.contentLength;
-      await response.stream.listen((chunk) {
-        received += chunk.length;
-        sink.add(chunk);
-        state = UpdateDownloadInProgress(received, total);
-      }).asFuture<void>();
-      await sink.close();
+      try {
+        await response.stream.listen((chunk) {
+          received += chunk.length;
+          sink.add(chunk);
+          state = UpdateDownloadInProgress(received, total);
+        }).asFuture<void>();
+      } finally {
+        await sink.close();
+      }
 
       state = const UpdateDownloadInstalling();
       final installer = ref.read(updateInstallerServiceProvider);
