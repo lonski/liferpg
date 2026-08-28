@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/change_request.dart';
+import '../models/quest.dart' show QuestStatus;
 
 /// Thrown when a transaction finds the request already accepted or rejected:
 /// a double-tap, or a decision taken on another device while this list was
@@ -126,7 +127,7 @@ class ChangeRequestRepository {
     final characterRef = _db.collection('characters').doc(request.characterId);
 
     await _db.runTransaction((tx) async {
-      await _readPending(tx, requestRef);
+      final requestData = await _readPending(tx, requestRef);
 
       final characterSnap = await tx.get(characterRef);
       final character = characterSnap.data();
@@ -141,6 +142,13 @@ class ChangeRequestRepository {
         'decidedBy': adminUid,
         'decidedAt': FieldValue.serverTimestamp(),
       });
+
+      final questId = requestData['questId'];
+      if (questId is String) {
+        tx.update(_db.collection('quests').doc(questId), {
+          'status': QuestStatus.completed.wire,
+        });
+      }
     });
   }
 
@@ -151,13 +159,20 @@ class ChangeRequestRepository {
   }) async {
     final requestRef = _requests.doc(request.id);
     await _db.runTransaction((tx) async {
-      await _readPending(tx, requestRef);
+      final requestData = await _readPending(tx, requestRef);
       tx.update(requestRef, {
         'status': ChangeRequestStatus.rejected.wire,
         'decidedBy': adminUid,
         'decidedAt': FieldValue.serverTimestamp(),
         'rejectionReason': ?reason,
       });
+
+      final questId = requestData['questId'];
+      if (questId is String) {
+        tx.update(_db.collection('quests').doc(questId), {
+          'status': QuestStatus.failed.wire,
+        });
+      }
     });
   }
 

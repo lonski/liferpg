@@ -330,4 +330,88 @@ void main() {
       throwsA(isA<ChangeRequestNoLongerPending>()),
     );
   });
+
+  test('accept flips a linked quest to completed', () async {
+    final db = FakeFirebaseFirestore();
+    final questRef = await db.collection('quests').add({
+      'title': 'Posprzątaj garaż',
+      'posterUid': 'u1',
+      'posterEmail': 'ala@example.com',
+      'posterName': 'Ala',
+      'assignedToCharacterId': 'c1',
+      'status': 'pending_review',
+      'reward': {'current_xp': 50},
+    });
+    await db.collection('characters').doc('c1').set({
+      'name': 'Grommash',
+      'email': 'ala@example.com',
+      'current_xp': 10,
+    });
+    final request = _request(characterId: 'c1', changes: const ChangeSet(currentXp: 50));
+    final repo = ChangeRequestRepository(db);
+    await repo.create(ChangeRequest(
+      id: '',
+      characterId: request.characterId,
+      characterName: request.characterName,
+      requesterUid: request.requesterUid,
+      requesterEmail: request.requesterEmail,
+      status: ChangeRequestStatus.pending,
+      changes: request.changes,
+      questId: questRef.id,
+      questTitle: 'Posprzątaj garaż',
+    ));
+    final saved = (await repo.watchPending().first).single;
+
+    await repo.accept(saved, adminUid: 'admin1');
+
+    final questDoc = await db.collection('quests').doc(questRef.id).get();
+    expect(questDoc.data()!['status'], 'completed');
+  });
+
+  test('reject flips a linked quest to failed', () async {
+    final db = FakeFirebaseFirestore();
+    final questRef = await db.collection('quests').add({
+      'title': 'Umyj okna',
+      'posterUid': 'u1',
+      'posterEmail': 'ala@example.com',
+      'posterName': 'Ala',
+      'assignedToCharacterId': 'c1',
+      'status': 'pending_review',
+      'reward': {'current_xp': 25},
+    });
+    final repo = ChangeRequestRepository(db);
+    await repo.create(ChangeRequest(
+      id: '',
+      characterId: 'c1',
+      characterName: 'Grommash',
+      requesterUid: 'u1',
+      requesterEmail: 'ala@example.com',
+      status: ChangeRequestStatus.pending,
+      changes: const ChangeSet(currentXp: 25),
+      questId: questRef.id,
+      questTitle: 'Umyj okna',
+    ));
+    final saved = (await repo.watchPending().first).single;
+
+    await repo.reject(saved, adminUid: 'admin1');
+
+    final questDoc = await db.collection('quests').doc(questRef.id).get();
+    expect(questDoc.data()!['status'], 'failed');
+  });
+
+  test('accept on a request with no questId does not touch /quests', () async {
+    final db = FakeFirebaseFirestore();
+    await db.collection('characters').doc('c1').set({
+      'name': 'Grommash',
+      'email': 'ala@example.com',
+      'current_xp': 10,
+    });
+    final repo = ChangeRequestRepository(db);
+    await repo.create(_request(characterId: 'c1'));
+    final saved = (await repo.watchPending().first).single;
+
+    await repo.accept(saved, adminUid: 'admin1');
+
+    expect((await db.collection('quests').get()).docs, isEmpty);
+  });
 }
