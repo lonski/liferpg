@@ -164,8 +164,8 @@ class QuestRepository {
         throw const QuestNotAssignedToCaller();
       }
       tx.set(requestRef, {
-        'characterId': quest.assignedToCharacterId,
-        'characterName': quest.assignedToCharacterName,
+        'characterId': data['assignedToCharacterId'],
+        'characterName': data['assignedToCharacterName'],
         'requesterUid': requesterUid,
         'requesterEmail': requesterEmail,
         'status': ChangeRequestStatus.pending.wire,

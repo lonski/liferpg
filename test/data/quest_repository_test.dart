@@ -247,4 +247,36 @@ void main() {
       throwsA(isA<QuestNotAssignedToCaller>()),
     );
   });
+
+  test('markComplete uses fresh assignment from re-read, not stale quest object', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await repo.create(_openQuest());
+    var quest = (await repo.watchOpen().first).single;
+
+    // Take as character A
+    await repo.take(quest, characterId: 'c1', characterName: 'Grommash', email: 'ala@example.com');
+    quest = (await repo.watchAssignedTo(['c1']).first).single;
+
+    // Simulate reassignment: abandon and re-take as character B
+    // (but keep the stale quest object still showing A)
+    final staleQuest = quest;
+    await repo.abandon(staleQuest);
+    await repo.take(
+      (await repo.watchOpen().first).single,
+      characterId: 'c2',
+      characterName: 'Thrall',
+      email: 'ala@example.com',
+    );
+
+    // markComplete with stale quest object should use fresh assignment (B)
+    await repo.markComplete(staleQuest, requesterUid: 'u1', requesterEmail: 'ala@example.com');
+
+    // Verify the change request credits character B, not A
+    final requestDocs = await db.collection('change_requests').get();
+    expect(requestDocs.docs, hasLength(1));
+    final requestData = requestDocs.docs.single.data();
+    expect(requestData['characterId'], 'c2');
+    expect(requestData['characterName'], 'Thrall');
+  });
 }
