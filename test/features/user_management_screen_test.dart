@@ -122,6 +122,40 @@ void main() {
     expect(find.text('Ukryte postacie'), findsNothing);
   });
 
+  // Regression: the section used to be an unconstrained Column above an
+  // Expanded user list, so enough hidden characters overflowed the screen
+  // (measured at 12 on the default test surface) instead of scrolling.
+  testWidgets('a large number of hidden characters does not overflow',
+      (tester) async {
+    final db = await seed();
+    final ids = <String>[];
+    for (var i = 0; i < 12; i++) {
+      final ref = await db.collection('characters').add({
+        'name': 'Postać $i',
+        'email': 'gracz$i@example.com',
+        'level': 1,
+        'current_xp': 0,
+        'next_level_xp': 100,
+        'favour': 0,
+        'traits': <dynamic>[],
+      });
+      ids.add(ref.id);
+    }
+    await pumpScreen(tester, db);
+
+    final container =
+        ProviderScope.containerOf(tester.element(find.byType(UserManagementScreen)));
+    for (final id in ids) {
+      container.read(hiddenCharacterIdsProvider.notifier).hide(id);
+    }
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Ukryte postacie'), findsOneWidget);
+    // The user list below the (now large) hidden section must still render.
+    expect(find.text('bob@example.com'), findsOneWidget);
+  });
+
   testWidgets('shows an empty state when there are no users', (tester) async {
     final db = FakeFirebaseFirestore();
     await pumpScreen(tester, db);

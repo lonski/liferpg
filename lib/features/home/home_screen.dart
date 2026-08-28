@@ -30,8 +30,13 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(appUserProvider).value;
+    final isAdmin = user?.admin ?? false;
     final feed = ref.watch(charactersProvider);
-    final hiddenIds = ref.watch(hiddenCharacterIdsProvider);
+    // Hiding is an admin-only affordance, so a hidden id must never filter
+    // anyone else's roster: a stale id left over from before this user was
+    // demoted (this screen's own settings can flip that flag) must not
+    // strand them with an invisible, unrecoverable card.
+    final hiddenIds = isAdmin ? ref.watch(hiddenCharacterIdsProvider) : const <String>{};
     final pendingCount =
         ref.watch(pendingChangeRequestsProvider).value?.length ?? 0;
 
@@ -190,7 +195,7 @@ class HomeScreen extends ConsumerWidget {
                     CharacterCard(
                       character: c,
                       canEdit: user?.canEdit ?? false,
-                      onHide: user?.admin ?? false
+                      onHide: isAdmin
                           ? () => ref
                               .read(hiddenCharacterIdsProvider.notifier)
                               .hide(c.id)

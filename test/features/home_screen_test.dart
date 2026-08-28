@@ -99,10 +99,32 @@ void main() {
     expect(find.byKey(const Key('edit-character')), findsOneWidget);
   });
 
-  testWidgets('an admin gets the hide affordance, a non-admin does not',
+  testWidgets('an admin gets the hide affordance', (tester) async {
+    final db = await seed(admin: true);
+    final characterId =
+        (await db.collection('characters').get()).docs.single.id;
+    await pumpHome(tester, db);
+    expect(find.byKey(Key('hide-character-$characterId')), findsOneWidget);
+  });
+
+  testWidgets('a non-admin does not get the hide affordance', (tester) async {
+    final db = await seed();
+    final characterId =
+        (await db.collection('characters').get()).docs.single.id;
+    await pumpHome(tester, db);
+    expect(find.byKey(Key('hide-character-$characterId')), findsNothing);
+  });
+
+  // T4: the hide button is gated on admin, not canSeeAllCharacters --
+  // swapping the two would hand readOnlyOthers users a hide action that,
+  // per the design, is admin-only.
+  testWidgets('a readOnlyOthers user does not get the hide affordance',
       (tester) async {
-    await pumpHome(tester, await seed());
-    expect(find.byKey(const Key('hide-character-c1')), findsNothing);
+    final db = await seed(readOnlyOthers: true);
+    final characterId =
+        (await db.collection('characters').get()).docs.single.id;
+    await pumpHome(tester, db);
+    expect(find.byKey(Key('hide-character-$characterId')), findsNothing);
   });
 
   testWidgets('hiding a character removes it from the roster',
@@ -120,8 +142,39 @@ void main() {
     expect(find.byType(CharacterCard), findsNothing);
   });
 
+  // Regression: hiding only ever filters an admin's own view, so a stale
+  // hidden id left in prefs from before this account was demoted (this app
+  // has a whole screen for flipping that flag) must never leave a
+  // non-admin permanently unable to see -- and possibly unable to explain
+  // why they can't see -- their own roster.
   testWidgets(
-      'a hidden character stays hidden across a rebuild of the same session',
+      'a stale hidden id does not affect a user who is no longer admin',
+      (tester) async {
+    final db = await seed();
+    final characterId =
+        (await db.collection('characters').get()).docs.single.id;
+    SharedPreferences.setMockInitialValues({
+      'hidden_characters_u1': [characterId],
+    });
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        firestoreProvider.overrideWithValue(db),
+        firebaseAuthProvider.overrideWithValue(MockFirebaseAuth(
+          signedIn: true,
+          mockUser: MockUser(uid: 'u1', email: 'ala@example.com'),
+        )),
+        sharedPreferencesProvider.overrideWithValue(
+          await SharedPreferences.getInstance(),
+        ),
+      ],
+      child: const MaterialApp(home: HomeScreen()),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CharacterCard), findsOneWidget);
+  });
+
+  testWidgets('hiding one character does not affect a different character',
       (tester) async {
     final db = await seed(admin: true);
     final characterId =

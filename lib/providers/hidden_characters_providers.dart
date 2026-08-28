@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/hidden_characters_repository.dart';
@@ -34,7 +35,16 @@ class HiddenCharacterIds extends Notifier<Set<String>> {
     if (uid == null) return;
     final updated = update({...state});
     state = updated;
-    ref.read(hiddenCharactersRepositoryProvider).save(uid, updated);
+    // Not awaited -- callers are plain VoidCallbacks (a button's onPressed),
+    // and shared_preferences' in-memory cache is already updated
+    // synchronously by the time this returns, so state and a same-session
+    // reload agree regardless of the disk write's outcome. Still logged
+    // rather than dropped, so a real failure isn't invisible.
+    ref
+        .read(hiddenCharactersRepositoryProvider)
+        .save(uid, updated)
+        .catchError((Object error) =>
+            debugPrint('Failed to persist hidden characters: $error'));
   }
 }
 

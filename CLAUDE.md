@@ -24,10 +24,11 @@ Add `--dart-define=SHOW_FAVOUR=true` to enable the favour UI.
 
 ## Project Structure
 
-`lib/` holds `main.dart` (Firebase init + auth gate), `theme/` (palette,
-ornaments), `models/`, `data/` (repositories plus the `firebaseAuthProvider` /
-`firestoreProvider` test seams), `providers/` (Riverpod), and `features/`
-(login, home, character, users). Tests mirror that tree under `test/`.
+`lib/` holds `main.dart` (Firebase + SharedPreferences init, auth gate),
+`theme/` (palette, ornaments), `models/`, `data/` (repositories plus the
+`firebaseAuthProvider` / `firestoreProvider` / `sharedPreferencesProvider`
+test seams), `providers/` (Riverpod), and `features/` (login, home,
+character, users). Tests mirror that tree under `test/`.
 Firestore rules have their own emulator-based test suite in `tools/rules-test/`.
 
 ## Firestore Data Model
@@ -120,7 +121,9 @@ The UI is in **Polish**. Labels (Poziom, Złoto, XP, Przychylność, etc.) are v
 - Never touch `FirebaseAuth.instance` or `FirebaseFirestore.instance` outside
   `lib/data/firebase_providers.dart` — tests override those two providers. The one
   exception is `main()`, which sets Firestore persistence before any `ProviderScope`
-  exists and therefore cannot route through a provider.
+  exists and therefore cannot route through a provider. `SharedPreferences.getInstance()`
+  carries the identical rule and the identical one exception, via
+  `lib/data/shared_preferences_provider.dart`'s `sharedPreferencesProvider`.
 - Colours are `const Color(0xAARRGGBB)` literals with alpha baked in.
 - Firestore field names stay snake_case (`current_xp`, `next_level_xp`);
   Dart-side names are camelCase and mapped in the models.

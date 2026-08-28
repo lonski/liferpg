@@ -69,33 +69,36 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           ),
         ),
       ),
-      body: users.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator(color: crimsonBright)),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'Nie udało się wczytać użytkowników: $error',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: parchmentLight),
-            ),
-          ),
-        ),
-        data: (list) => Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Column(
-              children: [
-                _HiddenCharactersSection(
-                  characters: characters,
-                  hiddenIds: hiddenIds,
-                  onUnhide: (id) => ref
-                      .read(hiddenCharacterIdsProvider.notifier)
-                      .unhide(id),
-                ),
-                Expanded(
-                  child: list.isEmpty
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Column(
+            children: [
+              // Independent of the users query below: an admin can still
+              // unhide a character while that query is loading or has
+              // failed, since the two have nothing to do with each other.
+              _HiddenCharactersSection(
+                characters: characters,
+                hiddenIds: hiddenIds,
+                onUnhide: (id) =>
+                    ref.read(hiddenCharacterIdsProvider.notifier).unhide(id),
+              ),
+              Expanded(
+                child: users.when(
+                  loading: () => const Center(
+                      child:
+                          CircularProgressIndicator(color: crimsonBright)),
+                  error: (error, _) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        'Nie udało się wczytać użytkowników: $error',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: parchmentLight),
+                      ),
+                    ),
+                  ),
+                  data: (list) => list.isEmpty
                       ? const Center(
                           child: Text(
                             'Brak użytkowników',
@@ -126,8 +129,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                           },
                         ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -233,6 +236,12 @@ class _HiddenCharactersSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Intersected against the live roster rather than rendered from ids
+    // alone: a character deleted from Firestore while hidden simply stops
+    // appearing here. Its id is left sitting in prefs -- harmless (Firestore
+    // ids are unique, so it can never collide with a future character) and
+    // deliberately not pruned, since that would mean coupling this notifier
+    // to charactersProvider for a few stray bytes of local storage.
     final hidden = [
       for (final c in characters)
         if (hiddenIds.contains(c.id)) c,
@@ -254,22 +263,35 @@ class _HiddenCharactersSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          for (final c in hidden)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Bounded and independently scrollable: hiding is meant for a
+          // large roster, so this list is exactly the one expected to grow
+          // past the screen -- it must not push the user list below it into
+          // a RenderFlex overflow.
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 160),
+            child: SingleChildScrollView(
+              child: Column(
                 children: [
-                  Text(c.name,
-                      style: const TextStyle(color: parchmentLight)),
-                  TextButton(
-                    key: Key('unhide-${c.id}'),
-                    onPressed: () => onUnhide(c.id),
-                    child: const Text('Pokaż'),
-                  ),
+                  for (final c in hidden)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(c.name,
+                              style: const TextStyle(color: parchmentLight)),
+                          TextButton(
+                            key: Key('unhide-${c.id}'),
+                            onPressed: () => onUnhide(c.id),
+                            child: const Text('Pokaż'),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
+          ),
           const Divider(color: crimsonBorderFaint, height: 16),
         ],
       ),
