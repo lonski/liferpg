@@ -1,3 +1,2 @@
 - add notifications. I want to see notifications when requests arrives or changes state
-- add a optional reason on request rejection so the user can see why it was rejected
 - explore possibilities of auto-update the application. downloading the apk from gh releases page is unconvinient
