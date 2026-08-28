@@ -209,4 +209,42 @@ void main() {
 
     expect(() => repo.withdraw(quest), throwsA(isA<QuestNotOpen>()));
   });
+
+  test('markComplete raises a linked change request and flips to pending_review', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await repo.create(_openQuest());
+    var quest = (await repo.watchOpen().first).single;
+    await repo.take(quest, characterId: 'c1', characterName: 'Grommash', email: 'ala@example.com');
+    quest = (await repo.watchAssignedTo(['c1']).first).single;
+
+    await repo.markComplete(quest, requesterUid: 'u1', requesterEmail: 'ala@example.com');
+
+    final questDoc = await db.collection('quests').doc(quest.id).get();
+    expect(questDoc.data()!['status'], 'pending_review');
+    final requestId = questDoc.data()!['changeRequestId'] as String;
+
+    final requestDoc = await db.collection('change_requests').doc(requestId).get();
+    final data = requestDoc.data()!;
+    expect(data['status'], 'pending');
+    expect(data['characterId'], 'c1');
+    expect(data['characterName'], 'Grommash');
+    expect(data['requesterUid'], 'u1');
+    expect(data['changes'], {'current_xp': 50});
+    expect(data['questId'], quest.id);
+    expect(data['questTitle'], 'Posprzątaj garaż');
+    expect(data.containsKey('reason'), isFalse);
+  });
+
+  test('markComplete throws QuestNotAssignedToCaller on a quest not assigned', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await repo.create(_openQuest());
+    final quest = (await repo.watchOpen().first).single;
+
+    expect(
+      () => repo.markComplete(quest, requesterUid: 'u1', requesterEmail: 'ala@example.com'),
+      throwsA(isA<QuestNotAssignedToCaller>()),
+    );
+  });
 }

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
+import '../models/change_request.dart' show ChangeRequestStatus;
 import '../models/quest.dart';
 
 /// Thrown when `take`/`withdraw` re-read the quest and it is no longer
@@ -138,6 +139,45 @@ class QuestRepository {
         throw const QuestNotOpen();
       }
       tx.update(ref, {'status': QuestStatus.cancelled.wire});
+    });
+  }
+
+  CollectionReference<Map<String, dynamic>> get _requests =>
+      _db.collection('change_requests');
+
+  /// Raises the change request an admin will review, and flips the quest to
+  /// `pending_review` in the same transaction -- either both writes land or
+  /// neither does. The request's `reason` is deliberately left unset: the
+  /// link to its quest is carried by `questId`/`questTitle`, rendered as its
+  /// own line by the admin screens, not smuggled into free text.
+  Future<void> markComplete(
+    Quest quest, {
+    required String requesterUid,
+    required String requesterEmail,
+  }) async {
+    final questRef = _quests.doc(quest.id);
+    final requestRef = _requests.doc();
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(questRef);
+      final data = snap.data();
+      if (data == null || QuestStatus.parse(data['status']) != QuestStatus.assigned) {
+        throw const QuestNotAssignedToCaller();
+      }
+      tx.set(requestRef, {
+        'characterId': quest.assignedToCharacterId,
+        'characterName': quest.assignedToCharacterName,
+        'requesterUid': requesterUid,
+        'requesterEmail': requesterEmail,
+        'status': ChangeRequestStatus.pending.wire,
+        'changes': quest.reward.toMap(),
+        'questId': quest.id,
+        'questTitle': quest.title,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      tx.update(questRef, {
+        'status': QuestStatus.pendingReview.wire,
+        'changeRequestId': requestRef.id,
+      });
     });
   }
 }
