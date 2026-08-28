@@ -116,4 +116,16 @@ void main() {
 
     expect(find.text('Podaj liczbę'), findsOneWidget);
   });
+
+  testWidgets('shows a validation message when reason is left empty',
+      (tester) async {
+    await pumpForm(tester);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('field-reason')), 'x');
+    await tester.enterText(find.byKey(const Key('field-reason')), '');
+    await tester.pump();
+
+    expect(find.text('Podaj powód'), findsOneWidget);
+  });
 }

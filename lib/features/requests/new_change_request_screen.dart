@@ -71,8 +71,11 @@ class _NewChangeRequestScreenState
             (c) => c.id == _selectedCharacterId,
             orElse: () => characters.first,
           );
-    final canSubmit =
-        !_submitting && selected != null && user != null && !_changes.isEmpty;
+    final canSubmit = !_submitting &&
+        selected != null &&
+        user != null &&
+        !_changes.isEmpty &&
+        _reason != null;
     final myRequests = ref.watch(myChangeRequestsProvider).value ?? const [];
 
     return Scaffold(

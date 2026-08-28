@@ -56,7 +56,9 @@ void main() {
     expect(find.byKey(const Key('character-picker')), findsOneWidget);
   });
 
-  testWidgets('submit is disabled until something is entered', (tester) async {
+  testWidgets(
+      'submit stays disabled until both a change and a reason are entered',
+      (tester) async {
     await pumpScreen(tester, await seed());
 
     ElevatedButton button() => tester
@@ -64,6 +66,11 @@ void main() {
     expect(button().onPressed, isNull);
 
     await tester.enterText(find.byKey(const Key('field-current_xp')), '50');
+    await tester.pump();
+    expect(button().onPressed, isNull, reason: 'reason is still required');
+
+    await tester.enterText(
+        find.byKey(const Key('field-reason')), 'Posprzątałem garaż');
     await tester.pump();
 
     expect(button().onPressed, isNotNull);
