@@ -7,6 +7,9 @@
          FlutterLocalNotificationsChangeRequestService) for change-request
          notifications to actually show. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Lets the in-app updater hand a downloaded APK to Android's package
+         installer (see UpdateInstallerService). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <application
         android:label="liferpg"
         android:name="${applicationName}"
