@@ -15,6 +15,7 @@ import {
   query,
   where,
   serverTimestamp,
+  deleteField,
 } from 'firebase/firestore';
 import assert from 'node:assert/strict';
 
@@ -637,6 +638,81 @@ test('only the current holder may abandon or mark an assigned quest complete', a
 
   const bob = env.authenticatedContext('bob', { email: 'bob@example.com' }).firestore();
   await assertSucceeds(updateDoc(doc(bob, 'quests/q10'), { status: 'pending_review' }));
+});
+
+test('the current holder may abandon an assigned quest, clearing the assignment fields', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q11'), {
+      title: 'Ugotuj obiad',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      assignedToCharacterId: 'c-bob4',
+      assignedToCharacterName: 'Bob the Bold',
+      assignedToEmail: 'bob@example.com',
+      status: 'assigned',
+      reward: { current_xp: 30 },
+    });
+  });
+  const bob = env.authenticatedContext('bob', { email: 'bob@example.com' }).firestore();
+  await assertSucceeds(
+    updateDoc(doc(bob, 'quests/q11'), {
+      status: 'open',
+      assignedToCharacterId: deleteField(),
+      assignedToCharacterName: deleteField(),
+      assignedToEmail: deleteField(),
+    })
+  );
+});
+
+test('only the current holder may abandon an assigned quest', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q12'), {
+      title: 'Ugotuj obiad',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      assignedToCharacterId: 'c-bob5',
+      assignedToCharacterName: 'Bob the Bold',
+      assignedToEmail: 'bob@example.com',
+      status: 'assigned',
+      reward: { current_xp: 30 },
+    });
+  });
+  const mallory = env.authenticatedContext('mallory', { email: 'mallory@example.com' }).firestore();
+  await assertFails(
+    updateDoc(doc(mallory, 'quests/q12'), {
+      status: 'open',
+      assignedToCharacterId: deleteField(),
+      assignedToCharacterName: deleteField(),
+      assignedToEmail: deleteField(),
+    })
+  );
+});
+
+test('abandoning may not leave stale assignment values on an open quest', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q13'), {
+      title: 'Ugotuj obiad',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      assignedToCharacterId: 'c-bob6',
+      assignedToCharacterName: 'Bob the Bold',
+      assignedToEmail: 'bob@example.com',
+      status: 'assigned',
+      reward: { current_xp: 30 },
+    });
+  });
+  const bob = env.authenticatedContext('bob', { email: 'bob@example.com' }).firestore();
+  await assertFails(
+    updateDoc(doc(bob, 'quests/q13'), {
+      status: 'open',
+      // Deliberately NOT deleted: the fields still carry values, which the
+      // tightened abandon rule must reject even though `status` itself is a
+      // legal transition and the touched-keys set is still within hasOnly().
+    })
+  );
 });
 
 test('only an admin may write to quest_roster', async () => {

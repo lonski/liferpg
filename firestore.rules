@@ -106,6 +106,9 @@ service cloud.firestore {
                         && resource.data.status == 'assigned'
                         && request.resource.data.status == 'open'
                         && resource.data.assignedToEmail.lower() == request.auth.token.email.lower()
+                        && !('assignedToCharacterId' in request.resource.data)
+                        && !('assignedToCharacterName' in request.resource.data)
+                        && !('assignedToEmail' in request.resource.data)
                         && request.resource.data.diff(resource.data).affectedKeys()
                              .hasOnly(['status', 'assignedToCharacterId', 'assignedToCharacterName', 'assignedToEmail']))
                     // withdraw: open -> cancelled, by the poster
