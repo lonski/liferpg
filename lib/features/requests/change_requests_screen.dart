@@ -8,14 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/dialogs.dart';
 import '../../theme/ornaments.dart';
 import 'change_request_form.dart';
-
-String _signed(num v) => v > 0 ? '+$v' : '$v';
-
-/// Plain interpolation and zero-padding, deliberately — no `intl` dependency.
-String _formatTimestamp(DateTime t) {
-  String pad(int n) => n.toString().padLeft(2, '0');
-  return '${t.year}-${pad(t.month)}-${pad(t.day)} ${pad(t.hour)}:${pad(t.minute)}';
-}
+import 'change_request_formatting.dart';
 
 class ChangeRequestsScreen extends ConsumerStatefulWidget {
   const ChangeRequestsScreen({super.key});
@@ -284,10 +277,7 @@ class _RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final changes = request.changes;
-    final deltaLines = <String>[
-      if (changes.currentXp != null) 'XP: ${_signed(changes.currentXp!)}',
-      if (changes.gold != null) 'Złoto: ${_signed(changes.gold!)}',
-    ];
+    final deltaLines = changeSetLines(changes);
 
     return Container(
       key: Key('request-${request.id}'),
@@ -334,11 +324,6 @@ class _RequestCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   for (final line in deltaLines)
                     Text(line, style: const TextStyle(color: inkHeading)),
-                  for (final trait in changes.traits)
-                    Text(
-                      '${trait.name}: ${trait.value}',
-                      style: const TextStyle(color: inkHeading),
-                    ),
                   if (request.reason != null) ...[
                     const SizedBox(height: 8),
                     Text(
@@ -352,7 +337,7 @@ class _RequestCard extends StatelessWidget {
                   if (request.createdAt != null) ...[
                     const SizedBox(height: 8),
                     Text(
-                      _formatTimestamp(request.createdAt!),
+                      formatTimestamp(request.createdAt!),
                       style: const TextStyle(color: traitNameInk, fontSize: 12),
                     ),
                   ],
