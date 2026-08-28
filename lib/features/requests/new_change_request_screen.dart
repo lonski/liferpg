@@ -240,89 +240,78 @@ class _NewChangeRequestScreenState
                       Container(
                         decoration:
                             const BoxDecoration(gradient: cardGradient),
-                        padding: const EdgeInsets.fromLTRB(16, 30, 16, 16),
-                        child: Stack(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: crimsonBorder),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                children: [
-                                  if (characters.length > 1)
-                                    DropdownButtonFormField<String>(
-                                      key: const Key('character-picker'),
-                                      initialValue: selected?.id,
-                                      items: [
-                                        for (final c in characters)
-                                          DropdownMenuItem(
-                                            value: c.id,
-                                            child: Text(c.name),
-                                          ),
-                                      ],
-                                      onChanged: (id) => setState(
-                                          () => _selectedCharacterId = id),
-                                    ),
-                                  ChangeRequestForm(
-                                    onChanged: (changes, reason) =>
-                                        setState(() {
-                                      _changes = changes;
-                                      _reason = reason;
-                                    }),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      key: const Key('submit-request'),
-                                      // Left as an ElevatedButton (rather than
-                                      // the login screen's InkWell) so the
-                                      // disabled state stays a real
-                                      // `onPressed: null`, but restyled: the
-                                      // stock Material surface reads as a
-                                      // foreign widget on the parchment card.
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: crimson,
-                                        foregroundColor: parchmentLight,
-                                        disabledBackgroundColor: crimsonFaint,
-                                        disabledForegroundColor: crimson,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(3),
-                                          side: const BorderSide(
-                                              color: goldGlyph),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 12),
-                                        textStyle: const TextStyle(
-                                          fontFamily: fontDisplay,
-                                          fontSize: 10,
-                                          letterSpacing: 2,
-                                          fontWeight: FontWeight.w700,
-                                        ),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: crimsonBorder),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            children: [
+                              if (characters.length > 1)
+                                DropdownButtonFormField<String>(
+                                  key: const Key('character-picker'),
+                                  initialValue: selected?.id,
+                                  items: [
+                                    for (final c in characters)
+                                      DropdownMenuItem(
+                                        value: c.id,
+                                        child: Text(c.name),
                                       ),
-                                      onPressed: canSubmit
-                                          ? () => _submit(selected, user)
-                                          : null,
-                                      child: Text(_submitting
-                                          ? '...'
-                                          : 'Wyślij prośbę'.toUpperCase()),
+                                  ],
+                                  onChanged: (id) => setState(
+                                      () => _selectedCharacterId = id),
+                                ),
+                              ChangeRequestForm(
+                                onChanged: (changes, reason) =>
+                                    setState(() {
+                                  _changes = changes;
+                                  _reason = reason;
+                                }),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  key: const Key('submit-request'),
+                                  // Left as an ElevatedButton (rather than
+                                  // the login screen's InkWell) so the
+                                  // disabled state stays a real
+                                  // `onPressed: null`, but restyled: the
+                                  // stock Material surface reads as a
+                                  // foreign widget on the parchment card.
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: crimson,
+                                    foregroundColor: parchmentLight,
+                                    disabledBackgroundColor: crimsonFaint,
+                                    disabledForegroundColor: crimson,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(3),
+                                      side: const BorderSide(
+                                          color: goldGlyph),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                    textStyle: const TextStyle(
+                                      fontFamily: fontDisplay,
+                                      fontSize: 10,
+                                      letterSpacing: 2,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                ],
+                                  onPressed: canSubmit
+                                      ? () => _submit(selected, user)
+                                      : null,
+                                  child: Text(_submitting
+                                      ? '...'
+                                      : 'Wyślij prośbę'.toUpperCase()),
+                                ),
                               ),
-                            ),
-                            const Positioned(
-                                top: 5, left: 5, child: CornerOrnament()),
-                            const Positioned(
-                              top: 5,
-                              right: 5,
-                              child: CornerOrnament(mirrored: true),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       const BottomBand(),
