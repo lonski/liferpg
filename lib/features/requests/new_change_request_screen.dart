@@ -11,6 +11,14 @@ import '../../theme/app_theme.dart';
 import '../../theme/dialogs.dart';
 import '../../theme/ornaments.dart';
 import 'change_request_form.dart';
+import 'change_request_formatting.dart';
+
+const TextStyle _detailSectionLabel = TextStyle(
+  fontFamily: fontDisplay,
+  fontSize: 10,
+  letterSpacing: 2,
+  color: crimson,
+);
 
 class NewChangeRequestScreen extends ConsumerStatefulWidget {
   const NewChangeRequestScreen({super.key});
@@ -58,6 +66,90 @@ class _NewChangeRequestScreenState
         SnackBar(content: Text('Nie udało się wysłać prośby: $error')),
       );
     }
+  }
+
+  Future<void> _showDetails(ChangeRequest request) async {
+    final askedLines = changeSetLines(request.changes);
+    final applied = request.appliedChanges;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: parchment,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+          side: const BorderSide(color: crimson, width: 2),
+        ),
+        title: Text(
+          request.characterName.toUpperCase(),
+          style: const TextStyle(
+            fontFamily: fontDisplay,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 2,
+            color: inkHeading,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                changeRequestStatusLabel(request.status),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: inkHeading,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text('Poproszono o'.toUpperCase(), style: _detailSectionLabel),
+              for (final line in askedLines)
+                Text(line, style: const TextStyle(color: inkHeading)),
+              if (request.reason != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  request.reason!,
+                  style: const TextStyle(
+                    fontStyle: FontStyle.italic,
+                    color: traitNameInk,
+                  ),
+                ),
+              ],
+              if (request.createdAt != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Wysłano: ${formatTimestamp(request.createdAt!)}',
+                  style: const TextStyle(color: traitNameInk, fontSize: 12),
+                ),
+              ],
+              if (applied != null) ...[
+                const SizedBox(height: 12),
+                const Divider(color: crimsonBorderFaint, height: 1),
+                const SizedBox(height: 12),
+                Text('Zastosowano'.toUpperCase(), style: _detailSectionLabel),
+                for (final line in changeSetLines(applied))
+                  Text(line, style: const TextStyle(color: inkHeading)),
+                if (request.decidedAt != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Rozpatrzono: ${formatTimestamp(request.decidedAt!)}',
+                    style: const TextStyle(color: traitNameInk, fontSize: 12),
+                  ),
+                ],
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            style: TextButton.styleFrom(foregroundColor: crimson),
+            child: Text('Zamknij'.toUpperCase(), style: dialogActionStyle),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _cancel(ChangeRequest request) async {
@@ -247,22 +339,38 @@ class _NewChangeRequestScreenState
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        // The tappable region stops at the name/status pair,
+                        // as a sibling of the cancel button rather than its
+                        // parent -- nesting a button inside a tappable Row
+                        // leaves both taps in the same gesture arena with no
+                        // clear winner, so the cancel button silently stops
+                        // resolving its own tap.
                         Expanded(
-                          child: Text(r.characterName,
-                              style: const TextStyle(color: parchmentMuted)),
-                        ),
-                        Text(
-                          switch (r.status) {
-                            ChangeRequestStatus.pending => 'Oczekuje',
-                            ChangeRequestStatus.accepted => 'Zaakceptowana',
-                            ChangeRequestStatus.rejected => 'Odrzucona',
-                            ChangeRequestStatus.cancelled => 'Anulowana',
-                          },
-                          style: const TextStyle(
-                            fontFamily: fontDisplay,
-                            fontSize: 9,
-                            letterSpacing: 2,
-                            color: parchmentFaint,
+                          child: InkWell(
+                            onTap: () => _showDetails(r),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(r.characterName,
+                                      style: const TextStyle(
+                                          color: parchmentMuted)),
+                                ),
+                                Text(
+                                  changeRequestStatusLabel(r.status),
+                                  style: const TextStyle(
+                                    fontFamily: fontDisplay,
+                                    fontSize: 9,
+                                    letterSpacing: 2,
+                                    // Was parchmentFaint (~3.95:1 against
+                                    // bgDark at this size -- fails WCAG AA's
+                                    // 4.5:1 floor). parchmentMuted matches
+                                    // the name colour and clears 6:1.
+                                    color: parchmentMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         if (r.status == ChangeRequestStatus.pending)

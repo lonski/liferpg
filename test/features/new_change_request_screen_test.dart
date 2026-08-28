@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/data/firebase_providers.dart';
 import 'package:liferpg/features/requests/new_change_request_screen.dart';
+import 'package:liferpg/theme/app_theme.dart';
 
 Future<FakeFirebaseFirestore> seed({int characters = 1}) async {
   final db = FakeFirebaseFirestore();
@@ -157,5 +159,109 @@ void main() {
         (await db.collection('change_requests').doc(request.id).get())
             .data()!;
     expect(data['status'], 'pending');
+  });
+
+  // Regression: parchmentFaint blends to ~3.95:1 against bgDark at this
+  // fontSize (9) -- below WCAG AA's 4.5:1 floor for text this small.
+  // parchmentMuted (already used for the character name on the same row)
+  // clears 6:1.
+  testWidgets('the status label uses a colour that passes contrast',
+      (tester) async {
+    final db = await seed();
+    final request = await db.collection('change_requests').add({
+      'characterId': 'whatever',
+      'characterName': 'Bohater 0',
+      'requesterUid': 'u1',
+      'requesterEmail': 'ala@example.com',
+      'status': 'pending',
+      'changes': {'current_xp': 50},
+    });
+    await pumpScreen(tester, db);
+
+    final statusText = tester.widget<Text>(find.descendant(
+      of: find.byKey(Key('my-request-${request.id}')),
+      matching: find.text('Oczekuje'),
+    ));
+    expect(statusText.style?.color, parchmentMuted);
+  });
+
+  testWidgets('tapping a request shows what was asked for', (tester) async {
+    final db = await seed();
+    final request = await db.collection('change_requests').add({
+      'characterId': 'whatever',
+      'characterName': 'Bohater 0',
+      'requesterUid': 'u1',
+      'requesterEmail': 'ala@example.com',
+      'status': 'pending',
+      'reason': 'Posprzątałem garaż',
+      'createdAt': Timestamp.fromDate(DateTime(2026, 3, 4, 9, 5)),
+      'changes': {
+        'current_xp': 50,
+        'gold': -10,
+        'traits': [
+          {'name': 'Siła', 'value': '12'},
+        ],
+      },
+    });
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(Key('my-request-${request.id}')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('XP: +50'), findsOneWidget);
+    expect(find.text('Złoto: -10'), findsOneWidget);
+    expect(find.text('Siła: 12'), findsOneWidget);
+    expect(find.text('Posprzątałem garaż'), findsOneWidget);
+    expect(find.textContaining('2026-03-04 09:05'), findsOneWidget);
+
+    await tester.tap(find.text('ZAMKNIJ'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('XP: +50'), findsNothing);
+  });
+
+  testWidgets('a decided request\'s details show what was applied',
+      (tester) async {
+    final db = await seed();
+    final request = await db.collection('change_requests').add({
+      'characterId': 'whatever',
+      'characterName': 'Bohater 0',
+      'requesterUid': 'u1',
+      'requesterEmail': 'ala@example.com',
+      'status': 'accepted',
+      'changes': {'current_xp': 50},
+      'appliedChanges': {'current_xp': 20},
+      'decidedBy': 'admin1',
+      'decidedAt': Timestamp.fromDate(DateTime(2026, 3, 5, 10, 0)),
+    });
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(Key('my-request-${request.id}')));
+    await tester.pumpAndSettle();
+
+    // The original ask is still shown alongside what actually landed.
+    expect(find.text('XP: +50'), findsOneWidget);
+    expect(find.text('XP: +20'), findsOneWidget);
+    expect(find.textContaining('2026-03-05 10:00'), findsOneWidget);
+  });
+
+  testWidgets('tapping the cancel icon does not open the details dialog',
+      (tester) async {
+    final db = await seed();
+    final request = await db.collection('change_requests').add({
+      'characterId': 'whatever',
+      'characterName': 'Bohater 0',
+      'requesterUid': 'u1',
+      'requesterEmail': 'ala@example.com',
+      'status': 'pending',
+      'changes': {'current_xp': 50},
+    });
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(Key('cancel-request-${request.id}')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ANULOWAĆ PROŚBĘ?'), findsOneWidget);
+    expect(find.text('XP: +50'), findsNothing);
   });
 }
