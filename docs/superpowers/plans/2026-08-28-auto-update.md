@@ -506,6 +506,13 @@ void main() {
                   ],
                 }),
                 200,
+                // http.Response defaults to latin1 when no content-type is
+                // given, which cannot encode "Nowości" (Polish diacritics
+                // aren't in Latin-1) and throws — caught by
+                // UpdateRepository's own catch-all and misread as "no
+                // update". application/json makes it default to utf8
+                // instead, matching how GitHub's real API responds.
+                headers: {'content-type': 'application/json'},
               )),
           '1.0.0',
         ),

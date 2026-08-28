@@ -26,6 +26,7 @@ void main() {
                   ],
                 }),
                 200,
+                headers: {'content-type': 'application/json'},
               )),
           '1.0.0',
         ),
