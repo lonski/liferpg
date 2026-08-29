@@ -32,12 +32,60 @@ Future<FakeFirebaseFirestore> _seed() async {
 }
 
 void main() {
+  testWidgets('submit stays disabled with an empty title', (tester) async {
+    final db = await _seed();
+    await _pump(tester, db);
+
+    ElevatedButton button() =>
+        tester.widget<ElevatedButton>(find.byKey(const Key('submit-quest')));
+    expect(button().onPressed, isNull);
+
+    await tester.tap(find.byKey(const Key('submit-quest')));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Podaj tytuł'), findsOneWidget);
+
+    expect((await db.collection('quests').get()).docs, isEmpty,
+        reason: 'a disabled button must not have created a quest');
+  });
+
+  testWidgets('submit stays disabled with an empty reward', (tester) async {
+    final db = await _seed();
+    await _pump(tester, db);
+
+    await tester.enterText(find.byKey(const Key('quest-title')), 'Posprzątaj garaż');
+    await tester.pump();
+
+    ElevatedButton button() =>
+        tester.widget<ElevatedButton>(find.byKey(const Key('submit-quest')));
+    expect(button().onPressed, isNull);
+
+    await tester.tap(find.byKey(const Key('submit-quest')));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Wprowadź nagrodę'), findsOneWidget);
+
+    expect((await db.collection('quests').get()).docs, isEmpty);
+  });
+
+  testWidgets('filling in title and reward enables submit', (tester) async {
+    final db = await _seed();
+    await _pump(tester, db);
+
+    await tester.enterText(find.byKey(const Key('quest-title')), 'Posprzątaj garaż');
+    await tester.enterText(find.byKey(const Key('quest-reward-xp')), '50');
+    await tester.pump();
+
+    final button =
+        tester.widget<ElevatedButton>(find.byKey(const Key('submit-quest')));
+    expect(button.onPressed, isNotNull);
+  });
+
   testWidgets('leaving the character picker empty posts to the board', (tester) async {
     final db = await _seed();
     await _pump(tester, db);
 
     await tester.enterText(find.byKey(const Key('quest-title')), 'Posprzątaj garaż');
     await tester.enterText(find.byKey(const Key('quest-reward-xp')), '50');
+    await tester.pump();
     await tester.tap(find.byKey(const Key('submit-quest')));
     await tester.pumpAndSettle();
 
