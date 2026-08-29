@@ -306,4 +306,24 @@ void main() {
     expect(find.text('ANULOWAĆ PROŚBĘ?'), findsOneWidget);
     expect(find.text('XP: +50'), findsNothing);
   });
+
+  testWidgets('a quest-originated own request shows the Zadanie line in its detail dialog', (tester) async {
+    final db = await seed();
+    final request = await db.collection('change_requests').add({
+      'characterId': (await db.collection('characters').get()).docs.single.id,
+      'characterName': 'Bohater 0',
+      'requesterUid': 'u1',
+      'requesterEmail': 'ala@example.com',
+      'status': 'pending',
+      'changes': {'current_xp': 50},
+      'questId': 'q1',
+      'questTitle': 'Posprzątaj garaż',
+    });
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(Key('my-request-${request.id}')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Posprzątaj garaż'), findsOneWidget);
+  });
 }

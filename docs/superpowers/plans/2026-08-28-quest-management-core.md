@@ -1129,7 +1129,7 @@ test('accept on a request with no questId does not touch /quests', () async {
 });
 ```
 
-(`_request` here is the file's existing helper — extend its signature with an optional `characterId` param if it does not already accept one; check the existing helper before editing.)
+(`_request` here is the file's existing helper — it already accepts a `characterId` named parameter with default `'c1'`, so no signature change is needed; use it as-is.)
 
 - [ ] **Step 2: Run test to verify it fails**
 

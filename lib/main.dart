@@ -10,11 +10,13 @@ import 'data/plugin_update_installer_service.dart';
 import 'data/shared_preferences_provider.dart';
 import 'features/home/home_screen.dart';
 import 'features/login/login_screen.dart';
+import 'features/quests/quests_screen.dart';
 import 'features/requests/change_requests_screen.dart';
 import 'features/requests/new_change_request_screen.dart';
 import 'firebase_options.dart';
 import 'providers/auth_providers.dart';
 import 'providers/change_request_notification_providers.dart';
+import 'providers/quest_notification_providers.dart';
 import 'providers/update_providers.dart';
 import 'theme/app_theme.dart';
 
@@ -35,6 +37,13 @@ void _openNotificationTarget(String payload) {
         MaterialPageRoute<void>(
           builder: (_) => const NewChangeRequestScreen(),
         ),
+      );
+    case 'quest_board':
+    case 'my_quests':
+      // Deep-linking to a specific tab or quest is out of scope -- this just
+      // gets the user to the Quests screen at all, same as the other cases.
+      navigator.push(
+        MaterialPageRoute<void>(builder: (_) => const QuestsScreen()),
       );
   }
 }
@@ -94,6 +103,7 @@ class AuthGate extends ConsumerWidget {
             // Kept alive for the session so the admin queue / own-requests
             // streams are watched even while the user is elsewhere in the app.
             ref.watch(changeRequestNotificationsProvider);
+            ref.watch(questNotificationsProvider);
             return const HomeScreen();
           },
           loading: () => const Scaffold(

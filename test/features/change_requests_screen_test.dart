@@ -376,4 +376,21 @@ void main() {
     // half the card width on a typical test viewport).
     expect(innerWidth, greaterThan(rejectedWidth * 0.9));
   });
+
+  testWidgets('a quest-originated request shows the Zadanie line', (tester) async {
+    final db = await seed();
+    await db.collection('change_requests').add({
+      'characterId': characterId,
+      'characterName': 'Grommash',
+      'requesterUid': 'u1',
+      'requesterEmail': 'ala@example.com',
+      'status': 'pending',
+      'changes': {'current_xp': 50},
+      'questId': 'q1',
+      'questTitle': 'Posprzątaj garaż',
+    });
+    await pumpScreen(tester, db);
+
+    expect(find.textContaining('Posprzątaj garaż'), findsOneWidget);
+  });
 }

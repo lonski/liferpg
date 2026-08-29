@@ -14,6 +14,7 @@ import 'package:liferpg/data/update_repository.dart';
 import 'package:liferpg/features/character/character_card.dart';
 import 'package:liferpg/data/character_repository.dart';
 import 'package:liferpg/features/home/home_screen.dart';
+import 'package:liferpg/features/quests/quests_screen.dart';
 import 'package:liferpg/features/requests/new_change_request_screen.dart';
 import 'package:liferpg/features/update/update_dialog.dart';
 import 'package:liferpg/models/character.dart';
@@ -242,13 +243,13 @@ void main() {
     expect(find.byIcon(Icons.cloud_off), findsNothing);
   });
 
-  testWidgets('offers the change-request FAB when the user has a character',
+  testWidgets('offers the quest FAB when the user has a character',
       (tester) async {
     await pumpHome(tester, await seed());
-    expect(find.byKey(const Key('new-change-request')), findsOneWidget);
+    expect(find.byKey(const Key('quest-fab')), findsOneWidget);
   });
 
-  testWidgets('hides the change-request FAB when the user owns no character',
+  testWidgets('hides the quest FAB when the user owns no character',
       (tester) async {
     final db = FakeFirebaseFirestore();
     await db.collection('users').doc('u1').set({
@@ -259,7 +260,7 @@ void main() {
       'readOnlyOthers': false,
     });
     await pumpHome(tester, db);
-    expect(find.byKey(const Key('new-change-request')), findsNothing);
+    expect(find.byKey(const Key('quest-fab')), findsNothing);
   });
 
   testWidgets('shows the change-request queue action only for admins',
@@ -271,9 +272,12 @@ void main() {
     expect(find.byKey(const Key('open-change-requests')), findsOneWidget);
   });
 
-  testWidgets('the FAB opens the request screen', (tester) async {
+  testWidgets('the FAB opens the request screen via the speed-dial',
+      (tester) async {
     await pumpHome(tester, await seed());
-    await tester.tap(find.byKey(const Key('new-change-request')));
+    await tester.tap(find.byKey(const Key('quest-fab')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quest-fab-change-request')));
     await tester.pumpAndSettle();
     expect(find.byType(NewChangeRequestScreen), findsOneWidget);
   });
@@ -303,7 +307,7 @@ void main() {
     });
     await pumpHome(tester, db);
     expect(find.byType(CharacterCard), findsOneWidget);
-    expect(find.byKey(const Key('new-change-request')), findsNothing);
+    expect(find.byKey(const Key('quest-fab')), findsNothing);
   });
 
   testWidgets(
@@ -321,7 +325,7 @@ void main() {
     });
     await pumpHome(tester, db);
     expect(find.byType(CharacterCard), findsNWidgets(2));
-    expect(find.byKey(const Key('new-change-request')), findsOneWidget);
+    expect(find.byKey(const Key('quest-fab')), findsOneWidget);
   });
 
   testWidgets(
@@ -385,5 +389,30 @@ void main() {
     );
 
     expect(find.byType(UpdateDialog), findsNothing);
+  });
+
+  testWidgets('the FAB opens a speed-dial with quests and change-request destinations', (tester) async {
+    await pumpHome(tester, await seed());
+
+    expect(find.byKey(const Key('quest-fab-quests')), findsNothing);
+    await tester.tap(find.byKey(const Key('quest-fab')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('quest-fab-quests')), findsOneWidget);
+    expect(find.byKey(const Key('quest-fab-change-request')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('quest-fab-change-request')));
+    await tester.pumpAndSettle();
+    expect(find.byType(NewChangeRequestScreen), findsOneWidget);
+  });
+
+  testWidgets('the quests destination opens QuestsScreen', (tester) async {
+    await pumpHome(tester, await seed());
+    await tester.tap(find.byKey(const Key('quest-fab')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('quest-fab-quests')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(QuestsScreen), findsOneWidget);
   });
 }

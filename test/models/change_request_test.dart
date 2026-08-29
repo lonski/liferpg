@@ -107,4 +107,40 @@ void main() {
       isFalse,
     );
   });
+
+  test('toMap/fromMap round trip carries questId/questTitle when set', () {
+    const request = ChangeRequest(
+      id: 'r1',
+      characterId: 'c1',
+      characterName: 'Grommash',
+      requesterUid: 'u1',
+      requesterEmail: 'ala@example.com',
+      status: ChangeRequestStatus.pending,
+      changes: ChangeSet(currentXp: 50),
+      questId: 'q1',
+      questTitle: 'Posprzątaj garaż',
+    );
+
+    final map = request.toMap();
+    expect(map['questId'], 'q1');
+    expect(map['questTitle'], 'Posprzątaj garaż');
+
+    final roundTripped = ChangeRequest.fromMap('r1', map);
+    expect(roundTripped.questId, 'q1');
+    expect(roundTripped.questTitle, 'Posprzątaj garaż');
+  });
+
+  test('questId/questTitle are absent when not a quest-originated request', () {
+    const request = ChangeRequest(
+      id: 'r2',
+      characterId: 'c1',
+      characterName: 'Grommash',
+      requesterUid: 'u1',
+      requesterEmail: 'ala@example.com',
+      status: ChangeRequestStatus.pending,
+      changes: ChangeSet(currentXp: 10),
+    );
+    expect(request.toMap().containsKey('questId'), isFalse);
+    expect(request.questId, isNull);
+  });
 }

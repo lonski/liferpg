@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/app_user.dart';
 import '../../models/character.dart';
+import '../../models/quest_roster_entry.dart';
 import '../../providers/character_providers.dart';
 import '../../providers/hidden_characters_providers.dart';
+import '../../providers/quest_providers.dart';
 import '../../providers/user_providers.dart';
 import '../../theme/app_theme.dart';
 
@@ -46,6 +48,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     final characters = ref.watch(charactersProvider).value?.characters ??
         const <Character>[];
     final hiddenIds = ref.watch(hiddenCharacterIdsProvider);
+    final roster = ref.watch(questRosterProvider).value ?? const <QuestRosterEntry>[];
+    final rosterIds = {for (final e in roster) e.characterId};
 
     return Scaffold(
       backgroundColor: bgDark,
@@ -82,6 +86,22 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 hiddenIds: hiddenIds,
                 onUnhide: (id) =>
                     ref.read(hiddenCharacterIdsProvider.notifier).unhide(id),
+              ),
+              _QuestRosterSection(
+                characters: characters,
+                rosterIds: rosterIds,
+                onToggle: (character, onRoster) async {
+                  final repo = ref.read(questRosterRepositoryProvider);
+                  if (onRoster) {
+                    await repo.remove(character.id);
+                  } else {
+                    await repo.add(
+                      characterId: character.id,
+                      characterName: character.name,
+                      email: character.email,
+                    );
+                  }
+                },
               ),
               Expanded(
                 child: users.when(
@@ -287,6 +307,67 @@ class _HiddenCharactersSection extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const Divider(color: crimsonBorderFaint, height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+/// Admin-only toggle over the quest_roster index (Task 8/10): who shows up
+/// in NewQuestScreen's assignee picker. Purely membership -- it does not
+/// touch hiding or the users' admin/readOnlyOthers flags above.
+class _QuestRosterSection extends StatelessWidget {
+  const _QuestRosterSection({
+    required this.characters,
+    required this.rosterIds,
+    required this.onToggle,
+  });
+
+  final List<Character> characters;
+  final Set<String> rosterIds;
+  final Future<void> Function(Character character, bool currentlyOnRoster)
+      onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    if (characters.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Uczestnicy zadań',
+            style: TextStyle(
+              fontFamily: fontDisplay,
+              fontSize: 11,
+              letterSpacing: 2,
+              color: parchmentMuted,
+            ),
+          ),
+          const SizedBox(height: 6),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 160),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  for (final c in characters)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(c.name, style: const TextStyle(color: parchmentLight)),
+                        Switch(
+                          key: Key('quest-roster-toggle-${c.id}'),
+                          value: rosterIds.contains(c.id),
+                          onChanged: (_) => onToggle(c, rosterIds.contains(c.id)),
+                        ),
+                      ],
                     ),
                 ],
               ),

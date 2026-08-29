@@ -113,7 +113,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ukryte postacie'), findsOneWidget);
-    expect(find.text('Grommash'), findsOneWidget);
+    // The new quest-roster section below (Task 19) also lists every
+    // character by name, so "Grommash" now legitimately appears twice on
+    // screen -- assert it specifically in the hidden-characters row that
+    // carries the unhide button, rather than assuming global uniqueness.
+    expect(
+      find.ancestor(
+        of: find.byKey(Key('unhide-$characterId')),
+        matching: find.widgetWithText(Row, 'Grommash'),
+      ),
+      findsOneWidget,
+    );
     expect(find.byKey(Key('unhide-$characterId')), findsOneWidget);
 
     await tester.tap(find.byKey(Key('unhide-$characterId')));
@@ -124,9 +134,20 @@ void main() {
 
   // Regression: the section used to be an unconstrained Column above an
   // Expanded user list, so enough hidden characters overflowed the screen
-  // (measured at 12 on the default test surface) instead of scrolling.
+  // (measured at 12 on the default test surface) instead of scrolling. Now
+  // pinned to a phone-sized surface (see "a user row fits a phone-sized
+  // screen" below): the default 800x600 test canvas is shorter than any
+  // real device, and Task 19's quest-roster section added a second bounded
+  // block above the user list, which on that tiny canvas squeezes the user
+  // list's Expanded down far enough that it stays technically built (kept
+  // alive) but is not actually painted on screen -- not a real bug, just an
+  // unrealistically cramped test surface.
   testWidgets('a large number of hidden characters does not overflow',
       (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+
     final db = await seed();
     final ids = <String>[];
     for (var i = 0; i < 12; i++) {
@@ -222,6 +243,39 @@ void main() {
     expect(find.byKey(const Key('admin-u2')), findsOneWidget);
     expect(find.byKey(const Key('readonly-u2')), findsOneWidget);
     expect(find.text('bob@example.com'), findsOneWidget);
+  });
+
+  testWidgets('toggling a character on adds it to quest_roster',
+      (tester) async {
+    final db = await seed();
+    await pumpScreen(tester, db);
+
+    final characterDoc = (await db.collection('characters').get()).docs.single;
+    await tester.tap(find.byKey(Key('quest-roster-toggle-${characterDoc.id}')));
+    await tester.pumpAndSettle();
+
+    final rosterDoc =
+        await db.collection('quest_roster').doc(characterDoc.id).get();
+    expect(rosterDoc.exists, isTrue);
+    expect(rosterDoc.data()!['characterName'], 'Grommash');
+  });
+
+  testWidgets('toggling an already-listed character off removes it',
+      (tester) async {
+    final db = await seed();
+    final characterDoc = (await db.collection('characters').get()).docs.single;
+    await db.collection('quest_roster').doc(characterDoc.id).set({
+      'characterName': 'Grommash',
+      'email': 'bob@example.com',
+    });
+    await pumpScreen(tester, db);
+
+    await tester.tap(find.byKey(Key('quest-roster-toggle-${characterDoc.id}')));
+    await tester.pumpAndSettle();
+
+    final rosterDoc =
+        await db.collection('quest_roster').doc(characterDoc.id).get();
+    expect(rosterDoc.exists, isFalse);
   });
 
   // Regression for the bug that shipped: activeThumbColor and

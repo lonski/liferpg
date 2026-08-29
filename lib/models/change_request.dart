@@ -107,6 +107,8 @@ class ChangeRequest {
     this.decidedBy,
     this.decidedAt,
     this.rejectionReason,
+    this.questId,
+    this.questTitle,
   });
 
   final String id;
@@ -133,6 +135,13 @@ class ChangeRequest {
   /// [decidedBy]/[decidedAt], since it belongs to the decision being undone.
   final String? rejectionReason;
 
+  /// Set only when this request was raised by completing a quest.
+  final String? questId;
+
+  /// Denormalised quest title, so the admin card and the requester's own
+  /// history can show the link without an extra read.
+  final String? questTitle;
+
   bool get isPending => status == ChangeRequestStatus.pending;
 
   static DateTime? _asDate(Object? v) =>
@@ -156,6 +165,8 @@ class ChangeRequest {
         decidedBy: _asString(data['decidedBy']),
         decidedAt: _asDate(data['decidedAt']),
         rejectionReason: _asString(data['rejectionReason']),
+        questId: _asString(data['questId']),
+        questTitle: _asString(data['questTitle']),
       );
 
   /// `createdAt` is deliberately absent: the repository writes it as a server
@@ -172,5 +183,7 @@ class ChangeRequest {
         if (decidedBy != null) 'decidedBy': decidedBy,
         if (decidedAt != null) 'decidedAt': Timestamp.fromDate(decidedAt!),
         if (rejectionReason != null) 'rejectionReason': rejectionReason,
+        if (questId != null) 'questId': questId,
+        if (questTitle != null) 'questTitle': questTitle,
       };
 }
