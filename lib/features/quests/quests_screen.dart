@@ -71,6 +71,42 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
     }
   }
 
+  Future<void> _abandon(Quest quest) async {
+    try {
+      await ref.read(questRepositoryProvider).abandon(quest);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
+  Future<void> _complete(Quest quest) async {
+    final user = ref.read(appUserProvider).value;
+    if (user == null) return;
+    try {
+      await ref.read(questRepositoryProvider).markComplete(
+            quest,
+            requesterUid: user.uid,
+            requesterEmail: user.email,
+          );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
+  Future<void> _withdraw(Quest quest) async {
+    try {
+      await ref.read(questRepositoryProvider).withdraw(quest);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -121,8 +157,8 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
         controller: _tabController,
         children: [
           _BoardTab(onTake: _take),
-          const SizedBox.shrink(),
-          const SizedBox.shrink(),
+          _MineTab(onAbandon: _abandon, onComplete: _complete, onWithdraw: _withdraw),
+          const _LogTab(),
         ],
       ),
     );
@@ -168,4 +204,109 @@ class _BoardTab extends ConsumerWidget {
             ),
     );
   }
+}
+
+class _MineTab extends ConsumerWidget {
+  const _MineTab({
+    required this.onAbandon,
+    required this.onComplete,
+    required this.onWithdraw,
+  });
+
+  final Future<void> Function(Quest quest) onAbandon;
+  final Future<void> Function(Quest quest) onComplete;
+  final Future<void> Function(Quest quest) onWithdraw;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final assigned = ref.watch(myAssignedQuestsProvider).value ?? const <Quest>[];
+    final posted = ref.watch(myPostedQuestsProvider).value ?? const <Quest>[];
+    final active = assigned
+        .where((q) => q.status == QuestStatus.assigned || q.status == QuestStatus.pendingReview)
+        .toList();
+    final myOpen = posted.where((q) => q.status == QuestStatus.open).toList();
+
+    if (active.isEmpty && myOpen.isEmpty) {
+      return const Center(
+        child: Text('Brak własnych zadań', style: TextStyle(color: parchmentMuted)),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (active.isNotEmpty) ...[
+          const _SectionLabel('✦ PRZYPISANE DO MNIE ✦'),
+          for (final quest in active)
+            QuestCard(
+              key: Key('quest-${quest.id}'),
+              quest: quest,
+              posterOrHolderLine: 'Wystawione przez: ${quest.posterName}',
+              statusBadge: quest.status == QuestStatus.pendingReview
+                  ? const Text('OCZEKUJE NA AKCEPTACJĘ',
+                      style: TextStyle(fontSize: 10, color: crimson))
+                  : null,
+              actions: quest.status == QuestStatus.assigned
+                  ? [
+                      TextButton(
+                        key: Key('complete-quest-${quest.id}'),
+                        onPressed: () => onComplete(quest),
+                        child: const Text('Ukończ'),
+                      ),
+                      TextButton(
+                        key: Key('abandon-quest-${quest.id}'),
+                        onPressed: () => onAbandon(quest),
+                        child: const Text('Porzuć'),
+                      ),
+                    ]
+                  : const [],
+            ),
+        ],
+        if (myOpen.isNotEmpty) ...[
+          const _SectionLabel('✦ WYSTAWIONE PRZEZE MNIE ✦'),
+          for (final quest in myOpen)
+            QuestCard(
+              key: Key('quest-${quest.id}'),
+              quest: quest,
+              posterOrHolderLine: 'Otwarte — nikt nie podjął',
+              actions: [
+                TextButton(
+                  key: Key('withdraw-quest-${quest.id}'),
+                  onPressed: () => onWithdraw(quest),
+                  child: const Text('Wycofaj'),
+                ),
+              ],
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontFamily: fontDisplay,
+            fontSize: 10,
+            letterSpacing: 2,
+            color: parchmentMuted,
+          ),
+        ),
+      );
+}
+
+class _LogTab extends StatelessWidget {
+  const _LogTab();
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

@@ -43,6 +43,38 @@ Future<FakeFirebaseFirestore> _seed() async {
   return db;
 }
 
+Future<FakeFirebaseFirestore> _seedMine() async {
+  final db = FakeFirebaseFirestore();
+  await db.collection('users').doc('u1').set({
+    'uid': 'u1', 'name': 'Ala', 'email': 'ala@example.com', 'admin': false, 'readOnlyOthers': false,
+  });
+  await db.collection('characters').doc('c1').set({
+    'name': 'Grommash', 'email': 'ala@example.com', 'current_xp': 0, 'next_level_xp': 100, 'favour': 0, 'traits': [],
+  });
+  await db.collection('quests').add({
+    'title': 'Ugotuj obiad',
+    'posterUid': 'u2',
+    'posterEmail': 'bob@example.com',
+    'posterName': 'Bob',
+    'assignedToCharacterId': 'c1',
+    'assignedToCharacterName': 'Grommash',
+    'assignedToEmail': 'ala@example.com',
+    'status': 'assigned',
+    'reward': {'current_xp': 30},
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+  await db.collection('quests').add({
+    'title': 'Zrób pranie',
+    'posterUid': 'u1',
+    'posterEmail': 'ala@example.com',
+    'posterName': 'Ala',
+    'status': 'open',
+    'reward': {'current_xp': 20},
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+  return db;
+}
+
 void main() {
   testWidgets('the Tablica tab lists open quests with a Podejmij action', (tester) async {
     final db = await _seed();
@@ -63,5 +95,34 @@ void main() {
     expect(quest['status'], 'assigned');
     expect(quest['assignedToCharacterId'], 'c1');
     expect(find.text('Posprzątaj garaż'), findsNothing);
+  });
+
+  testWidgets('Moje shows an assigned-to-me quest (Ukończ/Porzuć) and a posted-by-me one (Wycofaj)', (tester) async {
+    final db = await _seedMine();
+    await _pump(tester, db);
+
+    await tester.tap(find.byKey(const Key('quests-tab-mine')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ugotuj obiad'), findsOneWidget);
+    expect(find.textContaining('Ukończ'), findsOneWidget);
+    expect(find.textContaining('Porzuć'), findsOneWidget);
+    expect(find.text('Zrób pranie'), findsOneWidget);
+    expect(find.textContaining('Wycofaj'), findsOneWidget);
+  });
+
+  testWidgets('tapping Ukończ raises a linked change request and clears the action', (tester) async {
+    final db = await _seedMine();
+    await _pump(tester, db);
+    await tester.tap(find.byKey(const Key('quests-tab-mine')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.textContaining('Ukończ'));
+    await tester.pumpAndSettle();
+
+    final quests = (await db.collection('quests').get()).docs;
+    final ugotuj = quests.firstWhere((d) => d.data()['title'] == 'Ugotuj obiad');
+    expect(ugotuj.data()['status'], 'pending_review');
+    expect((await db.collection('change_requests').get()).docs, hasLength(1));
   });
 }
