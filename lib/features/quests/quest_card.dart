@@ -62,6 +62,7 @@ class QuestCard extends StatelessWidget {
                   padding: const EdgeInsets.all(10),
                   width: double.infinity,
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         quest.title,
