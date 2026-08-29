@@ -70,10 +70,21 @@ final questNotificationsProvider = Provider<void>((ref) {
   });
 
   ref.listen(myPostedQuestsProvider, (previous, next) {
-    final taken =
-        next.value?.where((q) => q.status == QuestStatus.assigned).toList();
     final user = ref.read(appUserProvider).value;
-    if (taken == null || user == null) return;
+    if (user == null) return;
+    final email = user.email.toLowerCase();
+    // A quest that is CREATED already `assigned` is a direct assignment,
+    // not something that was "taken" off the board -- and one assigned to
+    // the poster's own character is definitely self-caused (direct
+    // self-assignment is allowed by design). "Ktoś podjął Twoje zadanie"
+    // only makes sense for a board posting someone else took, so both are
+    // excluded here rather than just diffed against the previous snapshot.
+    final taken = next.value
+        ?.where((q) =>
+            q.status == QuestStatus.assigned &&
+            q.assignedToEmail?.toLowerCase() != email)
+        .toList();
+    if (taken == null) return;
 
     final repo = ref.read(questNotificationRepositoryProvider);
     final diff = diffNewIds(

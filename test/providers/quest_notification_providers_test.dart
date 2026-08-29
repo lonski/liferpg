@@ -157,4 +157,35 @@ void main() {
 
     expect(service.shown, contains('quest_taken_${questRef.id}'));
   });
+
+  test(
+      'a quest created already assigned to my own character does not notify "someone took it"',
+      () async {
+    final db = FakeFirebaseFirestore();
+    await db.collection('users').doc('u1').set({
+      'uid': 'u1', 'name': 'Ala', 'email': 'ala@example.com', 'admin': false, 'readOnlyOthers': false,
+    });
+    final service = FakeNotificationService();
+    final container = await _containerFor(db, uid: 'u1', email: 'ala@example.com', service: service);
+    container.listen(questNotificationsProvider, (_, _) {});
+    await container.read(myPostedQuestsProvider.future);
+    await Future<void>.delayed(Duration.zero);
+
+    // A direct self-assignment: posted and assigned in the same create, to
+    // the poster's own character -- never `open` at any point.
+    await db.collection('quests').add({
+      'title': 'Zrób pranie',
+      'posterUid': 'u1',
+      'posterEmail': 'ala@example.com',
+      'posterName': 'Ala',
+      'assignedToCharacterId': 'c1',
+      'assignedToCharacterName': 'Grommash',
+      'assignedToEmail': 'ala@example.com',
+      'status': 'assigned',
+      'reward': {'current_xp': 20},
+    });
+    await Future<void>.delayed(Duration.zero);
+
+    expect(service.shown, isEmpty);
+  });
 }

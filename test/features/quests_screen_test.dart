@@ -4,10 +4,31 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:liferpg/data/change_request_notification_service.dart';
 import 'package:liferpg/data/firebase_providers.dart';
+import 'package:liferpg/data/shared_preferences_provider.dart';
 import 'package:liferpg/features/quests/new_quest_screen.dart';
 import 'package:liferpg/features/quests/quests_screen.dart';
+import 'package:liferpg/providers/change_request_notification_providers.dart';
+import 'package:liferpg/providers/quest_notification_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _FakeNotificationService implements ChangeRequestNotificationService {
+  final shown = <String>[];
+
+  @override
+  Future<void> requestPermission() async {}
+
+  @override
+  Future<void> show({
+    required String id,
+    required String title,
+    required String body,
+    required String payload,
+  }) async {
+    shown.add(id);
+  }
+}
 
 Future<void> _pump(WidgetTester tester, FakeFirebaseFirestore db) async {
   SharedPreferences.setMockInitialValues({});
@@ -157,6 +178,39 @@ void main() {
     final acceptedBadge = tester.widget<Text>(find.text('ZAAKCEPTOWANE'));
     final rejectedBadge = tester.widget<Text>(find.text('ODRZUCONE'));
     expect(acceptedBadge.style!.color, isNot(rejectedBadge.style!.color));
+  });
+
+  testWidgets(
+      'taking a board quest does not self-notify "assigned to you"',
+      (tester) async {
+    final db = await _seed();
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final service = _FakeNotificationService();
+    final container = ProviderContainer(overrides: [
+      firestoreProvider.overrideWithValue(db),
+      firebaseAuthProvider.overrideWithValue(MockFirebaseAuth(
+        signedIn: true,
+        mockUser: MockUser(uid: 'u1', email: 'ala@example.com'),
+      )),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      changeRequestNotificationServiceProvider.overrideWithValue(service),
+    ]);
+    addTearDown(container.dispose);
+    container.listen(questNotificationsProvider, (_, _) {});
+
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: const MaterialApp(home: QuestsScreen()),
+    ));
+    await tester.pumpAndSettle();
+
+    final questId = (await db.collection('quests').get()).docs.single.id;
+
+    await tester.tap(find.textContaining('Podejmij'));
+    await tester.pumpAndSettle();
+
+    expect(service.shown, isNot(contains('quest_assigned_$questId')));
   });
 
   testWidgets('tapping the + AppBar action opens NewQuestScreen', (tester) async {

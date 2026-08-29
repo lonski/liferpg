@@ -5,6 +5,7 @@ import '../../models/character.dart';
 import '../../models/quest.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/character_providers.dart';
+import '../../providers/quest_notification_providers.dart';
 import '../../providers/quest_providers.dart';
 import '../../theme/app_theme.dart';
 import 'new_quest_screen.dart';
@@ -65,11 +66,28 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
             characterName: character.name,
             email: user.email,
           );
+      await _markSelfAssignedSeen(quest.id, user.uid);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('$error')));
     }
+  }
+
+  /// Seeds the quest-notification baseline with a quest this device just
+  /// took, so the "Przydzielono Ci zadanie" listener never sees it as newly
+  /// appearing and self-notifies the taker about their own action. Only
+  /// merges in when a baseline already exists (`null` means the
+  /// notification listener hasn't done its first pass yet, which in
+  /// practice only happens in the brief window right after app start --
+  /// skipping in that narrow case is safer than writing a partial baseline
+  /// that would make the next real seeding pass misfire on unrelated
+  /// already-assigned quests).
+  Future<void> _markSelfAssignedSeen(String questId, String uid) async {
+    final repo = ref.read(questNotificationRepositoryProvider);
+    final baseline = repo.loadNotifiedAssignedIds(uid);
+    if (baseline == null) return;
+    await repo.saveNotifiedAssignedIds(uid, {...baseline, questId});
   }
 
   Future<void> _abandon(Quest quest) async {
