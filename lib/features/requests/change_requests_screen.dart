@@ -378,6 +378,16 @@ class _RequestCard extends StatelessWidget {
                     request.requesterEmail,
                     style: const TextStyle(color: traitNameInk),
                   ),
+                  if (request.questTitle != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Zadanie: ${request.questTitle}',
+                      style: const TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: traitNameInk,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   for (final line in deltaLines)
                     Text(line, style: const TextStyle(color: inkHeading)),

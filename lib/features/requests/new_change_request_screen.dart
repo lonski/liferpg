@@ -163,6 +163,16 @@ class _NewChangeRequestScreenState
                   color: inkHeading,
                 ),
               ),
+              if (request.questTitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Zadanie: ${request.questTitle}',
+                  style: const TextStyle(
+                    fontStyle: FontStyle.italic,
+                    color: traitNameInk,
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
               Text('Poproszono o'.toUpperCase(), style: _detailSectionLabel),
               for (final line in askedLines)
