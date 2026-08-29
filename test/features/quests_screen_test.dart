@@ -125,4 +125,36 @@ void main() {
     expect(ugotuj.data()['status'], 'pending_review');
     expect((await db.collection('change_requests').get()).docs, hasLength(1));
   });
+
+  testWidgets('Dziennik shows completed (green) and failed (red) outcomes', (tester) async {
+    final db = FakeFirebaseFirestore();
+    await db.collection('users').doc('u1').set({
+      'uid': 'u1', 'name': 'Ala', 'email': 'ala@example.com', 'admin': false, 'readOnlyOthers': false,
+    });
+    await db.collection('quests').add({
+      'title': 'Wynieś śmieci',
+      'posterUid': 'u2', 'posterEmail': 'bob@example.com', 'posterName': 'Bob',
+      'status': 'completed', 'reward': {'current_xp': 15},
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    await db.collection('quests').add({
+      'title': 'Umyj okna',
+      'posterUid': 'u2', 'posterEmail': 'bob@example.com', 'posterName': 'Bob',
+      'status': 'failed', 'reward': {'current_xp': 25},
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    await _pump(tester, db);
+
+    await tester.tap(find.byKey(const Key('quests-tab-log')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Wynieś śmieci'), findsOneWidget);
+    expect(find.text('ZAAKCEPTOWANE'), findsOneWidget);
+    expect(find.text('Umyj okna'), findsOneWidget);
+    expect(find.text('ODRZUCONE'), findsOneWidget);
+
+    final acceptedBadge = tester.widget<Text>(find.text('ZAAKCEPTOWANE'));
+    final rejectedBadge = tester.widget<Text>(find.text('ODRZUCONE'));
+    expect(acceptedBadge.style!.color, isNot(rejectedBadge.style!.color));
+  });
 }

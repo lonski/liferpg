@@ -304,9 +304,70 @@ class _SectionLabel extends StatelessWidget {
       );
 }
 
-class _LogTab extends StatelessWidget {
+class _LogTab extends ConsumerWidget {
   const _LogTab();
 
   @override
-  Widget build(BuildContext context) => const SizedBox.shrink();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final log = ref.watch(questLogProvider);
+    return log.when(
+      loading: () => const Center(child: CircularProgressIndicator(color: gold)),
+      error: (e, _) => Center(
+        child: Text('Nie udało się wczytać dziennika: $e',
+            style: const TextStyle(color: parchmentMuted)),
+      ),
+      data: (quests) => quests.isEmpty
+          ? const Center(
+              child: Text('Dziennik jest pusty', style: TextStyle(color: parchmentMuted)))
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                for (final quest in quests)
+                  QuestCard(
+                    key: Key('quest-${quest.id}'),
+                    quest: quest,
+                    posterOrHolderLine:
+                        '${quest.posterName} · ${quest.assignedToCharacterName ?? "—"}',
+                    statusBadge: _outcomeBadge(quest.status),
+                  ),
+              ],
+            ),
+    );
+  }
+
+  Widget? _outcomeBadge(QuestStatus status) {
+    // The one place this app's palette departs from pure crimson/gold —
+    // muted moss-green / muted brick-red so a scan of the log reads status
+    // at a glance, per the design spec.
+    return switch (status) {
+      QuestStatus.completed => const Text(
+          'ZAAKCEPTOWANE',
+          style: TextStyle(
+            fontFamily: fontDisplay,
+            fontSize: 10,
+            letterSpacing: 1,
+            color: Color(0xFF3C6E3C),
+          ),
+        ),
+      QuestStatus.failed => const Text(
+          'ODRZUCONE',
+          style: TextStyle(
+            fontFamily: fontDisplay,
+            fontSize: 10,
+            letterSpacing: 1,
+            color: Color(0xFF8C3228),
+          ),
+        ),
+      QuestStatus.cancelled => const Text(
+          'WYCOFANE',
+          style: TextStyle(
+            fontFamily: fontDisplay,
+            fontSize: 10,
+            letterSpacing: 1,
+            color: parchmentMuted,
+          ),
+        ),
+      _ => null,
+    };
+  }
 }
