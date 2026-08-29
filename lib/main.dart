@@ -15,6 +15,7 @@ import 'features/requests/new_change_request_screen.dart';
 import 'firebase_options.dart';
 import 'providers/auth_providers.dart';
 import 'providers/change_request_notification_providers.dart';
+import 'providers/quest_notification_providers.dart';
 import 'providers/update_providers.dart';
 import 'theme/app_theme.dart';
 
@@ -94,6 +95,7 @@ class AuthGate extends ConsumerWidget {
             // Kept alive for the session so the admin queue / own-requests
             // streams are watched even while the user is elsewhere in the app.
             ref.watch(changeRequestNotificationsProvider);
+            ref.watch(questNotificationsProvider);
             return const HomeScreen();
           },
           loading: () => const Scaffold(
