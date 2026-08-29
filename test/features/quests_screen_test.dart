@@ -1,0 +1,67 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:liferpg/data/firebase_providers.dart';
+import 'package:liferpg/features/quests/quests_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+Future<void> _pump(WidgetTester tester, FakeFirebaseFirestore db) async {
+  SharedPreferences.setMockInitialValues({});
+  await tester.pumpWidget(ProviderScope(
+    overrides: [
+      firestoreProvider.overrideWithValue(db),
+      firebaseAuthProvider.overrideWithValue(MockFirebaseAuth(
+        signedIn: true,
+        mockUser: MockUser(uid: 'u1', email: 'ala@example.com'),
+      )),
+    ],
+    child: const MaterialApp(home: QuestsScreen()),
+  ));
+  await tester.pumpAndSettle();
+}
+
+Future<FakeFirebaseFirestore> _seed() async {
+  final db = FakeFirebaseFirestore();
+  await db.collection('users').doc('u1').set({
+    'uid': 'u1', 'name': 'Ala', 'email': 'ala@example.com', 'admin': false, 'readOnlyOthers': false,
+  });
+  await db.collection('characters').doc('c1').set({
+    'name': 'Grommash', 'email': 'ala@example.com', 'current_xp': 0, 'next_level_xp': 100, 'favour': 0, 'traits': [],
+  });
+  await db.collection('quests').add({
+    'title': 'Posprzątaj garaż',
+    'posterUid': 'u2',
+    'posterEmail': 'bob@example.com',
+    'posterName': 'Bob',
+    'status': 'open',
+    'reward': {'current_xp': 50},
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+  return db;
+}
+
+void main() {
+  testWidgets('the Tablica tab lists open quests with a Podejmij action', (tester) async {
+    final db = await _seed();
+    await _pump(tester, db);
+
+    expect(find.text('Posprzątaj garaż'), findsOneWidget);
+    expect(find.textContaining('Podejmij'), findsOneWidget);
+  });
+
+  testWidgets('tapping Podejmij with exactly one owned character takes it immediately', (tester) async {
+    final db = await _seed();
+    await _pump(tester, db);
+
+    await tester.tap(find.textContaining('Podejmij'));
+    await tester.pumpAndSettle();
+
+    final quest = (await db.collection('quests').get()).docs.single.data();
+    expect(quest['status'], 'assigned');
+    expect(quest['assignedToCharacterId'], 'c1');
+    expect(find.text('Posprzątaj garaż'), findsNothing);
+  });
+}
