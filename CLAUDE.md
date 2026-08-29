@@ -61,8 +61,9 @@ decidedBy, decidedAt: written on accept/reject
 
 - Numeric entries in `changes` are **deltas**, not target values, so a request
   stays correct if the character changes before an admin accepts it. Trait
-  entries are **upserts by name**: a matching trait's value is replaced, a new
-  name is appended. There is no remove operation.
+  entries are deltas too, matched **by name**: a matching trait's value has
+  the request's value *added* to it, while a new name is appended with the
+  request's value as its starting value. There is no remove operation.
 - Any signed-in user may post a request **for their own character only**;
   the rule checks the target character's email against the caller's, and that
   the request names the caller as `requesterUid` and is `pending` (with no
@@ -88,7 +89,9 @@ decidedBy, decidedAt: written on accept/reject
   `gold` field from the React era) is coerced to `0` before the delta is
   added, per the same tolerant-parsing philosophy as `Character.fromMap` —
   so a badly-typed legacy field silently absorbs the delta into a fresh
-  value rather than the transaction erroring.
+  value rather than the transaction erroring. A trait's existing value gets
+  the same tolerant coercion before the request's delta is added to it (so a
+  free-text legacy trait value, e.g. `"Wojownik"`, is treated as `0`).
 
 **`quests/{id}`**
 ```

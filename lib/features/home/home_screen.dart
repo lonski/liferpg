@@ -33,6 +33,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final version = ref.watch(appVersionProvider).value;
     final user = ref.watch(appUserProvider).value;
     final isAdmin = user?.admin ?? false;
     final feed = ref.watch(charactersProvider);
@@ -73,15 +74,31 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
         ),
-        title: const Text(
-          '⚔  LifeRPG',
-          style: TextStyle(
-            fontFamily: fontDisplay,
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            letterSpacing: 3,
-            color: parchmentLight,
-          ),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '⚔  LifeRPG',
+              style: TextStyle(
+                fontFamily: fontDisplay,
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                letterSpacing: 3,
+                color: parchmentLight,
+              ),
+            ),
+            if (version != null)
+              Text(
+                version,
+                key: const Key('app-version'),
+                style: const TextStyle(
+                  fontFamily: fontBody,
+                  fontSize: 9,
+                  color: parchmentFaint,
+                ),
+              ),
+          ],
         ),
         actions: [
           if (feed.value?.isOffline ?? false)

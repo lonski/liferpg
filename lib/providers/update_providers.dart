@@ -32,6 +32,16 @@ final updateRepositoryProvider = FutureProvider<UpdateRepository>((ref) async {
   return UpdateRepository(ref.watch(updateHttpClientProvider), info.version);
 });
 
+/// The running build's version + build number, so a user can confirm which
+/// APK they actually installed. `PackageInfo.fromPlatform()` throws under
+/// `flutter_test` (no platform channel), which surfaces here as an
+/// `AsyncError` -- callers reading `.value` just get `null` and show
+/// nothing, so no test needs to override this to render cleanly.
+final appVersionProvider = FutureProvider<String>((ref) async {
+  final info = await PackageInfo.fromPlatform();
+  return 'v${info.version}+${info.buildNumber}';
+});
+
 /// Runs exactly once per app process (a plain, non-stream `FutureProvider`
 /// isn't re-triggered by rebuilds) — this alone gives "check on every
 /// launch, and if the resulting dialog is dismissed, ask again next launch"

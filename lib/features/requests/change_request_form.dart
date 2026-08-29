@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/change_request.dart';
-import '../../models/character.dart';
 import '../../providers/character_providers.dart';
 import '../../theme/app_theme.dart';
 
@@ -63,19 +62,12 @@ class ChangeRequestForm extends ConsumerStatefulWidget {
     this.initial,
     this.reason,
     this.showReason = true,
-    this.existingTraits = const [],
     required this.onChanged,
   });
 
   final ChangeSet? initial;
   final String? reason;
   final bool showReason;
-  // The character's current traits, so picking a name already on the
-  // character can prefill its current value below -- a trait change is an
-  // absolute replacement, not a delta like XP/gold, so without this the
-  // value box starts blank/zero and typing into it silently discards
-  // whatever the trait was set to before.
-  final List<Trait> existingTraits;
   final void Function(ChangeSet changes, String? reason) onChanged;
 
   @override
@@ -345,26 +337,6 @@ class _ChangeRequestFormState extends ConsumerState<ChangeRequestForm> {
                         return traitNames.where(
                           (n) => n.toLowerCase().contains(text),
                         );
-                      },
-                      onSelected: (name) {
-                        // Prefer a value already staged in this request over
-                        // the character's current one, so re-selecting a
-                        // name the user already edited in this session
-                        // doesn't clobber their in-progress edit.
-                        final staged = _traits
-                            .where((t) => t.name == name)
-                            .map((t) => t.value);
-                        final current = widget.existingTraits
-                            .where((t) => t.name == name)
-                            .map((t) => t.value);
-                        final value = staged.isNotEmpty
-                            ? staged.first
-                            : current.isNotEmpty
-                            ? current.first
-                            : null;
-                        if (value != null) {
-                          _newTraitValue.text = value;
-                        }
                       },
                       optionsViewBuilder: (context, onSelected, options) {
                         return Align(

@@ -159,8 +159,9 @@ void main() {
     expect(character['gold'], 10);
   });
 
-  test('trait upserts overwrite an existing name and append a new one',
-      () async {
+  test(
+      'trait changes add to an existing name\'s value and set a new one\'s '
+      'starting value', () async {
     final db = FakeFirebaseFirestore();
     final repo = ChangeRequestRepository(db);
     final characterId = await seedCharacter(db, extra: {
@@ -183,7 +184,32 @@ void main() {
       (await db.collection('characters').doc(characterId).get()).data()!,
     );
     expect(character.traits.map((t) => '${t.name}=${t.value}').toList(),
-        ['Siła=12', 'Spryt=7']);
+        ['Siła=22', 'Spryt=7']);
+  });
+
+  test('a non-numeric existing trait value is treated as 0 before adding',
+      () async {
+    final db = FakeFirebaseFirestore();
+    final repo = ChangeRequestRepository(db);
+    final characterId = await seedCharacter(db, extra: {
+      'traits': [
+        {'name': 'Klasa', 'value': 'Wojownik'},
+      ],
+    });
+    await repo.create(_request(
+      characterId: characterId,
+      changes: const ChangeSet(
+        traits: [TraitChange(name: 'Klasa', value: '5')],
+      ),
+    ));
+
+    await repo.accept(await onlyRequest(db), adminUid: 'admin1');
+
+    final character = Character.fromMap(
+      characterId,
+      (await db.collection('characters').doc(characterId).get()).data()!,
+    );
+    expect(character.traits.single.value, '5');
   });
 
   test('overrides are applied and recorded while changes are preserved',

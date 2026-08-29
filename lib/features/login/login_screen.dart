@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_providers.dart';
+import '../../providers/update_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
 
@@ -30,6 +31,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final version = ref.watch(appVersionProvider).value;
     return Scaffold(
       backgroundColor: bgDark,
       body: Center(
@@ -87,6 +89,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   color: parchmentGhost,
                 ),
               ),
+              if (version != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  version,
+                  key: const Key('app-version'),
+                  style: const TextStyle(
+                    fontFamily: fontBody,
+                    fontSize: 9,
+                    color: parchmentGhost,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

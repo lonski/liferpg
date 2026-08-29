@@ -22,6 +22,7 @@ import 'package:liferpg/models/update_info.dart';
 import 'package:liferpg/providers/character_providers.dart';
 import 'package:liferpg/providers/hidden_characters_providers.dart';
 import 'package:liferpg/providers/update_providers.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // A deterministic stand-in for the real update check so tests don't
@@ -414,5 +415,25 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(QuestsScreen), findsOneWidget);
+  });
+
+  // Last in the file: PackageInfo's mock value is a package-level static
+  // that persists for the rest of this isolate once set, so this runs after
+  // every other test that doesn't expect it.
+  testWidgets('shows the running build version so it can be verified',
+      (tester) async {
+    PackageInfo.setMockInitialValues(
+      appName: 'LifeRPG',
+      packageName: 'com.example.liferpg',
+      version: '1.2.2',
+      buildNumber: '6',
+      buildSignature: '',
+    );
+
+    await pumpHome(tester, await seed());
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('app-version')), findsOneWidget);
+    expect(find.text('v1.2.2+6'), findsOneWidget);
   });
 }

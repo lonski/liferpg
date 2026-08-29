@@ -257,8 +257,22 @@ class ChangeRequestRepository {
       for (final change in changes.traits) {
         final index = traits.indexWhere((t) => t['name'] == change.name);
         if (index >= 0) {
-          traits[index] = change.toMap();
+          // A trait change is a numeric delta added to the character's
+          // current value, mirroring current_xp/gold above -- not a
+          // replacement. A value that doesn't parse (an old free-form trait,
+          // say) is tolerantly treated as 0, per the same coercion `current`
+          // applies to current_xp/gold.
+          final currentValue =
+              num.tryParse((traits[index]['value'] as String).trim()) ?? 0;
+          final delta = num.tryParse(change.value.trim()) ?? 0;
+          final next = currentValue + delta;
+          traits[index] = {
+            'name': change.name,
+            'value': next % 1 == 0 ? next.toInt().toString() : '$next',
+          };
         } else {
+          // No current value to add to, so the request's value becomes the
+          // trait's starting value verbatim.
           traits.add(change.toMap());
         }
       }

@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/features/requests/change_request_form.dart';
 import 'package:liferpg/models/change_request.dart';
-import 'package:liferpg/models/character.dart';
-import 'package:liferpg/providers/character_providers.dart';
 
 // The brief's helper called `tester.pumpWidget(...)` without awaiting it,
 // which trips flutter_test's "guarded function conflict" check the moment a
@@ -12,12 +10,9 @@ import 'package:liferpg/providers/character_providers.dart';
 // finished. Mechanical repair: make pumpForm itself async and await the
 // pump, so callers `await pumpForm(tester)` instead of calling it bare. Every
 // expectation below is unchanged.
-void _noop(ChangeSet changes, String? reason) {}
-
 Future<Future<ChangeSet> Function()> pumpForm(
   WidgetTester tester, {
   ChangeSet? initial,
-  List<Trait> existingTraits = const [],
 }) async {
   var latest = const ChangeSet();
   await tester.pumpWidget(
@@ -26,7 +21,6 @@ Future<Future<ChangeSet> Function()> pumpForm(
         home: Scaffold(
           body: ChangeRequestForm(
             initial: initial,
-            existingTraits: existingTraits,
             onChanged: (changes, _) => latest = changes,
           ),
         ),
@@ -77,38 +71,6 @@ void main() {
     expect(
       (await latest()).traits.single,
       const TraitChange(name: 'Siła', value: '12'),
-    );
-  });
-
-  testWidgets(
-      'selecting an existing trait name prefills its current value',
-      (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [traitNamesProvider.overrideWithValue(['Siła'])],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: ChangeRequestForm(
-              existingTraits: [Trait(name: 'Siła', value: '10')],
-              onChanged: _noop,
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.enterText(find.byKey(const Key('trait-name')), 'Si');
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Siła'));
-    await tester.pumpAndSettle();
-
-    expect(
-      tester
-          .widget<TextFormField>(find.byKey(const Key('trait-value')))
-          .controller
-          ?.text,
-      '10',
     );
   });
 

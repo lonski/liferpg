@@ -11,10 +11,10 @@ num? _asNum(Object? v) {
 
 String? _asString(Object? v) => v is String ? v : null;
 
-/// A single trait upsert: the trait with this `name` has its value replaced,
-/// or is appended to the character if no trait carries that name. There is no
-/// remove operation and no delta on a trait's value — the value is free-form
-/// text, so a delta on it would be meaningless.
+/// A single trait change: `value` is a numeric delta added to the trait
+/// named `name`'s current value on the character, or — if no trait carries
+/// that name yet — the trait is appended with `value` as its starting value.
+/// There is no remove operation.
 class TraitChange {
   const TraitChange({required this.name, required this.value});
 

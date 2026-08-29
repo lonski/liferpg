@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/change_request.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/change_request_providers.dart';
-import '../../providers/character_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/dialogs.dart';
 import '../../theme/ornaments.dart';
@@ -112,11 +111,6 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
 
   Future<void> _editThenAccept(ChangeRequest request, String adminUid) async {
     var edited = request.changes;
-    final characters = ref.read(charactersProvider).value?.characters ?? const [];
-    final existingTraits = [
-      for (final c in characters)
-        if (c.id == request.characterId) ...c.traits,
-    ];
     final confirmed = await showDialog<bool>(
       context: context,
       // Parchment, not bgDark. ChangeRequestForm is a parchment-card widget:
@@ -147,7 +141,6 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
         content: SingleChildScrollView(
           child: ChangeRequestForm(
             initial: request.changes,
-            existingTraits: existingTraits,
             showReason: false,
             onChanged: (changes, _) => edited = changes,
           ),
