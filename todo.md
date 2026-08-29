@@ -1,2 +1,3 @@
-- add notifications. I want to see notifications when requests arrives or changes state
-- explore possibilities of auto-update the application. downloading the apk from gh releases page is unconvinient
+- when editing change request, just save the edit, dont accept it immediately
+- allow rollbacking accepted requests
+- in the change request in trait section allow only single trait change, so that user dont have to explicitly clikc "+" after filling the trait. In this way user will have to just select trait and value. there should be also option to clear it

@@ -342,6 +342,7 @@ class _NewChangeRequestScreenState
                                       setState(() => _selectedCharacterId = id),
                                 ),
                               ChangeRequestForm(
+                                existingTraits: selected?.traits ?? const [],
                                 onChanged: (changes, reason) => setState(() {
                                   _changes = changes;
                                   _reason = reason;
