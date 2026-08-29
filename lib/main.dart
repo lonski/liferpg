@@ -10,6 +10,7 @@ import 'data/plugin_update_installer_service.dart';
 import 'data/shared_preferences_provider.dart';
 import 'features/home/home_screen.dart';
 import 'features/login/login_screen.dart';
+import 'features/quests/quests_screen.dart';
 import 'features/requests/change_requests_screen.dart';
 import 'features/requests/new_change_request_screen.dart';
 import 'firebase_options.dart';
@@ -36,6 +37,13 @@ void _openNotificationTarget(String payload) {
         MaterialPageRoute<void>(
           builder: (_) => const NewChangeRequestScreen(),
         ),
+      );
+    case 'quest_board':
+    case 'my_quests':
+      // Deep-linking to a specific tab or quest is out of scope -- this just
+      // gets the user to the Quests screen at all, same as the other cases.
+      navigator.push(
+        MaterialPageRoute<void>(builder: (_) => const QuestsScreen()),
       );
   }
 }
