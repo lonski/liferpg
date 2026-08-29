@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/data/firebase_providers.dart';
+import 'package:liferpg/features/quests/new_quest_screen.dart';
 import 'package:liferpg/features/quests/quests_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -156,5 +157,15 @@ void main() {
     final acceptedBadge = tester.widget<Text>(find.text('ZAAKCEPTOWANE'));
     final rejectedBadge = tester.widget<Text>(find.text('ODRZUCONE'));
     expect(acceptedBadge.style!.color, isNot(rejectedBadge.style!.color));
+  });
+
+  testWidgets('tapping the + AppBar action opens NewQuestScreen', (tester) async {
+    final db = await _seed();
+    await _pump(tester, db);
+
+    await tester.tap(find.byKey(const Key('open-new-quest')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NewQuestScreen), findsOneWidget);
   });
 }

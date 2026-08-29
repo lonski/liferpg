@@ -7,6 +7,7 @@ import '../../providers/auth_providers.dart';
 import '../../providers/character_providers.dart';
 import '../../providers/quest_providers.dart';
 import '../../theme/app_theme.dart';
+import 'new_quest_screen.dart';
 import 'quest_card.dart';
 
 class QuestsScreen extends ConsumerStatefulWidget {
@@ -141,6 +142,17 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
             color: parchmentLight,
           ),
         ),
+        actions: [
+          IconButton(
+            key: const Key('open-new-quest'),
+            tooltip: 'Nowy quest',
+            icon: const Icon(Icons.add),
+            color: parchmentMuted,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const NewQuestScreen()),
+            ),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: parchmentLight,
