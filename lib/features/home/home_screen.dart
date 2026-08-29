@@ -10,6 +10,7 @@ import '../../providers/hidden_characters_providers.dart';
 import '../../providers/update_providers.dart';
 import '../../theme/app_theme.dart';
 import '../character/character_card.dart';
+import '../quests/quests_screen.dart';
 import '../requests/change_requests_screen.dart';
 import '../requests/new_change_request_screen.dart';
 import '../update/update_dialog.dart';
@@ -166,23 +167,8 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(width: 4),
         ],
       ),
-      floatingActionButton: ownsACharacter
-          ? FloatingActionButton(
-              key: const Key('new-change-request'),
-              tooltip: 'Poproś o zmianę',
-              backgroundColor: crimson,
-              foregroundColor: parchmentLight,
-              shape: const CircleBorder(
-                side: BorderSide(color: goldBorder),
-              ),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const NewChangeRequestScreen(),
-                ),
-              ),
-              child: const Icon(Icons.add),
-            )
-          : null,
+      floatingActionButton:
+          ownsACharacter ? _QuestFab(key: const Key('quest-fab')) : null,
       body: feed.when(
         loading: () => const Center(child: CircularProgressIndicator(color: gold)),
         error: (error, _) => Center(
@@ -212,6 +198,101 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The FAB rotates into a close icon and reveals two labeled mini-FABs
+/// above it -- Zadania (the quest board/moje/dziennik screen) and the
+/// existing change-request form.
+class _QuestFab extends StatefulWidget {
+  const _QuestFab({super.key});
+
+  @override
+  State<_QuestFab> createState() => _QuestFabState();
+}
+
+class _QuestFabState extends State<_QuestFab> {
+  bool _open = false;
+
+  void _toggle() => setState(() => _open = !_open);
+
+  void _navigate(BuildContext context, Widget screen) {
+    setState(() => _open = false);
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
+  }
+
+  Widget _miniFab({
+    required Key key,
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: parchmentLight,
+                border: Border.all(color: crimson),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontFamily: fontDisplay,
+                  fontSize: 10,
+                  letterSpacing: 1,
+                  color: inkHeading,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            FloatingActionButton.small(
+              key: key,
+              heroTag: key.toString(),
+              backgroundColor: crimsonDeep,
+              foregroundColor: parchmentLight,
+              shape: const CircleBorder(side: BorderSide(color: goldBorder)),
+              onPressed: onPressed,
+              child: Icon(icon),
+            ),
+          ],
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (_open) ...[
+          _miniFab(
+            key: const Key('quest-fab-quests'),
+            label: 'Zadania',
+            icon: Icons.checklist,
+            onPressed: () => _navigate(context, const QuestsScreen()),
+          ),
+          _miniFab(
+            key: const Key('quest-fab-change-request'),
+            label: 'Prośba o zmianę',
+            icon: Icons.edit_note,
+            onPressed: () => _navigate(context, const NewChangeRequestScreen()),
+          ),
+        ],
+        FloatingActionButton(
+          tooltip: _open ? 'Zamknij' : 'Dodaj',
+          backgroundColor: crimson,
+          foregroundColor: parchmentLight,
+          shape: const CircleBorder(side: BorderSide(color: goldBorder)),
+          onPressed: _toggle,
+          child: Icon(_open ? Icons.close : Icons.add),
+        ),
+      ],
     );
   }
 }
