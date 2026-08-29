@@ -25,6 +25,12 @@ Future<FakeFirebaseFirestore> _seed() async {
   await db.collection('users').doc('u1').set({
     'uid': 'u1', 'name': 'Ala', 'email': 'ala@example.com', 'admin': false, 'readOnlyOthers': false,
   });
+  // The poster's own character -- "Wystawione przez:" shows this name, not
+  // the account's display name, and it's what the submit button requires
+  // before it enables.
+  await db.collection('characters').doc('poster1').set({
+    'name': 'Elwenna', 'email': 'ala@example.com', 'current_xp': 0, 'next_level_xp': 100, 'favour': 0, 'traits': [],
+  });
   await db.collection('quest_roster').doc('c1').set({
     'characterName': 'Grommash', 'email': 'ala@example.com',
   });
@@ -110,5 +116,48 @@ void main() {
     final quest = (await db.collection('quests').get()).docs.single.data();
     expect(quest['status'], 'assigned');
     expect(quest['assignedToCharacterId'], 'c1');
+  });
+
+  testWidgets('posted quest is attributed to the poster\'s character, not their account name', (tester) async {
+    final db = await _seed();
+    await _pump(tester, db);
+
+    await tester.enterText(find.byKey(const Key('quest-title')), 'Posprzątaj garaż');
+    await tester.enterText(find.byKey(const Key('quest-reward-xp')), '50');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('submit-quest')));
+    await tester.pumpAndSettle();
+
+    final quest = (await db.collection('quests').get()).docs.single.data();
+    expect(quest['posterName'], 'Elwenna');
+  });
+
+  testWidgets('the poster character picker only appears with more than one own character', (tester) async {
+    final db = await _seed();
+    await _pump(tester, db);
+    expect(find.byKey(const Key('poster-character-picker')), findsNothing);
+  });
+
+  testWidgets('picking among multiple own characters sets that character as poster', (tester) async {
+    final db = await _seed();
+    await db.collection('characters').doc('poster2').set({
+      'name': 'Thoradin', 'email': 'ala@example.com', 'current_xp': 0, 'next_level_xp': 100, 'favour': 0, 'traits': [],
+    });
+    await _pump(tester, db);
+
+    expect(find.byKey(const Key('poster-character-picker')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('poster-character-picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Thoradin').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('quest-title')), 'Wynieś śmieci');
+    await tester.enterText(find.byKey(const Key('quest-reward-xp')), '15');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('submit-quest')));
+    await tester.pumpAndSettle();
+
+    final quest = (await db.collection('quests').get()).docs.single.data();
+    expect(quest['posterName'], 'Thoradin');
   });
 }
