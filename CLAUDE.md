@@ -90,6 +90,47 @@ decidedBy, decidedAt: written on accept/reject
   so a badly-typed legacy field silently absorbs the delta into a fresh
   value rather than the transaction erroring.
 
+**`quests/{id}`**
+```
+title, description (optional), posterUid, posterEmail, posterName
+status: 'open' | 'assigned' | 'pending_review' | 'completed' | 'failed' | 'cancelled'
+assignedToCharacterId, assignedToCharacterName, assignedToEmail (all optional)
+reward: { current_xp?, traits?: [{name, value}] }  (never gold)
+changeRequestId (optional), createdAt (server timestamp)
+```
+
+**`quest_roster/{characterId}`**
+```
+characterName, email
+```
+
+- The roster is a thin, admin-curated index of characters eligible for direct
+  quest assignment (name/email only, never stats) — see the user management
+  screen's roster panel. The document id is always the character's own id.
+- State machine: `open` (on the board, unassigned) → `assigned` (a character
+  holds it, via take-from-board or direct assignment) → `pending_review` (the
+  holder marked it complete, awaiting an admin) → `completed` or `failed`
+  (an admin accepted/rejected the linked change request). An `open` quest can
+  also go straight to `cancelled` (poster withdraws it), and an `assigned`
+  quest can be abandoned back to `open`.
+- A quest can be created already `assigned` (a direct assignment against the
+  roster) instead of `open` — this is a poster-chosen target at creation
+  time, not a transition, and self-assignment (posting a quest already
+  assigned to your own character) is explicitly allowed by design.
+- Completion never touches the character directly: `QuestRepository.markComplete`
+  raises a `change_requests` document carrying `questId`/`questTitle` (the
+  same shape as an ordinary XP/trait request) and flips the quest to
+  `pending_review`, both in one transaction. Accepting or rejecting that
+  request flips the quest to `completed`/`failed` in the same transaction as
+  the decision (see `ChangeRequestRepository.accept`/`reject`); restoring a
+  rejected request back to `pending` (an existing admin affordance) likewise
+  flips the quest back to `pending_review`, so it never gets stranded in
+  `failed` while its request is live again.
+- `reward` reuses `ChangeSet`'s shape but a `gold` delta is rejected by the
+  create rule — quests only ever pay out XP and/or traits.
+- `QuestRepository` sorts newest-first client-side, same reasoning as
+  `ChangeRequestRepository`.
+
 ## Key Behaviors
 
 - **Auth**: auth state is driven by `firebaseAuthProvider`; unauthenticated users are routed to the login screen.
@@ -113,6 +154,16 @@ decidedBy, decidedAt: written on accept/reject
   on a different device see. Hidden characters can be brought back from a
   "Ukryte postacie" section in the user management
   screen. `readOnlyOthers` users do not get this affordance.
+- **Quests**: the home screen's FAB is a speed-dial (`_QuestFab`) — it
+  replaces the old single-button FAB, rotating into a close icon and
+  revealing two labeled mini-FABs: "Zadania" (the tabbed `QuestsScreen`
+  below) and the existing "Prośba o zmianę" form. `QuestsScreen` has three
+  tabs: TABLICA (the open board, with a Podejmij action per quest), MOJE
+  (quests assigned to or posted by your own characters, with
+  Ukończ/Porzuć/Wycofaj actions), and DZIENNIK (the global outcome log —
+  every `completed`/`failed`/`cancelled` quest, visible to everyone). Posting
+  a new quest (round `+` AppBar action) optionally targets a `quest_roster`
+  character directly instead of the board.
 - **Change-request notifications**: a real Android system-tray notification
   (via `flutter_local_notifications`) fires when a new pending request is
   created (to admins) or when the signed-in user's own request is accepted or
@@ -127,6 +178,15 @@ decidedBy, decidedAt: written on accept/reject
   seeds silently instead of flooding notifications for requests that already
   existed, and a request leaving the pending list is dropped from the
   notified set so a later restore-to-pending notifies again.
+- **Quest notifications**: the same real-notification, same-baseline-seeding
+  approach covers three quest events, from
+  `lib/providers/quest_notification_providers.dart`: a new open-board quest
+  (to everyone but its poster), a quest newly assigned to one of your own
+  characters, and a posted quest of yours being taken off the board. A quest
+  created already `assigned` (a direct assignment) is excluded from the
+  "someone took it" notification — that phrasing only fits a genuine
+  `open` → `assigned` transition — and self-assignment doubly so, since the
+  poster and the assignee are the same person.
 
 ## UI Language
 
