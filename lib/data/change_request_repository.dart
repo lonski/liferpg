@@ -207,6 +207,18 @@ class ChangeRequestRepository {
         'decidedAt': FieldValue.delete(),
         'rejectionReason': FieldValue.delete(),
       });
+
+      // A quest-completion request that was rejected flipped its quest to
+      // `failed` (see reject() above). Restoring the request to the live
+      // queue must undo that, or an admin who then accepts it would drive
+      // the quest straight from `failed` to `completed` -- a transition the
+      // state machine doesn't define.
+      final questId = data['questId'];
+      if (questId is String) {
+        tx.update(_db.collection('quests').doc(questId), {
+          'status': QuestStatus.pendingReview.wire,
+        });
+      }
     });
   }
 
