@@ -76,7 +76,7 @@ void main() {
     expect(fakeService.calls, hasLength(1));
     final call = fakeService.calls.single;
     expect(call.text, contains('Posprzątaj garaż'));
-    expect(call.text, contains('liferpg://quest/q1'));
+    expect(call.text, contains('https://liferpg.lonski.pl/quest/q1'));
     expect(call.imageBytes, isNotNull);
     expect(call.imageBytes, isNotEmpty);
   });
