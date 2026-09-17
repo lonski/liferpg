@@ -196,20 +196,31 @@ characterName, email
   an action-free copy of the card offscreen via an `Overlay` + `RepaintBoundary`,
   rasterises it to a PNG, and opens Android's native share sheet (`share_plus`,
   behind the `QuestShareService` seam so tests can fake it) with that image
-  plus a caption carrying the quest's title and a `liferpg://quest/<id>` deep
-  link (`lib/data/quest_deep_link.dart`). A failed capture (rare) falls back
-  to a text-only share rather than failing the action.
-- **Quest deep links**: `MainActivity` declares a second, non-`autoVerify`
-  `<intent-filter>` for the `liferpg://quest/...` custom scheme (there's no
-  owned domain to host `assetlinks.json` for a real Android App Link, so a
-  tapped link with the app not installed is simply inert). `app_links`
-  delivers the URI on cold start (`main()`) and while running/backgrounded
-  (`uriLinkStream`) into a module-level `pendingQuestDeepLink` notifier; the
-  `_PendingQuestLinkGate` wrapping `HomeScreen` in `main.dart` consumes it
-  once a user is signed in and pushes `QuestDetailScreen` — a link that
-  arrives pre-login just waits rather than opening a screen that can't yet
-  read `quests/{id}` (any signed-in user can, per `firestore.rules`, so the
-  screen itself never needs its own auth gate beyond that).
+  plus a caption carrying the quest's title and a `https://liferpg.lonski.pl/quest/<id>`
+  deep link (`lib/data/quest_deep_link.dart`). A failed capture (rare) falls
+  back to a text-only share rather than failing the action.
+- **Quest deep links**: shared quest links are `https://liferpg.lonski.pl/quest/<id>`
+  — a verified Android App Link (`android:autoVerify="true"` intent-filter in
+  `MainActivity`, `.well-known/assetlinks.json` hosted on the `gh-pages`
+  branch's GitHub Pages site). A tap opens LifeRPG directly on a device that
+  has it installed and where verification has propagated; otherwise Android
+  opens the URL in a browser, which lands on `gh-pages`' `404.html` (GitHub
+  Pages has no server-side routing, so any `/quest/<id>` path 404s into it by
+  design) — that page redirects into the app via a second, legacy,
+  non-`autoVerify` `<intent-filter>` for the original `liferpg://quest/...`
+  custom scheme (kept for this, and so already-shared old-format links still
+  work), or offers the latest GitHub Release if the app isn't installed at
+  all. `lib/data/quest_deep_link.dart` builds the `https://` link and parses
+  incoming URIs in either shape. `app_links` delivers the URI on cold start
+  (`main()`) and while running/backgrounded (`uriLinkStream`) into a
+  module-level `pendingQuestDeepLink` notifier; the `_PendingQuestLinkGate`
+  wrapping `HomeScreen` in `main.dart` consumes it once a user is signed in
+  and pushes `QuestDetailScreen` — a link that arrives pre-login just waits
+  rather than opening a screen that can't yet read `quests/{id}` (any
+  signed-in user can, per `firestore.rules`, so the screen itself never
+  needs its own auth gate beyond that). See
+  `docs/superpowers/specs/2026-09-17-quest-deep-link-app-links-design.md`
+  for the full design.
 
 ## UI Language
 
