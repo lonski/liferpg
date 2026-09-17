@@ -46,10 +46,19 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Opens a shared quest's card. No android:autoVerify: this is
-                 a plain custom scheme, not a verified Android App Link, so
-                 there's no domain/assetlinks.json to host. A link tapped
-                 without the app installed is simply inert. -->
+            <!-- Opens a shared quest's card via the verified Android App
+                 Link below. Kept alongside a second, non-autoVerify
+                 intent-filter for the legacy liferpg:// custom scheme: the
+                 hosted fallback page (see the gh-pages branch's 404.html)
+                 still redirects through it, and it keeps already-shared
+                 old-format links working. See
+                 docs/superpowers/specs/2026-09-17-quest-deep-link-app-links-design.md. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="liferpg.lonski.pl" android:pathPrefix="/quest/"/>
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
