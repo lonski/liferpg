@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -390,6 +392,73 @@ void main() {
     );
 
     expect(find.byType(UpdateDialog), findsNothing);
+  });
+
+  testWidgets(
+      'tapping the logo/version manually checks for an update and shows the '
+      'dialog when one is found', (tester) async {
+    final db = await seed();
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        firestoreProvider.overrideWithValue(db),
+        firebaseAuthProvider.overrideWithValue(MockFirebaseAuth(
+          signedIn: true,
+          mockUser: MockUser(uid: 'u1', email: 'ala@example.com'),
+        )),
+        sharedPreferencesProvider.overrideWithValue(
+          await SharedPreferences.getInstance(),
+        ),
+        // Disable the once-per-launch automatic check so only the manual
+        // tap under test can produce the dialog.
+        updateCheckProvider.overrideWith((ref) async => null),
+        updateRepositoryProvider.overrideWith(
+          (ref) async => UpdateRepository(
+            MockClient((_) async => http.Response(
+                  jsonEncode({
+                    'tag_name': 'v9.9.9',
+                    'body': 'Nowości',
+                    'assets': [
+                      {
+                        'name': 'app-release.apk',
+                        'browser_download_url': 'https://example.com/app.apk',
+                      },
+                    ],
+                  }),
+                  200,
+                  headers: {'content-type': 'application/json'},
+                )),
+            '1.0.0',
+          ),
+        ),
+      ],
+      child: const MaterialApp(home: HomeScreen()),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(UpdateDialog), findsNothing);
+    await tester.tap(find.byKey(const Key('app-version-tap')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(UpdateDialog), findsOneWidget);
+  });
+
+  testWidgets(
+      'tapping the logo/version shows a message when already up to date',
+      (tester) async {
+    await pumpHome(
+      tester,
+      await seed(),
+      extraOverrides: [
+        updateCheckProvider.overrideWith((ref) async => null),
+      ],
+    );
+
+    await tester.tap(find.byKey(const Key('app-version-tap')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(UpdateDialog), findsNothing);
+    expect(find.text('Nie znaleziono nowszej wersji'), findsOneWidget);
   });
 
   testWidgets('the FAB opens a speed-dial with quests and change-request destinations', (tester) async {

@@ -33,7 +33,6 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final version = ref.watch(appVersionProvider).value;
     final user = ref.watch(appUserProvider).value;
     final isAdmin = user?.admin ?? false;
     final feed = ref.watch(charactersProvider);
@@ -74,32 +73,7 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
         ),
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '⚔  LifeRPG',
-              style: TextStyle(
-                fontFamily: fontDisplay,
-                fontWeight: FontWeight.w700,
-                fontSize: 20,
-                letterSpacing: 3,
-                color: parchmentLight,
-              ),
-            ),
-            if (version != null)
-              Text(
-                version,
-                key: const Key('app-version'),
-                style: const TextStyle(
-                  fontFamily: fontBody,
-                  fontSize: 9,
-                  color: parchmentFaint,
-                ),
-              ),
-          ],
-        ),
+        title: const _LogoTitle(),
         actions: [
           if (feed.value?.isOffline ?? false)
             const Padding(
@@ -310,6 +284,83 @@ class _QuestFabState extends State<_QuestFab> {
           child: Icon(_open ? Icons.close : Icons.add),
         ),
       ],
+    );
+  }
+}
+
+/// The AppBar logo + running version. Tapping it manually checks for an
+/// update, bypassing [updateCheckProvider]'s once-per-process guard (which
+/// exists only to keep the automatic launch-time check from repeating).
+class _LogoTitle extends ConsumerStatefulWidget {
+  const _LogoTitle();
+
+  @override
+  ConsumerState<_LogoTitle> createState() => _LogoTitleState();
+}
+
+class _LogoTitleState extends ConsumerState<_LogoTitle> {
+  bool _checking = false;
+
+  Future<void> _checkForUpdate() async {
+    if (_checking) return;
+    setState(() => _checking = true);
+    try {
+      final repository = await ref.read(updateRepositoryProvider.future);
+      final info = await repository.checkForUpdate();
+      if (!mounted) return;
+      if (info != null) {
+        UpdateDialog.show(context, info);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nie znaleziono nowszej wersji')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final version = ref.watch(appVersionProvider).value;
+    return InkWell(
+      key: const Key('app-version-tap'),
+      onTap: _checkForUpdate,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '⚔  LifeRPG',
+            style: TextStyle(
+              fontFamily: fontDisplay,
+              fontWeight: FontWeight.w700,
+              fontSize: 20,
+              letterSpacing: 3,
+              color: parchmentLight,
+            ),
+          ),
+          if (_checking)
+            const SizedBox(
+              width: 10,
+              height: 10,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                color: parchmentFaint,
+              ),
+            )
+          else if (version != null)
+            Text(
+              version,
+              key: const Key('app-version'),
+              style: const TextStyle(
+                fontFamily: fontBody,
+                fontSize: 9,
+                color: parchmentFaint,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
