@@ -25,12 +25,18 @@ class QuestCard extends StatelessWidget {
     this.posterOrHolderLine,
     this.actions = const [],
     this.statusBadge,
+    this.onShare,
   });
 
   final Quest quest;
   final String? posterOrHolderLine;
   final List<Widget> actions;
   final Widget? statusBadge;
+
+  /// Renders a small share button when non-null. Kept out of [actions] so
+  /// the offscreen copy captured by `shareQuest` can omit it (pass `null`)
+  /// without the caller having to filter its own action list.
+  final VoidCallback? onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -101,6 +107,19 @@ class QuestCard extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: actions,
+                        ),
+                      ],
+                      if (onShare != null) ...[
+                        const SizedBox(height: 4),
+                        IconButton(
+                          key: Key('share-quest-${quest.id}'),
+                          tooltip: 'Udostępnij',
+                          icon: const Icon(Icons.share, size: 16),
+                          color: crimson,
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: onShare,
                         ),
                       ],
                     ],

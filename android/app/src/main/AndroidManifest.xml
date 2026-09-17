@@ -46,6 +46,16 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Opens a shared quest's card. No android:autoVerify: this is
+                 a plain custom scheme, not a verified Android App Link, so
+                 there's no domain/assetlinks.json to host. A link tapped
+                 without the app installed is simply inert. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="liferpg" android:host="quest"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

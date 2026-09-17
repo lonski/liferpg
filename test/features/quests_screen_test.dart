@@ -104,6 +104,7 @@ void main() {
 
     expect(find.text('Posprzątaj garaż'), findsOneWidget);
     expect(find.textContaining('Podejmij'), findsOneWidget);
+    expect(find.byIcon(Icons.share), findsOneWidget);
   });
 
   testWidgets('tapping Podejmij with exactly one owned character takes it immediately', (tester) async {

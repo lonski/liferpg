@@ -38,6 +38,20 @@ class QuestRepository {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
+  /// A single quest by id, for the share-link detail screen. `null` covers
+  /// both "no such document" and a malformed one -- the caller renders the
+  /// same not-found state either way.
+  Stream<Quest?> watchById(String id) => _quests.doc(id).snapshots().map((snap) {
+        final data = snap.data();
+        if (data == null) return null;
+        try {
+          return Quest.fromMap(snap.id, data);
+        } catch (e) {
+          debugPrint('Malformed quest $id: $e');
+          return null;
+        }
+      });
+
   Stream<List<Quest>> watchOpen() =>
       _watch(_quests.where('status', isEqualTo: QuestStatus.open.wire));
 

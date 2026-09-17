@@ -10,6 +10,7 @@ import '../../providers/quest_providers.dart';
 import '../../theme/app_theme.dart';
 import 'new_quest_screen.dart';
 import 'quest_card.dart';
+import 'quest_share.dart';
 
 class QuestsScreen extends ConsumerStatefulWidget {
   const QuestsScreen({super.key});
@@ -229,6 +230,7 @@ class _BoardTab extends ConsumerWidget {
                         child: const Text('Podejmij'),
                       ),
                     ],
+                    onShare: () => shareQuest(context, ref, quest),
                   ),
               ],
             ),
@@ -290,6 +292,7 @@ class _MineTab extends ConsumerWidget {
                       ),
                     ]
                   : const [],
+              onShare: () => shareQuest(context, ref, quest),
             ),
         ],
         if (myOpen.isNotEmpty) ...[
@@ -306,6 +309,7 @@ class _MineTab extends ConsumerWidget {
                   child: const Text('Wycofaj'),
                 ),
               ],
+              onShare: () => shareQuest(context, ref, quest),
             ),
         ],
       ],
@@ -359,6 +363,7 @@ class _LogTab extends ConsumerWidget {
                     posterOrHolderLine:
                         '${quest.posterName} · ${quest.assignedToCharacterName ?? "—"}',
                     statusBadge: _outcomeBadge(quest.status),
+                    onShare: () => shareQuest(context, ref, quest),
                   ),
               ],
             ),

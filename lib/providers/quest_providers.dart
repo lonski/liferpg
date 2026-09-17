@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/firebase_providers.dart';
 import '../data/quest_repository.dart';
 import '../data/quest_roster_repository.dart';
+import '../data/quest_share_service.dart';
+import '../data/share_plus_quest_share_service.dart';
 import '../models/quest.dart';
 import '../models/quest_roster_entry.dart';
 import 'auth_providers.dart';
@@ -11,6 +13,21 @@ import 'character_providers.dart';
 final questRepositoryProvider = Provider<QuestRepository>(
   (ref) => QuestRepository(ref.watch(firestoreProvider)),
 );
+
+/// Overridden with a fake in tests, same seam pattern as
+/// `changeRequestNotificationServiceProvider`.
+final questShareServiceProvider = Provider<QuestShareService>(
+  (ref) => const SharePlusQuestShareService(),
+);
+
+/// A single quest by id, for the share-link detail screen. Deliberately not
+/// gated on `appUserProvider` the way the list providers are: the screen
+/// itself renders its own not-found/loading states and Firestore's own rule
+/// (`isAuthenticated()`) is what actually enforces sign-in.
+final questByIdProvider =
+    StreamProvider.family<Quest?, String>((ref, id) {
+  return ref.watch(questRepositoryProvider).watchById(id);
+});
 
 final questRosterRepositoryProvider = Provider<QuestRosterRepository>(
   (ref) => QuestRosterRepository(ref.watch(firestoreProvider)),

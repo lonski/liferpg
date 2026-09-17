@@ -1,3 +1,4 @@
+import 'package:app_links/app_links.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -7,9 +8,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/flutter_local_notifications_change_request_service.dart';
 import 'data/plugin_update_installer_service.dart';
+import 'data/quest_deep_link.dart';
 import 'data/shared_preferences_provider.dart';
 import 'features/home/home_screen.dart';
 import 'features/login/login_screen.dart';
+import 'features/quests/quest_detail_screen.dart';
 import 'features/quests/quests_screen.dart';
 import 'features/requests/change_requests_screen.dart';
 import 'features/requests/new_change_request_screen.dart';
@@ -23,6 +26,18 @@ import 'theme/app_theme.dart';
 /// Lets a tapped system-tray notification open a screen without threading a
 /// BuildContext through the plugin's tap callback.
 final navigatorKey = GlobalKey<NavigatorState>();
+
+/// A quest id extracted from a `liferpg://quest/<id>` link that hasn't been
+/// opened yet -- set from `main()` (cold start) and the `app_links` stream
+/// (warm/background), consumed by `_PendingQuestLinkGate` once a user is
+/// signed in. `null` after consumption, same "nothing pending" meaning as
+/// before anything ever arrived.
+final pendingQuestDeepLink = ValueNotifier<String?>(null);
+
+void _handleIncomingLink(Uri uri) {
+  final id = questIdFromDeepLink(uri);
+  if (id != null) pendingQuestDeepLink.value = id;
+}
 
 void _openNotificationTarget(String payload) {
   final navigator = navigatorKey.currentState;
@@ -56,6 +71,11 @@ Future<void> main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
   final prefs = await SharedPreferences.getInstance();
+
+  final appLinks = AppLinks();
+  final initialLink = await appLinks.getInitialLink();
+  if (initialLink != null) _handleIncomingLink(initialLink);
+  appLinks.uriLinkStream.listen(_handleIncomingLink);
 
   final notificationService = FlutterLocalNotificationsChangeRequestService(
     FlutterLocalNotificationsPlugin(),
@@ -104,7 +124,7 @@ class AuthGate extends ConsumerWidget {
             // streams are watched even while the user is elsewhere in the app.
             ref.watch(changeRequestNotificationsProvider);
             ref.watch(questNotificationsProvider);
-            return const HomeScreen();
+            return const _PendingQuestLinkGate(child: HomeScreen());
           },
           loading: () => const Scaffold(
             backgroundColor: bgDark,
@@ -121,4 +141,45 @@ class AuthGate extends ConsumerWidget {
           ),
         );
   }
+}
+
+/// Opens [QuestDetailScreen] for a deep link that arrived before the user
+/// was signed in -- listens for one to show up while mounted, and also
+/// checks for one already waiting (the cold-start case, where the link was
+/// consumed in `main()` before this gate ever existed) after the first
+/// frame, once `navigatorKey` is guaranteed attached.
+class _PendingQuestLinkGate extends StatefulWidget {
+  const _PendingQuestLinkGate({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_PendingQuestLinkGate> createState() => _PendingQuestLinkGateState();
+}
+
+class _PendingQuestLinkGateState extends State<_PendingQuestLinkGate> {
+  @override
+  void initState() {
+    super.initState();
+    pendingQuestDeepLink.addListener(_consumePending);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _consumePending());
+  }
+
+  @override
+  void dispose() {
+    pendingQuestDeepLink.removeListener(_consumePending);
+    super.dispose();
+  }
+
+  void _consumePending() {
+    final id = pendingQuestDeepLink.value;
+    if (id == null) return;
+    pendingQuestDeepLink.value = null;
+    navigatorKey.currentState?.push(
+      MaterialPageRoute<void>(builder: (_) => QuestDetailScreen(questId: id)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

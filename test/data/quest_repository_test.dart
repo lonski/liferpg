@@ -74,6 +74,29 @@ void main() {
     expect(mine.single.title, 'Ugotuj obiad');
   });
 
+  test('watchById streams the quest by document id', () async {
+    final db = FakeFirebaseFirestore();
+    final ref = await db.collection('quests').add({
+      'title': 'Posprzątaj garaż',
+      'posterUid': 'u1',
+      'posterEmail': 'ala@example.com',
+      'posterName': 'Ala',
+      'status': 'open',
+      'reward': {'current_xp': 50},
+    });
+
+    final quest = await QuestRepository(db).watchById(ref.id).first;
+    expect(quest, isNotNull);
+    expect(quest!.id, ref.id);
+    expect(quest.title, 'Posprzątaj garaż');
+  });
+
+  test('watchById is null for a missing document', () async {
+    final db = FakeFirebaseFirestore();
+    final quest = await QuestRepository(db).watchById('does-not-exist').first;
+    expect(quest, isNull);
+  });
+
   test('watchAssignedTo returns nothing for an empty character list', () async {
     final db = FakeFirebaseFirestore();
     final result = await QuestRepository(db).watchAssignedTo(const []).first;

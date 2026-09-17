@@ -45,4 +45,26 @@ void main() {
 
     expect(find.text('OCZEKUJE NA AKCEPTACJĘ'), findsOneWidget);
   });
+
+  testWidgets('omits the share button when onShare is not given', (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(body: QuestCard(quest: _quest)),
+    ));
+
+    expect(find.byKey(const Key('share-quest-q1')), findsNothing);
+  });
+
+  testWidgets('renders a share button that calls onShare when tapped', (tester) async {
+    var tapped = false;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: QuestCard(quest: _quest, onShare: () => tapped = true),
+      ),
+    ));
+
+    final shareButton = find.byKey(const Key('share-quest-q1'));
+    expect(shareButton, findsOneWidget);
+    await tester.tap(shareButton);
+    expect(tapped, isTrue);
+  });
 }

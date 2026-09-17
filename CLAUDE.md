@@ -190,6 +190,26 @@ characterName, email
   "someone took it" notification — that phrasing only fits a genuine
   `open` → `assigned` transition — and self-assignment doubly so, since the
   poster and the assignee are the same person.
+- **Quest sharing**: every `QuestCard`, on every tab, has a small "Udostępnij"
+  icon button (`onShare`, `lib/features/quests/quest_card.dart`) that hands
+  off to `shareQuest` (`lib/features/quests/quest_share.dart`), which renders
+  an action-free copy of the card offscreen via an `Overlay` + `RepaintBoundary`,
+  rasterises it to a PNG, and opens Android's native share sheet (`share_plus`,
+  behind the `QuestShareService` seam so tests can fake it) with that image
+  plus a caption carrying the quest's title and a `liferpg://quest/<id>` deep
+  link (`lib/data/quest_deep_link.dart`). A failed capture (rare) falls back
+  to a text-only share rather than failing the action.
+- **Quest deep links**: `MainActivity` declares a second, non-`autoVerify`
+  `<intent-filter>` for the `liferpg://quest/...` custom scheme (there's no
+  owned domain to host `assetlinks.json` for a real Android App Link, so a
+  tapped link with the app not installed is simply inert). `app_links`
+  delivers the URI on cold start (`main()`) and while running/backgrounded
+  (`uriLinkStream`) into a module-level `pendingQuestDeepLink` notifier; the
+  `_PendingQuestLinkGate` wrapping `HomeScreen` in `main.dart` consumes it
+  once a user is signed in and pushes `QuestDetailScreen` — a link that
+  arrives pre-login just waits rather than opening a screen that can't yet
+  read `quests/{id}` (any signed-in user can, per `firestore.rules`, so the
+  screen itself never needs its own auth gate beyond that).
 
 ## UI Language
 
