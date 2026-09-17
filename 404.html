@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LifeRPG</title>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    background: #1b1512;
+    color: #f2e8d8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  .card { max-width: 420px; text-align: center; }
+  a.button {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 12px 20px;
+    background: #8a2e2e;
+    color: #f2e8d8;
+    text-decoration: none;
+    border-radius: 4px;
+    border: 1px solid #caa53d;
+    font-weight: 600;
+  }
+  a.link { color: #caa53d; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>LifeRPG</h1>
+    <p id="message">Zainstaluj LifeRPG, aby otworzyć ten link.</p>
+    <a id="open" class="button" href="#" style="display:none">Otwórz w LifeRPG</a>
+    <p><a class="link" href="https://github.com/lonski/liferpg/releases/latest">Pobierz aplikację</a></p>
+  </div>
+  <script>
+    var segments = location.pathname.split('/').filter(Boolean);
+    var isQuest = segments[0] === 'quest' && segments[1];
+    if (isQuest) {
+      var appUrl = 'liferpg://quest/' + segments[1];
+      var openLink = document.getElementById('open');
+      openLink.href = appUrl;
+      openLink.style.display = 'inline-block';
+      document.getElementById('message').textContent = 'Otwieranie w aplikacji...';
+      location.replace(appUrl);
+    }
+  </script>
+</body>
+</html>

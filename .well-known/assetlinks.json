@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.liferpg.app",
+      "sha256_cert_fingerprints": [
+        "21:5D:77:BC:1D:35:8D:72:1E:C5:36:AB:ED:CC:89:AA:FA:67:62:75:7C:7E:1E:0A:4C:36:BF:ED:62:D7:50:E3",
+        "66:87:6C:F7:90:64:F8:E8:AE:C7:2B:55:7D:0D:1D:C9:65:37:12:66:78:A0:6F:A4:29:83:CB:07:93:CC:6B:AA"
+      ]
+    }
+  }
+]
