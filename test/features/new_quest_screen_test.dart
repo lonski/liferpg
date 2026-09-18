@@ -118,6 +118,37 @@ void main() {
     expect(quest['assignedToCharacterId'], 'c1');
   });
 
+  testWidgets('the trait editor is collapsed behind an add button by '
+      'default', (tester) async {
+    final db = await _seed();
+    await _pump(tester, db);
+
+    expect(find.byKey(const Key('add-trait-button')), findsOneWidget);
+    expect(find.byKey(const Key('trait-name')), findsNothing);
+  });
+
+  testWidgets('adding a trait includes it in the reward', (tester) async {
+    final db = await _seed();
+    await _pump(tester, db);
+
+    await tester.enterText(find.byKey(const Key('quest-title')), 'Posprzątaj garaż');
+    await tester.enterText(find.byKey(const Key('quest-reward-xp')), '50');
+    await tester.tap(find.byKey(const Key('add-trait-button')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('trait-name')), 'Siła');
+    await tester.enterText(find.byKey(const Key('trait-value')), '3');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('submit-quest')));
+    await tester.pumpAndSettle();
+
+    final quest = (await db.collection('quests').get()).docs.single.data();
+    final reward = Map<String, dynamic>.from(quest['reward'] as Map);
+    expect(reward['current_xp'], 50);
+    final traits = (reward['traits'] as List).cast<Map>();
+    expect(traits.single['name'], 'Siła');
+    expect(traits.single['value'], '3');
+  });
+
   testWidgets('posted quest is attributed to the poster\'s character, not their account name', (tester) async {
     final db = await _seed();
     await _pump(tester, db);

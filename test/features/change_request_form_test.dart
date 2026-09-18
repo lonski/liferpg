@@ -58,23 +58,33 @@ void main() {
     expect((await latest()).isEmpty, isTrue);
   });
 
-  testWidgets('adds a trait upsert', (tester) async {
+  testWidgets('the trait editor is collapsed behind an add button by '
+      'default', (tester) async {
+    await pumpForm(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('add-trait-button')), findsOneWidget);
+    expect(find.byKey(const Key('trait-name')), findsNothing);
+  });
+
+  testWidgets('setting a single trait reports it', (tester) async {
     final latest = await pumpForm(tester);
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const Key('add-trait-button')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('trait-name')), 'Siła');
     await tester.enterText(find.byKey(const Key('trait-value')), '12');
-    await tester.tap(find.byKey(const Key('add-trait')));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
-    expect(find.byKey(const Key('trait-row-Siła')), findsOneWidget);
     expect(
       (await latest()).traits.single,
       const TraitChange(name: 'Siła', value: '12'),
     );
   });
 
-  testWidgets('a trait with an empty name is not added', (tester) async {
+  testWidgets('an expanded trait editor with an empty name reports no '
+      'trait', (tester) async {
     final latest = await pumpForm(tester);
     await tester.pumpAndSettle();
 
@@ -82,14 +92,36 @@ void main() {
     await tester.pump();
     expect((await latest()).currentXp, 50);
 
-    await tester.enterText(find.byKey(const Key('trait-value')), '12');
-    await tester.tap(find.byKey(const Key('add-trait')));
+    await tester.tap(find.byKey(const Key('add-trait-button')));
     await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('trait-value')), '12');
+    await tester.pump();
 
     expect((await latest()).traits, isEmpty);
   });
 
-  testWidgets('prefills from an initial ChangeSet', (tester) async {
+  testWidgets('removing the trait clears it and collapses the editor', (
+    tester,
+  ) async {
+    final latest = await pumpForm(tester);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('add-trait-button')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('trait-name')), 'Siła');
+    await tester.enterText(find.byKey(const Key('trait-value')), '12');
+    await tester.pump();
+    expect((await latest()).traits, isNotEmpty);
+
+    await tester.tap(find.byKey(const Key('remove-trait')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('add-trait-button')), findsOneWidget);
+    expect((await latest()).traits, isEmpty);
+  });
+
+  testWidgets('prefills from an initial ChangeSet, trait editor already '
+      'expanded', (tester) async {
     await pumpForm(
       tester,
       initial: const ChangeSet(
@@ -106,7 +138,14 @@ void main() {
           ?.text,
       '50',
     );
-    expect(find.byKey(const Key('trait-row-Siła')), findsOneWidget);
+    expect(find.byKey(const Key('add-trait-button')), findsNothing);
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('trait-value')))
+          .controller
+          ?.text,
+      '12',
+    );
   });
 
   testWidgets('shows the Polish validation message for non-numeric input', (

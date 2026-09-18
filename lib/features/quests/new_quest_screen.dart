@@ -11,6 +11,7 @@ import '../../providers/character_providers.dart';
 import '../../providers/quest_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
+import '../requests/trait_change_field.dart';
 
 class NewQuestScreen extends ConsumerStatefulWidget {
   const NewQuestScreen({super.key});
@@ -23,6 +24,7 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _xpController = TextEditingController();
+  TraitChange? _rewardTrait;
   QuestRosterEntry? _target;
   String? _selectedPosterCharacterId;
   bool _submitting = false;
@@ -104,7 +106,10 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
       assignedToCharacterName: target?.characterName,
       assignedToEmail: target?.email,
       status: target == null ? QuestStatus.open : QuestStatus.assigned,
-      reward: ChangeSet(currentXp: xp),
+      reward: ChangeSet(
+        currentXp: xp,
+        traits: _rewardTrait == null ? const [] : [_rewardTrait!],
+      ),
     );
     try {
       await ref.read(questRepositoryProvider).create(quest);
@@ -248,6 +253,12 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(labelText: 'Nagroda (XP)'),
                       onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 8),
+                    TraitChangeField(
+                      initial: _rewardTrait,
+                      onChanged: (trait) =>
+                          setState(() => _rewardTrait = trait),
                     ),
                     const SizedBox(height: 12),
                     ListTile(
