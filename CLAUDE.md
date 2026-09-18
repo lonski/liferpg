@@ -11,6 +11,15 @@ A native Flutter Android app that gamifies real life — users are RPG character
 
 ## Commands
 
+Before starting any task, run `git fetch && git status` (and `git pull` if
+the local branch is behind `origin/master`) so work never starts from a
+stale checkout.
+
+On a fresh Ubuntu machine with no Flutter/Android toolchain installed, run
+`tools/setup_dev_env.sh` first — it installs a JDK, Flutter (stable), and
+the Android SDK command-line tools into `$HOME` (sudo only for the missing
+apt packages), then runs `flutter pub get` in this repo.
+
 ```bash
 flutter run --dart-define=GOOGLE_SERVER_CLIENT_ID=<web client id>   # debug on device
 flutter test                                                        # run tests
