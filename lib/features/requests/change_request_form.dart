@@ -113,19 +113,15 @@ class _ChangeRequestFormState extends ConsumerState<ChangeRequestForm> {
             child: _deltaField('gold', decimal: true),
           ),
           const SizedBox(height: 12),
-          Text('Cechy'.toUpperCase(), style: fieldLabel),
-          const SizedBox(height: 6),
           TraitChangeField(initial: _trait, onChanged: _onTraitChanged),
           if (widget.showReason) ...[
             const SizedBox(height: 12),
-            _Labelled(
-              label: 'Powód',
-              width: stepperWidth,
-              child: boxedField(
-                key: const Key('field-reason'),
-                controller: _reasonController,
-                maxLines: 2,
-              ),
+            Text('Powód'.toUpperCase(), style: fieldLabel),
+            const SizedBox(height: 6),
+            boxedField(
+              key: const Key('field-reason'),
+              controller: _reasonController,
+              maxLines: 2,
             ),
           ],
         ],

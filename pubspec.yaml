@@ -84,17 +84,15 @@ flutter:
   uses-material-design: true
 
   fonts:
-    - family: Cinzel
+    - family: Marcellus
       fonts:
-        - asset: assets/fonts/Cinzel-Regular.ttf
-        - asset: assets/fonts/Cinzel-Bold.ttf
-          weight: 700
-    - family: LibreBaskerville
+        - asset: assets/fonts/Marcellus-Regular.ttf
+    - family: EBGaramond
       fonts:
-        - asset: assets/fonts/LibreBaskerville-Regular.ttf
-        - asset: assets/fonts/LibreBaskerville-Bold.ttf
+        - asset: assets/fonts/EBGaramond-Regular.ttf
+        - asset: assets/fonts/EBGaramond-Bold.ttf
           weight: 700
-        - asset: assets/fonts/LibreBaskerville-Italic.ttf
+        - asset: assets/fonts/EBGaramond-Italic.ttf
           style: italic
 
   # To add assets to your application, add an assets section, like this:

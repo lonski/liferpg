@@ -67,8 +67,8 @@ const RadialGradient cardGradient = RadialGradient(
   stops: [0.0, 0.6, 1.0],
 );
 
-const String fontDisplay = 'Cinzel';
-const String fontBody = 'LibreBaskerville';
+const String fontDisplay = 'Marcellus';
+const String fontBody = 'EBGaramond';
 
 // Shared text roles.
 
