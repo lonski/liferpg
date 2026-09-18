@@ -88,8 +88,18 @@ jobs:
       # update dialog shows (UpdateRepository reads the release's `body`),
       # so the annotated tag message (git tag -a -m "...") is the one place
       # release notes get written.
+      #
+      # actions/checkout's default shallow fetch resolves a tag-push trigger
+      # straight to its target commit SHA and creates a local same-named tag
+      # ref pointing directly at that commit -- a lightweight stand-in, not
+      # the real annotated tag object. `%(contents)` on that stand-in falls
+      # back to the *commit* message (confirmed on v1.8.1's release, which
+      # showed the version-bump commit's message instead of the tag's own
+      # notes). Re-fetching the tag ref explicitly replaces the stand-in
+      # with the genuine annotated tag object before reading it.
       - name: Extract release notes from the annotated tag
         run: |
+          git fetch --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
           git tag -l --format='%(contents)' "$GITHUB_REF_NAME" \
             > "$RUNNER_TEMP/release_notes.md"
 
