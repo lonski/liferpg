@@ -62,6 +62,33 @@ the two ever disagree.)
      lines at ~70 chars.
    - Prefer `•` over `-` for bullets — reads as an actual bullet rather than
      a stray hyphen in plain text.
+   - **Write for the player reading a popup, not for a developer reading a
+     diff.** State the outcome they'll notice, not the mechanism, the cause,
+     or the name of the code/UI thing that got touched. A commit message
+     translated to Polish is not a release note — it's an internal log entry
+     that happens to be in the wrong language for its actual audience.
+   - **One bullet per user-visible change, and only for changes that are
+     user-visible.** A batch is usually a mix of things players will notice
+     (a fixed bug, a reworked screen) and things they never will (a CI
+     workflow fix, a docs tweak, a dev-tooling script, a refactor with no
+     behavior change, a chore). Skip the invisible ones entirely rather than
+     force a line out of them — a thin release is fine; a padded one just
+     buries the changes that matter.
+   - **No implementation detail leaks into the wording.** Not the specific
+     characters/inputs that were broken, not the name of a label/button/field
+     that was removed or renamed, not which file or screen internally — just
+     what's better now, in the plain language the rest of the app's Polish UI
+     already uses (see `CLAUDE.md`'s UI Language section).
+   - Worked example, same batch, bad → good:
+     - **Bad** (reads like a translated commit message): "Poprawiono
+       czcionki, które nie wyświetlały poprawnie niektórych polskich znaków
+       (np. ą, ć, ę, ł, ń, ś, ź, ż) w części aplikacji." / "Formularz prośby
+       o zmianę: usunięto zbędną etykietę „Cechy” i pole „Powód” zajmuje
+       teraz całą szerokość ekranu."
+     - **Good** (states the outcome, no mechanism, no internal names):
+       "Naprawiono wyświetlanie polskich znaków w kilku miejscach aplikacji."
+       / "Odświeżono formularz zgłaszania zmian — jest teraz prostszy i
+       wygodniejszy."
 8. Pushing the tag is what actually fires the release build and creates a
    public GitHub Release with a downloadable APK — treat it as the
    consequential step and confirm with the user before running
