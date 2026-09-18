@@ -8,6 +8,7 @@ import '../../providers/character_providers.dart';
 import '../../providers/quest_notification_providers.dart';
 import '../../providers/quest_providers.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/dialogs.dart';
 import 'new_quest_screen.dart';
 import 'quest_card.dart';
 import 'quest_share.dart';
@@ -54,6 +55,14 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
   }
 
   Future<void> _take(Quest quest) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Podjąć zadanie?',
+      cancelLabel: 'Nie',
+      confirmLabel: 'Tak, podejmij',
+      confirmKey: Key('confirm-take-${quest.id}'),
+    );
+    if (!confirmed || !mounted) return;
     final user = ref.read(appUserProvider).value;
     if (user == null) return;
     final characters = _ownCharacters();
@@ -92,6 +101,14 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
   }
 
   Future<void> _abandon(Quest quest) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Porzucić zadanie?',
+      cancelLabel: 'Nie',
+      confirmLabel: 'Tak, porzuć',
+      confirmKey: Key('confirm-abandon-${quest.id}'),
+    );
+    if (!confirmed || !mounted) return;
     try {
       await ref.read(questRepositoryProvider).abandon(quest);
     } catch (error) {
@@ -102,6 +119,14 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
   }
 
   Future<void> _complete(Quest quest) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Zgłosić ukończenie?',
+      cancelLabel: 'Nie',
+      confirmLabel: 'Tak, ukończ',
+      confirmKey: Key('confirm-complete-${quest.id}'),
+    );
+    if (!confirmed || !mounted) return;
     final user = ref.read(appUserProvider).value;
     if (user == null) return;
     try {
@@ -118,6 +143,14 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
   }
 
   Future<void> _withdraw(Quest quest) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Wycofać zadanie?',
+      cancelLabel: 'Nie',
+      confirmLabel: 'Tak, wycofaj',
+      confirmKey: Key('confirm-withdraw-${quest.id}'),
+    );
+    if (!confirmed || !mounted) return;
     try {
       await ref.read(questRepositoryProvider).withdraw(quest);
     } catch (error) {
@@ -126,6 +159,12 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
           .showSnackBar(SnackBar(content: Text('$error')));
     }
   }
+
+  Future<void> _edit(Quest quest) => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => NewQuestScreen(editing: quest),
+        ),
+      );
 
   @override
   void dispose() {
@@ -188,7 +227,12 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
         controller: _tabController,
         children: [
           _BoardTab(onTake: _take),
-          _MineTab(onAbandon: _abandon, onComplete: _complete, onWithdraw: _withdraw),
+          _MineTab(
+            onAbandon: _abandon,
+            onComplete: _complete,
+            onWithdraw: _withdraw,
+            onEdit: _edit,
+          ),
           const _LogTab(),
         ],
       ),
@@ -224,10 +268,11 @@ class _BoardTab extends ConsumerWidget {
                     quest: quest,
                     posterOrHolderLine: 'Wystawione przez: ${quest.posterName}',
                     actions: [
-                      TextButton(
+                      QuestActionButton(
                         key: Key('take-quest-${quest.id}'),
+                        icon: Icons.back_hand,
+                        tooltip: 'Podejmij',
                         onPressed: () => onTake(quest),
-                        child: const Text('Podejmij'),
                       ),
                     ],
                     onShare: () => shareQuest(context, ref, quest),
@@ -243,11 +288,13 @@ class _MineTab extends ConsumerWidget {
     required this.onAbandon,
     required this.onComplete,
     required this.onWithdraw,
+    required this.onEdit,
   });
 
   final Future<void> Function(Quest quest) onAbandon;
   final Future<void> Function(Quest quest) onComplete;
   final Future<void> Function(Quest quest) onWithdraw;
+  final Future<void> Function(Quest quest) onEdit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -276,19 +323,21 @@ class _MineTab extends ConsumerWidget {
               posterOrHolderLine: 'Wystawione przez: ${quest.posterName}',
               statusBadge: quest.status == QuestStatus.pendingReview
                   ? const Text('OCZEKUJE NA AKCEPTACJĘ',
-                      style: TextStyle(fontSize: 10, color: crimson))
+                      style: TextStyle(fontSize: 12, color: crimson))
                   : null,
               actions: quest.status == QuestStatus.assigned
                   ? [
-                      TextButton(
+                      QuestActionButton(
                         key: Key('complete-quest-${quest.id}'),
+                        icon: Icons.check_circle,
+                        tooltip: 'Ukończ',
                         onPressed: () => onComplete(quest),
-                        child: const Text('Ukończ'),
                       ),
-                      TextButton(
+                      QuestActionButton(
                         key: Key('abandon-quest-${quest.id}'),
+                        icon: Icons.undo,
+                        tooltip: 'Porzuć',
                         onPressed: () => onAbandon(quest),
-                        child: const Text('Porzuć'),
                       ),
                     ]
                   : const [],
@@ -303,10 +352,17 @@ class _MineTab extends ConsumerWidget {
               quest: quest,
               posterOrHolderLine: 'Otwarte — nikt nie podjął',
               actions: [
-                TextButton(
+                QuestActionButton(
+                  key: Key('edit-quest-${quest.id}'),
+                  icon: Icons.edit,
+                  tooltip: 'Edytuj',
+                  onPressed: () => onEdit(quest),
+                ),
+                QuestActionButton(
                   key: Key('withdraw-quest-${quest.id}'),
+                  icon: Icons.remove_circle_outline,
+                  tooltip: 'Wycofaj',
                   onPressed: () => onWithdraw(quest),
-                  child: const Text('Wycofaj'),
                 ),
               ],
               onShare: () => shareQuest(context, ref, quest),
@@ -330,7 +386,7 @@ class _SectionLabel extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontFamily: fontDisplay,
-            fontSize: 10,
+            fontSize: 12,
             letterSpacing: 2,
             color: parchmentMuted,
           ),
@@ -379,7 +435,7 @@ class _LogTab extends ConsumerWidget {
           'ZAAKCEPTOWANE',
           style: TextStyle(
             fontFamily: fontDisplay,
-            fontSize: 10,
+            fontSize: 12,
             letterSpacing: 1,
             color: Color(0xFF3C6E3C),
           ),
@@ -388,7 +444,7 @@ class _LogTab extends ConsumerWidget {
           'ODRZUCONE',
           style: TextStyle(
             fontFamily: fontDisplay,
-            fontSize: 10,
+            fontSize: 12,
             letterSpacing: 1,
             color: Color(0xFF8C3228),
           ),
@@ -397,7 +453,7 @@ class _LogTab extends ConsumerWidget {
           'WYCOFANE',
           style: TextStyle(
             fontFamily: fontDisplay,
-            fontSize: 10,
+            fontSize: 12,
             letterSpacing: 1,
             color: parchmentMuted,
           ),

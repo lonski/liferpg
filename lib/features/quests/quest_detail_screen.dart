@@ -8,6 +8,8 @@ import '../../providers/character_providers.dart';
 import '../../providers/quest_notification_providers.dart';
 import '../../providers/quest_providers.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/dialogs.dart';
+import 'new_quest_screen.dart';
 import 'quest_card.dart';
 
 /// The target of a shared quest's `https://liferpg.lonski.pl/quest/<id>`
@@ -54,6 +56,14 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
   }
 
   Future<void> _take(Quest quest) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Podjąć zadanie?',
+      cancelLabel: 'Nie',
+      confirmLabel: 'Tak, podejmij',
+      confirmKey: Key('confirm-take-${quest.id}'),
+    );
+    if (!confirmed || !mounted) return;
     final user = ref.read(appUserProvider).value;
     if (user == null) return;
     final characters = _ownCharacters();
@@ -86,6 +96,14 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
   }
 
   Future<void> _abandon(Quest quest) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Porzucić zadanie?',
+      cancelLabel: 'Nie',
+      confirmLabel: 'Tak, porzuć',
+      confirmKey: Key('confirm-abandon-${quest.id}'),
+    );
+    if (!confirmed || !mounted) return;
     try {
       await ref.read(questRepositoryProvider).abandon(quest);
     } catch (error) {
@@ -96,6 +114,14 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
   }
 
   Future<void> _complete(Quest quest) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Zgłosić ukończenie?',
+      cancelLabel: 'Nie',
+      confirmLabel: 'Tak, ukończ',
+      confirmKey: Key('confirm-complete-${quest.id}'),
+    );
+    if (!confirmed || !mounted) return;
     final user = ref.read(appUserProvider).value;
     if (user == null) return;
     try {
@@ -112,6 +138,14 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
   }
 
   Future<void> _withdraw(Quest quest) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Wycofać zadanie?',
+      cancelLabel: 'Nie',
+      confirmLabel: 'Tak, wycofaj',
+      confirmKey: Key('confirm-withdraw-${quest.id}'),
+    );
+    if (!confirmed || !mounted) return;
     try {
       await ref.read(questRepositoryProvider).withdraw(quest);
     } catch (error) {
@@ -121,35 +155,52 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
     }
   }
 
+  Future<void> _edit(Quest quest) => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => NewQuestScreen(editing: quest),
+        ),
+      );
+
   List<Widget> _actionsFor(Quest quest, String? uid, List<String> ownCharacterIds) {
     switch (quest.status) {
       case QuestStatus.open:
         return [
           if (ownCharacterIds.isNotEmpty)
-            TextButton(
+            QuestActionButton(
               key: Key('take-quest-${quest.id}'),
+              icon: Icons.back_hand,
+              tooltip: 'Podejmij',
               onPressed: () => _take(quest),
-              child: const Text('Podejmij'),
             ),
-          if (uid != null && quest.posterUid == uid)
-            TextButton(
+          if (uid != null && quest.posterUid == uid) ...[
+            QuestActionButton(
+              key: Key('edit-quest-${quest.id}'),
+              icon: Icons.edit,
+              tooltip: 'Edytuj',
+              onPressed: () => _edit(quest),
+            ),
+            QuestActionButton(
               key: Key('withdraw-quest-${quest.id}'),
+              icon: Icons.remove_circle_outline,
+              tooltip: 'Wycofaj',
               onPressed: () => _withdraw(quest),
-              child: const Text('Wycofaj'),
             ),
+          ],
         ];
       case QuestStatus.assigned:
         if (!ownCharacterIds.contains(quest.assignedToCharacterId)) return const [];
         return [
-          TextButton(
+          QuestActionButton(
             key: Key('complete-quest-${quest.id}'),
+            icon: Icons.check_circle,
+            tooltip: 'Ukończ',
             onPressed: () => _complete(quest),
-            child: const Text('Ukończ'),
           ),
-          TextButton(
+          QuestActionButton(
             key: Key('abandon-quest-${quest.id}'),
+            icon: Icons.undo,
+            tooltip: 'Porzuć',
             onPressed: () => _abandon(quest),
-            child: const Text('Porzuć'),
           ),
         ];
       case QuestStatus.pendingReview:
@@ -164,13 +215,13 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
     switch (quest.status) {
       case QuestStatus.pendingReview:
         return const Text('OCZEKUJE NA AKCEPTACJĘ',
-            style: TextStyle(fontSize: 10, color: crimson));
+            style: TextStyle(fontSize: 12, color: crimson));
       case QuestStatus.completed:
         return const Text(
           'ZAAKCEPTOWANE',
           style: TextStyle(
             fontFamily: fontDisplay,
-            fontSize: 10,
+            fontSize: 12,
             letterSpacing: 1,
             color: Color(0xFF3C6E3C),
           ),
@@ -180,7 +231,7 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
           'ODRZUCONE',
           style: TextStyle(
             fontFamily: fontDisplay,
-            fontSize: 10,
+            fontSize: 12,
             letterSpacing: 1,
             color: Color(0xFF8C3228),
           ),
@@ -190,7 +241,7 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
           'WYCOFANE',
           style: TextStyle(
             fontFamily: fontDisplay,
-            fontSize: 10,
+            fontSize: 12,
             letterSpacing: 1,
             color: parchmentMuted,
           ),

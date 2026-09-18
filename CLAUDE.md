@@ -172,10 +172,34 @@ characterName, email
   below) and the existing "Prośba o zmianę" form. `QuestsScreen` has three
   tabs: TABLICA (the open board, with a Podejmij action per quest), MOJE
   (quests assigned to or posted by your own characters, with
-  Ukończ/Porzuć/Wycofaj actions), and DZIENNIK (the global outcome log —
-  every `completed`/`failed`/`cancelled` quest, visible to everyone). Posting
-  a new quest (round `+` AppBar action) optionally targets a `quest_roster`
-  character directly instead of the board.
+  Ukończ/Porzuć/Wycofaj actions, plus Edytuj on a still-open quest you
+  posted), and DZIENNIK (the global outcome log — every
+  `completed`/`failed`/`cancelled` quest, visible to everyone). Posting a new
+  quest (round `+` AppBar action) optionally targets a `quest_roster`
+  character directly instead of the board. Every `QuestCard` action
+  (Podejmij/Ukończ/Porzuć/Wycofaj/Edytuj/Udostępnij) renders as an icon-only
+  `QuestActionButton` (`lib/features/quests/quest_card.dart`) in one row —
+  their Polish verb lives only in the button's `tooltip` now, not as visible
+  label text. The four state-changing ones (Podejmij/Ukończ/Porzuć/Wycofaj)
+  gate on `showConfirmDialog` (`lib/theme/dialogs.dart`) before touching
+  Firestore, so a mis-tap on the now-dense action row doesn't immediately
+  fire.
+- **Editing a posted quest**: the poster of a quest may edit its
+  title/description/reward — but only while it is still `open` (unassigned,
+  sitting on the board or already withdrawn back to it by nobody taking it);
+  once someone takes it or it's a direct-assignment quest (which never
+  reaches `open`), the Edytuj action disappears. Reachable from the MOJE
+  tab's "WYSTAWIONE PRZEZE MNIE" section and from `QuestDetailScreen`.
+  `NewQuestScreen` doubles as the edit form (`NewQuestScreen(editing: quest)`)
+  — the poster-character and target pickers are hidden in this mode, since
+  neither is editable after creation — and calls
+  `QuestRepository.edit`, a transaction that re-reads the quest to confirm it
+  is still `open` (throwing `QuestNotOpen` otherwise, same staleness guard as
+  `take`/`withdraw`) before writing. `firestore.rules`' quest update rule
+  grants this only to `resource.data.posterUid`, only while
+  `status == 'open'` on both sides, and only for a diff whose affected keys
+  are a subset of `['title', 'description', 'reward']` — status, assignment,
+  and poster identity are untouchable through this path.
 - **Change-request notifications**: a real Android system-tray notification
   (via `flutter_local_notifications`) fires when a new pending request is
   created (to admins) or when the signed-in user's own request is accepted or

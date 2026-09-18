@@ -103,15 +103,18 @@ void main() {
     await _pump(tester, db);
 
     expect(find.text('Posprzątaj garaż'), findsOneWidget);
-    expect(find.textContaining('Podejmij'), findsOneWidget);
+    expect(find.byTooltip('Podejmij'), findsOneWidget);
     expect(find.byIcon(Icons.share), findsOneWidget);
   });
 
-  testWidgets('tapping Podejmij with exactly one owned character takes it immediately', (tester) async {
+  testWidgets('tapping Podejmij with exactly one owned character takes it immediately '
+      'after confirming', (tester) async {
     final db = await _seed();
     await _pump(tester, db);
 
-    await tester.tap(find.textContaining('Podejmij'));
+    await tester.tap(find.byTooltip('Podejmij'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TAK, PODEJMIJ'));
     await tester.pumpAndSettle();
 
     final quest = (await db.collection('quests').get()).docs.single.data();
@@ -120,7 +123,8 @@ void main() {
     expect(find.text('Posprzątaj garaż'), findsNothing);
   });
 
-  testWidgets('Moje shows an assigned-to-me quest (Ukończ/Porzuć) and a posted-by-me one (Wycofaj)', (tester) async {
+  testWidgets('Moje shows an assigned-to-me quest (Ukończ/Porzuć) and a posted-by-me one '
+      '(Edytuj/Wycofaj)', (tester) async {
     final db = await _seedMine();
     await _pump(tester, db);
 
@@ -128,19 +132,39 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ugotuj obiad'), findsOneWidget);
-    expect(find.textContaining('Ukończ'), findsOneWidget);
-    expect(find.textContaining('Porzuć'), findsOneWidget);
+    expect(find.byTooltip('Ukończ'), findsOneWidget);
+    expect(find.byTooltip('Porzuć'), findsOneWidget);
     expect(find.text('Zrób pranie'), findsOneWidget);
-    expect(find.textContaining('Wycofaj'), findsOneWidget);
+    expect(find.byTooltip('Edytuj'), findsOneWidget);
+    expect(find.byTooltip('Wycofaj'), findsOneWidget);
   });
 
-  testWidgets('tapping Ukończ raises a linked change request and clears the action', (tester) async {
+  testWidgets('tapping Edytuj on a posted-by-me quest opens it pre-filled for editing',
+      (tester) async {
     final db = await _seedMine();
     await _pump(tester, db);
     await tester.tap(find.byKey(const Key('quests-tab-mine')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.textContaining('Ukończ'));
+    await tester.tap(find.byTooltip('Edytuj'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NewQuestScreen), findsOneWidget);
+    final titleField = tester.widget<TextField>(find.byKey(const Key('quest-title')));
+    expect(titleField.controller!.text, 'Zrób pranie');
+    expect(find.byKey(const Key('quest-target-picker')), findsNothing);
+  });
+
+  testWidgets('tapping Ukończ and confirming raises a linked change request and clears '
+      'the action', (tester) async {
+    final db = await _seedMine();
+    await _pump(tester, db);
+    await tester.tap(find.byKey(const Key('quests-tab-mine')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Ukończ'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TAK, UKOŃCZ'));
     await tester.pumpAndSettle();
 
     final quests = (await db.collection('quests').get()).docs;
@@ -208,7 +232,9 @@ void main() {
 
     final questId = (await db.collection('quests').get()).docs.single.id;
 
-    await tester.tap(find.textContaining('Podejmij'));
+    await tester.tap(find.byTooltip('Podejmij'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TAK, PODEJMIJ'));
     await tester.pumpAndSettle();
 
     expect(service.shown, isNot(contains('quest_assigned_$questId')));

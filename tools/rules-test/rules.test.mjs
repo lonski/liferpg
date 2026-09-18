@@ -619,6 +619,94 @@ test('only the poster may withdraw an open quest', async () => {
   await assertSucceeds(updateDoc(doc(alice, 'quests/q9'), { status: 'cancelled' }));
 });
 
+test('the poster may edit title/description/reward of their own open quest', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q14'), {
+      title: 'Posprzątaj garaż',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 50 },
+    });
+  });
+  const db = env.authenticatedContext('alice', { email: 'alice@example.com' }).firestore();
+  await assertSucceeds(
+    updateDoc(doc(db, 'quests/q14'), {
+      title: 'Posprzątaj garaż (gruntownie)',
+      description: 'Też pod samochodem',
+      reward: { current_xp: 80 },
+    })
+  );
+});
+
+test('editing a quest may not be done by anyone but the poster', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q15'), {
+      title: 'Posprzątaj garaż',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 50 },
+    });
+  });
+  const mallory = env.authenticatedContext('mallory', { email: 'mallory@example.com' }).firestore();
+  await assertFails(updateDoc(doc(mallory, 'quests/q15'), { title: 'Zmieniony tytuł' }));
+});
+
+test('editing may not touch fields outside title/description/reward', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q16'), {
+      title: 'Posprzątaj garaż',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 50 },
+    });
+  });
+  const db = env.authenticatedContext('alice', { email: 'alice@example.com' }).firestore();
+  await assertFails(
+    updateDoc(doc(db, 'quests/q16'), { title: 'Zmieniony tytuł', status: 'cancelled' })
+  );
+});
+
+test('editing may not leave a quest reward carrying a gold delta', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q17'), {
+      title: 'Posprzątaj garaż',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 50 },
+    });
+  });
+  const db = env.authenticatedContext('alice', { email: 'alice@example.com' }).firestore();
+  await assertFails(
+    updateDoc(doc(db, 'quests/q17'), { reward: { current_xp: 50, gold: 5 } })
+  );
+});
+
+test('a quest can no longer be edited once it has been taken', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q18'), {
+      title: 'Posprzątaj garaż',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      assignedToCharacterId: 'c-bob7',
+      assignedToCharacterName: 'Bob the Bold',
+      assignedToEmail: 'bob@example.com',
+      status: 'assigned',
+      reward: { current_xp: 50 },
+    });
+  });
+  const db = env.authenticatedContext('alice', { email: 'alice@example.com' }).firestore();
+  await assertFails(updateDoc(doc(db, 'quests/q18'), { title: 'Zmieniony tytuł' }));
+});
+
 test('only the current holder may abandon or mark an assigned quest complete', async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(ctx.firestore(), 'quests/q10'), {

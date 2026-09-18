@@ -117,6 +117,18 @@ service cloud.firestore {
                         && request.resource.data.status == 'cancelled'
                         && resource.data.posterUid == request.auth.uid
                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+                    // edit: title/description/reward, by the poster, while still
+                    // open -- status/assignment/poster identity are fixed at
+                    // creation and untouchable here, so a directly-assigned
+                    // quest (which never reaches 'open') can never hit this path
+                    || (isAuthenticated()
+                        && resource.data.status == 'open'
+                        && request.resource.data.status == 'open'
+                        && resource.data.posterUid == request.auth.uid
+                        && request.resource.data.reward.keys().hasAny(['current_xp', 'traits'])
+                        && !('gold' in request.resource.data.reward)
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['title', 'description', 'reward']))
                     // mark complete: assigned -> pending_review, by the current holder
                     || (isAuthenticated()
                         && resource.data.status == 'assigned'

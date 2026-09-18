@@ -233,6 +233,64 @@ void main() {
     expect(() => repo.withdraw(quest), throwsA(isA<QuestNotOpen>()));
   });
 
+  test('edit updates title/description/reward of an open quest', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await repo.create(_openQuest());
+    final quest = (await repo.watchOpen().first).single;
+
+    await repo.edit(
+      quest,
+      title: 'Posprzątaj garaż (gruntownie)',
+      description: 'Też pod samochodem',
+      reward: const ChangeSet(currentXp: 80, traits: [TraitChange(name: 'Porządek', value: '1')]),
+    );
+
+    final doc = await db.collection('quests').doc(quest.id).get();
+    final data = doc.data()!;
+    expect(data['title'], 'Posprzątaj garaż (gruntownie)');
+    expect(data['description'], 'Też pod samochodem');
+    expect(data['reward'], {
+      'current_xp': 80,
+      'traits': [
+        {'name': 'Porządek', 'value': '1'},
+      ],
+    });
+  });
+
+  test('edit with a null description removes it from the document', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await db.collection('quests').add({
+      'title': 'Posprzątaj garaż',
+      'posterUid': 'u1',
+      'posterEmail': 'ala@example.com',
+      'posterName': 'Ala',
+      'description': 'Stary opis',
+      'status': 'open',
+      'reward': {'current_xp': 50},
+    });
+    final quest = (await repo.watchOpen().first).single;
+
+    await repo.edit(quest, title: quest.title, reward: const ChangeSet(currentXp: 50));
+
+    final doc = await db.collection('quests').doc(quest.id).get();
+    expect(doc.data()!.containsKey('description'), isFalse);
+  });
+
+  test('edit throws QuestNotOpen once the quest has been taken', () async {
+    final db = FakeFirebaseFirestore();
+    final repo = QuestRepository(db);
+    await repo.create(_openQuest());
+    final quest = (await repo.watchOpen().first).single;
+    await repo.take(quest, characterId: 'c1', characterName: 'Grommash', email: 'a@example.com');
+
+    expect(
+      () => repo.edit(quest, title: 'Nowy tytuł', reward: const ChangeSet(currentXp: 10)),
+      throwsA(isA<QuestNotOpen>()),
+    );
+  });
+
   test('markComplete raises a linked change request and flips to pending_review', () async {
     final db = FakeFirebaseFirestore();
     final repo = QuestRepository(db);

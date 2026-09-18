@@ -71,7 +71,7 @@ void main() {
 
     await _pump(tester, db, ref.id);
 
-    expect(find.textContaining('Podejmij'), findsNothing);
+    expect(find.byTooltip('Podejmij'), findsNothing);
   });
 
   testWidgets('shows a Podejmij action for an open quest posted by someone else', (tester) async {
@@ -87,9 +87,11 @@ void main() {
     });
 
     await _pump(tester, db, ref.id);
-    expect(find.textContaining('Podejmij'), findsOneWidget);
+    expect(find.byTooltip('Podejmij'), findsOneWidget);
 
-    await tester.tap(find.textContaining('Podejmij'));
+    await tester.tap(find.byTooltip('Podejmij'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TAK, PODEJMIJ'));
     await tester.pumpAndSettle();
 
     final quest = (await db.collection('quests').doc(ref.id).get()).data()!;
@@ -97,7 +99,7 @@ void main() {
     expect(quest['assignedToCharacterId'], 'c1');
   });
 
-  testWidgets('shows a Wycofaj action for my own open quest', (tester) async {
+  testWidgets('shows Edytuj/Wycofaj actions for my own open quest', (tester) async {
     final db = FakeFirebaseFirestore();
     await _seedSelf(db, characterId: 'c1');
     final ref = await db.collection('quests').add({
@@ -111,7 +113,8 @@ void main() {
 
     await _pump(tester, db, ref.id);
 
-    expect(find.textContaining('Wycofaj'), findsOneWidget);
+    expect(find.byTooltip('Edytuj'), findsOneWidget);
+    expect(find.byTooltip('Wycofaj'), findsOneWidget);
   });
 
   testWidgets('shows Ukończ/Porzuć for a quest assigned to my character', (tester) async {
@@ -131,8 +134,8 @@ void main() {
 
     await _pump(tester, db, ref.id);
 
-    expect(find.textContaining('Ukończ'), findsOneWidget);
-    expect(find.textContaining('Porzuć'), findsOneWidget);
+    expect(find.byTooltip('Ukończ'), findsOneWidget);
+    expect(find.byTooltip('Porzuć'), findsOneWidget);
   });
 
   testWidgets('shows the pending-review badge and no actions once marked complete', (tester) async {
@@ -153,8 +156,8 @@ void main() {
     await _pump(tester, db, ref.id);
 
     expect(find.text('OCZEKUJE NA AKCEPTACJĘ'), findsOneWidget);
-    expect(find.textContaining('Ukończ'), findsNothing);
-    expect(find.textContaining('Porzuć'), findsNothing);
+    expect(find.byTooltip('Ukończ'), findsNothing);
+    expect(find.byTooltip('Porzuć'), findsNothing);
   });
 
   testWidgets('shows the outcome badge for a completed quest', (tester) async {

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
-import '../models/change_request.dart' show ChangeRequestStatus;
+import '../models/change_request.dart' show ChangeRequestStatus, ChangeSet;
 import '../models/quest.dart';
 
 /// Thrown when `take`/`withdraw` re-read the quest and it is no longer
@@ -153,6 +153,32 @@ class QuestRepository {
         throw const QuestNotOpen();
       }
       tx.update(ref, {'status': QuestStatus.cancelled.wire});
+    });
+  }
+
+  /// The poster's own title/description/reward edit -- re-reads the quest to
+  /// confirm it is still `open` (nobody took it out from under the poster
+  /// while they were editing) before writing, same staleness guard as
+  /// `take`/`withdraw`. `assignedTo*`/`status`/poster fields are untouched:
+  /// the update rule only grants these three keys.
+  Future<void> edit(
+    Quest quest, {
+    required String title,
+    String? description,
+    required ChangeSet reward,
+  }) async {
+    final ref = _quests.doc(quest.id);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      final data = snap.data();
+      if (data == null || QuestStatus.parse(data['status']) != QuestStatus.open) {
+        throw const QuestNotOpen();
+      }
+      tx.update(ref, {
+        'title': title,
+        'description': description ?? FieldValue.delete(),
+        'reward': reward.toMap(),
+      });
     });
   }
 

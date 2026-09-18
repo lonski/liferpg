@@ -13,6 +13,33 @@ String _rewardLine(ChangeSet reward) {
   return parts.join(' · ');
 }
 
+/// A compact icon-only action button for a [QuestCard]'s action row (e.g.
+/// Podejmij/Ukończ/Porzuć/Wycofaj/Edytuj), styled to match the share button
+/// so several fit on one line. [tooltip] carries the verb a plain icon can't
+/// -- shown on long-press, and read by screen readers and widget tests
+/// (`find.byTooltip`).
+class QuestActionButton extends StatelessWidget {
+  const QuestActionButton({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        tooltip: tooltip,
+        icon: Icon(icon, size: 20),
+        color: crimson,
+        visualDensity: VisualDensity.compact,
+        onPressed: onPressed,
+      );
+}
+
 /// The ornamental card shared by the Tablica/Moje/Dziennik tabs. It only
 /// renders the frame, title, reward pills, and whatever the caller hands it
 /// -- each tab decides its own caption line, actions, and status badge, so
@@ -75,19 +102,19 @@ class QuestCard extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontFamily: fontDisplay,
-                          fontSize: 13,
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: inkHeading,
                         ),
                       ),
                       if (posterOrHolderLine != null) ...[
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Text(
                           posterOrHolderLine!,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontStyle: FontStyle.italic,
-                            fontSize: 11,
+                            fontSize: 13,
                             color: traitNameInk,
                           ),
                         ),
@@ -96,30 +123,29 @@ class QuestCard extends StatelessWidget {
                       Text(
                         _rewardLine(quest.reward),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 11, color: inkHeading),
+                        style: const TextStyle(fontSize: 13, color: inkHeading),
                       ),
                       if (statusBadge != null) ...[
                         const SizedBox(height: 8),
                         statusBadge!,
                       ],
-                      if (actions.isNotEmpty) ...[
-                        const SizedBox(height: 10),
+                      // Actions and the share button render as a single row
+                      // (rather than two stacked ones) so every button for a
+                      // card lands on one line.
+                      if (actions.isNotEmpty || onShare != null) ...[
+                        const SizedBox(height: 6),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: actions,
-                        ),
-                      ],
-                      if (onShare != null) ...[
-                        const SizedBox(height: 4),
-                        IconButton(
-                          key: Key('share-quest-${quest.id}'),
-                          tooltip: 'Udostępnij',
-                          icon: const Icon(Icons.share, size: 16),
-                          color: crimson,
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          onPressed: onShare,
+                          children: [
+                            ...actions,
+                            if (onShare != null)
+                              QuestActionButton(
+                                key: Key('share-quest-${quest.id}'),
+                                icon: Icons.share,
+                                tooltip: 'Udostępnij',
+                                onPressed: onShare,
+                              ),
+                          ],
                         ),
                       ],
                     ],

@@ -14,12 +14,21 @@ import '../../theme/ornaments.dart';
 import '../requests/trait_change_field.dart';
 
 class NewQuestScreen extends ConsumerStatefulWidget {
-  const NewQuestScreen({super.key});
+  const NewQuestScreen({super.key, this.editing});
+
+  /// When set, this screen edits an already-posted quest in place instead of
+  /// creating a new one -- see the class doc comment on [_NewQuestScreenState]
+  /// for what that restricts. `null` is the ordinary "post a new quest" mode.
+  final Quest? editing;
 
   @override
   ConsumerState<NewQuestScreen> createState() => _NewQuestScreenState();
 }
 
+/// Doubles as the edit form for a quest the signed-in user posted
+/// themselves: the poster/target pickers only make sense at creation time
+/// (see `firestore.rules`' quest update rule), so edit mode hides both and
+/// only ever touches title/description/reward via `QuestRepository.edit`.
 class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -28,6 +37,19 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
   QuestRosterEntry? _target;
   String? _selectedPosterCharacterId;
   bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final editing = widget.editing;
+    if (editing != null) {
+      _titleController.text = editing.title;
+      _descriptionController.text = editing.description ?? '';
+      _xpController.text = editing.reward.currentXp?.toString() ?? '';
+      _rewardTrait =
+          editing.reward.traits.isEmpty ? null : editing.reward.traits.first;
+    }
+  }
 
   @override
   void dispose() {
@@ -79,13 +101,18 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
   // disabled button, and a blank title silently no-op-ing is worse still.
   String? _missingRequirement(Character? selected) {
     if (_submitting) return null;
-    if (selected == null) return 'Wybierz postać';
+    if (widget.editing == null && selected == null) return 'Wybierz postać';
     if (_titleController.text.trim().isEmpty) return 'Podaj tytuł';
     if (int.tryParse(_xpController.text.trim()) == null) {
       return 'Wprowadź nagrodę';
     }
     return null;
   }
+
+  ChangeSet _reward(int xp) => ChangeSet(
+        currentXp: xp,
+        traits: _rewardTrait == null ? const [] : [_rewardTrait!],
+      );
 
   Future<void> _submit(Character selected, String uid, String email) async {
     final title = _titleController.text.trim();
@@ -106,10 +133,7 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
       assignedToCharacterName: target?.characterName,
       assignedToEmail: target?.email,
       status: target == null ? QuestStatus.open : QuestStatus.assigned,
-      reward: ChangeSet(
-        currentXp: xp,
-        traits: _rewardTrait == null ? const [] : [_rewardTrait!],
-      ),
+      reward: _reward(xp),
     );
     try {
       await ref.read(questRepositoryProvider).create(quest);
@@ -122,7 +146,31 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
     }
   }
 
+  Future<void> _submitEdit(Quest editing) async {
+    final title = _titleController.text.trim();
+    final xp = int.tryParse(_xpController.text.trim());
+    if (title.isEmpty || xp == null) return;
+    setState(() => _submitting = true);
+    try {
+      await ref.read(questRepositoryProvider).edit(
+            editing,
+            title: title,
+            description: _descriptionController.text.trim().isEmpty
+                ? null
+                : _descriptionController.text.trim(),
+            reward: _reward(xp),
+          );
+      if (mounted) Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Nie udało się zapisać zmian: $error')));
+    }
+  }
+
   Widget _buildSubmitButton(AppUser? user, Character? selected) {
+    final editing = widget.editing;
     Widget button = ElevatedButton(
       key: const Key('submit-quest'),
       // Same restyle as NewChangeRequestScreen's submit button -- the stock
@@ -145,14 +193,20 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
           fontWeight: FontWeight.w700,
         ),
       ),
-      onPressed:
-          _submitting || user == null || _missingRequirement(selected) != null
-              ? null
-              : () => _submit(selected!, user.uid, user.email),
+      onPressed: _submitting ||
+              (editing == null && user == null) ||
+              _missingRequirement(selected) != null
+          ? null
+          : () => editing != null
+              ? _submitEdit(editing)
+              : _submit(selected!, user!.uid, user.email),
       child: Text(
         _submitting
             ? '...'
-            : (_target == null ? 'Wystaw na tablicę' : 'Wystaw zadanie').toUpperCase(),
+            : (editing != null
+                    ? 'Zapisz zmiany'
+                    : (_target == null ? 'Wystaw na tablicę' : 'Wystaw zadanie'))
+                .toUpperCase(),
       ),
     );
     final missing = _missingRequirement(selected);
@@ -170,9 +224,15 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final editing = widget.editing;
     final user = ref.watch(appUserProvider).value;
-    final roster = ref.watch(questRosterProvider).value ?? const <QuestRosterEntry>[];
-    final characters = _ownCharacters(ref, user);
+    // Neither the poster-character nor the target picker applies in edit
+    // mode (both are fixed at creation -- see firestore.rules' quest update
+    // rule), so their backing data isn't even watched then.
+    final roster = editing == null
+        ? ref.watch(questRosterProvider).value ?? const <QuestRosterEntry>[]
+        : const <QuestRosterEntry>[];
+    final characters = editing == null ? _ownCharacters(ref, user) : const <Character>[];
     // With exactly one character the picker is pointless, so it is hidden
     // and that character is used implicitly -- same convention as
     // NewChangeRequestScreen.
@@ -195,9 +255,9 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
             border: Border(bottom: BorderSide(color: goldBorderFaint)),
           ),
         ),
-        title: const Text(
-          'Nowy quest',
-          style: TextStyle(
+        title: Text(
+          editing != null ? 'Edytuj zadanie' : 'Nowy quest',
+          style: const TextStyle(
             fontFamily: fontDisplay,
             fontSize: 14,
             letterSpacing: 3,
@@ -221,7 +281,7 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    if (characters.length > 1)
+                    if (editing == null && characters.length > 1)
                       DropdownButtonFormField<String>(
                         key: const Key('poster-character-picker'),
                         initialValue: selected?.id,
@@ -260,16 +320,18 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
                       onChanged: (trait) =>
                           setState(() => _rewardTrait = trait),
                     ),
-                    const SizedBox(height: 12),
-                    ListTile(
-                      key: const Key('quest-target-picker'),
-                      onTap: () => _pickTarget(roster),
-                      title: Text(
-                        _target?.characterName ?? 'Tablica (dowolna osoba)',
-                        style: const TextStyle(color: inkHeading),
+                    if (editing == null) ...[
+                      const SizedBox(height: 12),
+                      ListTile(
+                        key: const Key('quest-target-picker'),
+                        onTap: () => _pickTarget(roster),
+                        title: Text(
+                          _target?.characterName ?? 'Tablica (dowolna osoba)',
+                          style: const TextStyle(color: inkHeading),
+                        ),
+                        trailing: const Icon(Icons.expand_more, color: crimson),
                       ),
-                      trailing: const Icon(Icons.expand_more, color: crimson),
-                    ),
+                    ],
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
