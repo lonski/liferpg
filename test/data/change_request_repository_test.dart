@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/data/change_request_repository.dart';
 import 'package:liferpg/models/change_request.dart';
 import 'package:liferpg/models/character.dart';
+import 'package:liferpg/models/quest.dart' show dailyQuestStamp;
 
 ChangeRequest _request({
   String characterId = 'c1',
@@ -473,6 +474,116 @@ void main() {
 
     final questDoc = await db.collection('quests').doc(questRef.id).get();
     expect(questDoc.data()!['status'], 'failed');
+  });
+
+  test('accept cycles a daily quest back to assigned instead of completed', () async {
+    final db = FakeFirebaseFirestore();
+    final questRef = await db.collection('quests').add({
+      'title': 'Wyprowadzić psa',
+      'posterUid': 'admin1',
+      'posterEmail': 'admin@example.com',
+      'posterName': 'Admin',
+      'assignedToCharacterId': 'c1',
+      'status': 'pending_review',
+      'reward': {'current_xp': 10},
+      'isDaily': true,
+      'lastCompletedDate': '2026-09-18',
+    });
+    await db.collection('characters').doc('c1').set({
+      'name': 'Grommash',
+      'email': 'ala@example.com',
+      'current_xp': 10,
+    });
+    final repo = ChangeRequestRepository(db);
+    await repo.create(ChangeRequest(
+      id: '',
+      characterId: 'c1',
+      characterName: 'Grommash',
+      requesterUid: 'u1',
+      requesterEmail: 'ala@example.com',
+      status: ChangeRequestStatus.pending,
+      changes: const ChangeSet(currentXp: 10),
+      questId: questRef.id,
+      questTitle: 'Wyprowadzić psa',
+    ));
+    final saved = (await repo.watchPending().first).single;
+
+    await repo.accept(saved, adminUid: 'admin1');
+
+    final questDoc = await db.collection('quests').doc(questRef.id).get();
+    expect(questDoc.data()!['status'], 'assigned');
+    expect(questDoc.data()!['lastCompletedDate'], '2026-09-18',
+        reason: 'accept must not touch a date markComplete already stamped');
+  });
+
+  test('reject cycles a daily quest back to assigned and clears lastCompletedDate', () async {
+    final db = FakeFirebaseFirestore();
+    final questRef = await db.collection('quests').add({
+      'title': 'Wyprowadzić psa',
+      'posterUid': 'admin1',
+      'posterEmail': 'admin@example.com',
+      'posterName': 'Admin',
+      'assignedToCharacterId': 'c1',
+      'status': 'pending_review',
+      'reward': {'current_xp': 10},
+      'isDaily': true,
+      'lastCompletedDate': '2026-09-18',
+    });
+    final repo = ChangeRequestRepository(db);
+    await repo.create(ChangeRequest(
+      id: '',
+      characterId: 'c1',
+      characterName: 'Grommash',
+      requesterUid: 'u1',
+      requesterEmail: 'ala@example.com',
+      status: ChangeRequestStatus.pending,
+      changes: const ChangeSet(currentXp: 10),
+      questId: questRef.id,
+      questTitle: 'Wyprowadzić psa',
+    ));
+    final saved = (await repo.watchPending().first).single;
+
+    await repo.reject(saved, adminUid: 'admin1');
+
+    final questDoc = await db.collection('quests').doc(questRef.id).get();
+    expect(questDoc.data()!['status'], 'assigned');
+    expect(questDoc.data()!.containsKey('lastCompletedDate'), isFalse,
+        reason: 'a rejected attempt must be immediately retryable today');
+  });
+
+  test('restoreToPending re-stamps a daily quest\'s lastCompletedDate to today', () async {
+    final db = FakeFirebaseFirestore();
+    final questRef = await db.collection('quests').add({
+      'title': 'Wyprowadzić psa',
+      'posterUid': 'admin1',
+      'posterEmail': 'admin@example.com',
+      'posterName': 'Admin',
+      'assignedToCharacterId': 'c1',
+      'status': 'pending_review',
+      'reward': {'current_xp': 10},
+      'isDaily': true,
+      'lastCompletedDate': '2026-09-18',
+    });
+    final repo = ChangeRequestRepository(db);
+    await repo.create(ChangeRequest(
+      id: '',
+      characterId: 'c1',
+      characterName: 'Grommash',
+      requesterUid: 'u1',
+      requesterEmail: 'ala@example.com',
+      status: ChangeRequestStatus.pending,
+      changes: const ChangeSet(currentXp: 10),
+      questId: questRef.id,
+      questTitle: 'Wyprowadzić psa',
+    ));
+    final saved = (await repo.watchPending().first).single;
+    await repo.reject(saved, adminUid: 'admin1');
+
+    await repo.restoreToPending(await onlyRequest(db));
+
+    final questDoc = await db.collection('quests').doc(questRef.id).get();
+    expect(questDoc.data()!['status'], 'pending_review');
+    expect(questDoc.data()!['lastCompletedDate'], dailyQuestStamp());
   });
 
   test('accept on a request with no questId does not touch /quests', () async {

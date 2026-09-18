@@ -24,6 +24,18 @@ class QuestNotAssignedToCaller implements Exception {
   String toString() => 'To zadanie nie jest już przypisane';
 }
 
+/// Thrown when `markComplete` re-reads a daily quest and its
+/// `lastCompletedDate` already matches today -- the UI already hides the
+/// Ukończ action once `Quest.isDueToday` is false, but this re-checks
+/// against a fresh server read rather than trusting client-side state (e.g.
+/// a second device, or a screen that didn't refresh yet).
+class QuestAlreadyCompletedToday implements Exception {
+  const QuestAlreadyCompletedToday();
+
+  @override
+  String toString() => 'To zadanie zostało już dziś zrobione';
+}
+
 class QuestRepository {
   QuestRepository(this._db);
 
@@ -54,6 +66,15 @@ class QuestRepository {
 
   Stream<List<Quest>> watchOpen() =>
       _watch(_quests.where('status', isEqualTo: QuestStatus.open.wire));
+
+  /// Every daily quest, any status -- the CODZIENNE tab's admin-only
+  /// management section, so an admin can see (and edit/deactivate) every
+  /// recurring chore regardless of who holds it. Reading `/quests` is
+  /// unconstrained for any signed-in user (see firestore.rules), same as the
+  /// board and log, so this needs no admin-only rule of its own; the
+  /// management UI itself is what's admin-gated.
+  Stream<List<Quest>> watchAllDaily() =>
+      _watch(_quests.where('isDaily', isEqualTo: true));
 
   /// The "Moje: przypisane do mnie" section and the assigned-to-me
   /// notification both watch this across *every* status the caller cares
@@ -203,6 +224,9 @@ class QuestRepository {
       if (data == null || QuestStatus.parse(data['status']) != QuestStatus.assigned) {
         throw const QuestNotAssignedToCaller();
       }
+      if (quest.isDaily && data['lastCompletedDate'] == dailyQuestStamp()) {
+        throw const QuestAlreadyCompletedToday();
+      }
       tx.set(requestRef, {
         'characterId': data['assignedToCharacterId'],
         'characterName': data['assignedToCharacterName'],
@@ -217,7 +241,34 @@ class QuestRepository {
       tx.update(questRef, {
         'status': QuestStatus.pendingReview.wire,
         'changeRequestId': requestRef.id,
+        // Stamped here, at the moment the holder reports it, rather than
+        // when an admin later accepts/rejects -- so the "already done today"
+        // button state is immediate and doesn't depend on review latency.
+        if (quest.isDaily) 'lastCompletedDate': dailyQuestStamp(),
       });
     });
   }
+
+  /// The admin's edit of a daily quest's title/description/reward. Unlike
+  /// [edit] (the poster's own edit of a still-`open` quest), this has no
+  /// status guard: a daily quest is never `open`, and only an admin can call
+  /// this in the first place (firestore.rules' blanket `isAdmin()` clause),
+  /// so there's no race to protect against with a transaction.
+  Future<void> editDaily(
+    Quest quest, {
+    required String title,
+    String? description,
+    required ChangeSet reward,
+  }) =>
+      _quests.doc(quest.id).update({
+        'title': title,
+        'description': description ?? FieldValue.delete(),
+        'reward': reward.toMap(),
+      });
+
+  /// Admin deactivation of a daily quest -- ends its recurring assignment
+  /// for good, the same terminal `cancelled` status an ordinary withdrawn
+  /// quest gets (so it surfaces in DZIENNIK like any other retired quest).
+  Future<void> cancelDaily(Quest quest) =>
+      _quests.doc(quest.id).update({'status': QuestStatus.cancelled.wire});
 }

@@ -9,6 +9,7 @@ import 'package:liferpg/data/firebase_providers.dart';
 import 'package:liferpg/data/shared_preferences_provider.dart';
 import 'package:liferpg/features/quests/new_quest_screen.dart';
 import 'package:liferpg/features/quests/quests_screen.dart';
+import 'package:liferpg/models/quest.dart' show dailyQuestStamp;
 import 'package:liferpg/providers/change_request_notification_providers.dart';
 import 'package:liferpg/providers/quest_notification_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -248,5 +249,117 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(NewQuestScreen), findsOneWidget);
+  });
+
+  group('daily quests (CODZIENNE tab)', () {
+    Future<FakeFirebaseFirestore> seedDaily({String? lastCompletedDate}) async {
+      final db = FakeFirebaseFirestore();
+      await db.collection('users').doc('u1').set({
+        'uid': 'u1', 'name': 'Ala', 'email': 'ala@example.com', 'admin': false, 'readOnlyOthers': false,
+      });
+      await db.collection('characters').doc('c1').set({
+        'name': 'Grommash', 'email': 'ala@example.com', 'current_xp': 0, 'next_level_xp': 100, 'favour': 0, 'traits': [],
+      });
+      await db.collection('quests').add({
+        'title': 'Wyprowadzić psa',
+        'posterUid': 'u2',
+        'posterEmail': 'bob@example.com',
+        'posterName': 'Admin',
+        'assignedToCharacterId': 'c1',
+        'assignedToCharacterName': 'Grommash',
+        'assignedToEmail': 'ala@example.com',
+        'status': 'assigned',
+        'reward': {'current_xp': 10},
+        'isDaily': true,
+        'lastCompletedDate': ?lastCompletedDate,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      return db;
+    }
+
+    testWidgets('a due-today daily quest shows an Ukończ action and no Porzuć', (tester) async {
+      final db = await seedDaily();
+      await _pump(tester, db);
+      await tester.tap(find.byKey(const Key('quests-tab-daily')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wyprowadzić psa'), findsOneWidget);
+      expect(find.byTooltip('Ukończ'), findsOneWidget);
+      expect(find.byTooltip('Porzuć'), findsNothing);
+      expect(find.textContaining('DO ZROBIENIA DZIŚ'), findsOneWidget);
+    });
+
+    testWidgets('a done-today daily quest hides the Ukończ action', (tester) async {
+      final db = await seedDaily(lastCompletedDate: dailyQuestStamp());
+      await _pump(tester, db);
+      await tester.tap(find.byKey(const Key('quests-tab-daily')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wyprowadzić psa'), findsOneWidget);
+      expect(find.byTooltip('Ukończ'), findsNothing);
+      expect(find.textContaining('ZROBIONE DZIŚ'), findsOneWidget);
+    });
+
+    testWidgets('a daily quest does not appear on the MOJE tab', (tester) async {
+      final db = await seedDaily();
+      await _pump(tester, db);
+      await tester.tap(find.byKey(const Key('quests-tab-mine')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wyprowadzić psa'), findsNothing);
+      expect(find.text('Brak własnych zadań'), findsOneWidget);
+    });
+
+    testWidgets('tapping Ukończ and confirming raises a linked change request', (tester) async {
+      final db = await seedDaily();
+      await _pump(tester, db);
+      await tester.tap(find.byKey(const Key('quests-tab-daily')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Ukończ'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('TAK, UKOŃCZ'));
+      await tester.pumpAndSettle();
+
+      final quest = (await db.collection('quests').get()).docs.single.data();
+      expect(quest['status'], 'pending_review');
+      expect(quest['lastCompletedDate'], dailyQuestStamp());
+    });
+
+    Future<FakeFirebaseFirestore> seedDailyAsAdmin() async {
+      final db = await seedDaily();
+      await db.collection('users').doc('u1').update({'admin': true});
+      return db;
+    }
+
+    testWidgets('an admin sees a ZARZĄDZANIE section with Edytuj and Zakończ', (tester) async {
+      final db = await seedDailyAsAdmin();
+      await _pump(tester, db);
+      await tester.tap(find.byKey(const Key('quests-tab-daily')));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Edytuj'), findsOneWidget);
+      expect(find.byTooltip('Zakończ'), findsOneWidget);
+    });
+
+    testWidgets('tapping Zakończ and confirming deactivates the daily quest', (tester) async {
+      final db = await seedDailyAsAdmin();
+      await _pump(tester, db);
+      await tester.tap(find.byKey(const Key('quests-tab-daily')));
+      await tester.pumpAndSettle();
+
+      // The quest is admin's own AND admin-managed, so it renders twice
+      // (once per section) -- tall enough to push Zakończ below the test
+      // viewport, hence the explicit scroll before tapping it.
+      await tester.ensureVisible(find.byTooltip('Zakończ'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Zakończ'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('TAK, ZAKOŃCZ'));
+      await tester.pumpAndSettle();
+
+      final quest = (await db.collection('quests').get()).docs.single.data();
+      expect(quest['status'], 'cancelled');
+    });
   });
 }

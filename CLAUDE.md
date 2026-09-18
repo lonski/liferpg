@@ -109,6 +109,7 @@ status: 'open' | 'assigned' | 'pending_review' | 'completed' | 'failed' | 'cance
 assignedToCharacterId, assignedToCharacterName, assignedToEmail (all optional)
 reward: { current_xp?, traits?: [{name, value}] }  (never gold)
 changeRequestId (optional), createdAt (server timestamp)
+isDaily (optional bool), lastCompletedDate (optional, 'yyyy-MM-dd')
 ```
 
 **`quest_roster/{characterId}`**
@@ -142,6 +143,10 @@ characterName, email
   create rule — quests only ever pay out XP and/or traits.
 - `QuestRepository` sorts newest-first client-side, same reasoning as
   `ChangeRequestRepository`.
+- **Daily quests** (`isDaily: true`) are a separate lifecycle grafted onto the
+  same document/state machine rather than a second collection — see the Key
+  Behaviors entry below for the full picture; `isDaily`/`lastCompletedDate`
+  are the only two fields it adds.
 
 ## Key Behaviors
 
@@ -169,14 +174,17 @@ characterName, email
 - **Quests**: the home screen's FAB is a speed-dial (`_QuestFab`) — it
   replaces the old single-button FAB, rotating into a close icon and
   revealing two labeled mini-FABs: "Zadania" (the tabbed `QuestsScreen`
-  below) and the existing "Prośba o zmianę" form. `QuestsScreen` has three
+  below) and the existing "Prośba o zmianę" form. `QuestsScreen` has four
   tabs: TABLICA (the open board, with a Podejmij action per quest), MOJE
-  (quests assigned to or posted by your own characters, with
+  (ordinary quests assigned to or posted by your own characters, with
   Ukończ/Porzuć/Wycofaj actions, plus Edytuj on a still-open quest you
-  posted), and DZIENNIK (the global outcome log — every
-  `completed`/`failed`/`cancelled` quest, visible to everyone). Posting a new
-  quest (round `+` AppBar action) optionally targets a `quest_roster`
-  character directly instead of the board. Every `QuestCard` action
+  posted — daily quests never appear here, see below), CODZIENNE (daily
+  quests — see below), and DZIENNIK (the global outcome log — every
+  `completed`/`failed`/`cancelled` quest, visible to everyone; a deactivated
+  daily quest lands here too, since `cancelled` is shared vocabulary between
+  the two lifecycles). Posting a new quest (round `+` AppBar action)
+  optionally targets a `quest_roster` character directly instead of the
+  board. Every `QuestCard` action
   (Podejmij/Ukończ/Porzuć/Wycofaj/Edytuj/Udostępnij) renders as an icon-only
   `QuestActionButton` (`lib/features/quests/quest_card.dart`) in one row —
   their Polish verb lives only in the button's `tooltip` now, not as visible
@@ -184,6 +192,53 @@ characterName, email
   gate on `showConfirmDialog` (`lib/theme/dialogs.dart`) before touching
   Firestore, so a mis-tap on the now-dense action row doesn't immediately
   fire.
+- **Daily quests**: an admin-only recurring chore, always created already
+  `assigned` directly to a `quest_roster` character (never `open` — a daily
+  quest is somebody's, never a board pickup) via the same "Zadanie
+  codzienne" toggle in `NewQuestScreen`, gated in the UI on `user.admin` and
+  enforced server-side by `firestore.rules`' quest create rule (an
+  `isDaily: true` document requires `isAdmin()`). Its poster identity is the
+  admin's own account name (`AppUser.name`), not one of their characters —
+  unlike an ordinary quest, an admin managing chores shouldn't need to own a
+  character. **No duplication, by construction**: there are no Cloud
+  Functions in this project (see below) to run a nightly job that would
+  spawn a fresh document per day, so a daily quest is one persistent
+  document whose completion *cycles* rather than terminates. Completing it
+  still raises a `change_requests` document exactly like an ordinary quest
+  (`QuestRepository.markComplete`, which also stamps `lastCompletedDate` —
+  device-local `yyyy-MM-dd`, from `dailyQuestStamp()` in
+  `lib/models/quest.dart` — at the moment of reporting, not when an admin
+  later decides it, so the button disables immediately rather than depending
+  on review latency); but `ChangeRequestRepository.accept`/`reject` branch on
+  the linked quest's `isDaily` (read inside the same transaction, before any
+  write, to respect Firestore's read-then-write ordering) and flip it back
+  to `assigned` instead of the terminal `completed`/`failed` — a reject also
+  clears `lastCompletedDate` so the attempt is immediately retryable the same
+  day, while `restoreToPending` re-stamps it to today so a follow-up
+  accept/reject still lands correctly. `Quest.isDueToday`
+  (`lastCompletedDate != dailyQuestStamp()`) is what every screen gates the
+  Ukończ action on,
+  and `QuestRepository.markComplete` re-checks the same condition against a
+  fresh server read (throwing `QuestAlreadyCompletedToday`) rather than
+  trusting client-side state. Visually, a live (non-cancelled) daily quest
+  gets a gold border and an "⟳ CODZIENNE ⟳" band (`goldBandGradient`,
+  `TopBand`'s `gradient`/`labelColor` params) instead of the ordinary
+  crimson one, so it reads as a different category at a glance, per
+  `QuestCard`. The CODZIENNE tab (`_DailyTab` in
+  `lib/features/quests/quests_screen.dart`) shows the signed-in user's own
+  daily quests (due-today vs. done-today, via the same `isDueToday`
+  distinction) and, admin-only, a "ZARZĄDZANIE" section listing *every*
+  daily quest (`QuestRepository.watchAllDaily`, unconstrained like the board
+  and log) with Edytuj (`QuestRepository.editDaily` — no `open` status guard,
+  since a daily quest is never `open` and only an admin can call it in the
+  first place) and Zakończ (`QuestRepository.cancelDaily`, a permanent
+  deactivation — surfaces in DZIENNIK like any other retired quest). A daily
+  quest is deliberately excluded from `_MineTab`'s "PRZYPISANE DO MNIE"
+  section (no Porzuć — it's a standing assignment, not a one-off taken off
+  the board) and, once deactivated, from the CODZIENNE tab's own "your daily
+  quests" list too (`watchAssignedTo` filters only by
+  `assignedToCharacterId`, not status, and `cancelDaily` deliberately leaves
+  the assignment fields in place, so that exclusion is client-side).
 - **Editing a posted quest**: the poster of a quest may edit its
   title/description/reward — but only while it is still `open` (unassigned,
   sitting on the board or already withdrawn back to it by nobody taking it);

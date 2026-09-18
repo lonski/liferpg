@@ -91,6 +91,16 @@ final questLogProvider = StreamProvider<List<Quest>>((ref) async* {
   yield* ref.watch(questRepositoryProvider).watchLog();
 });
 
+/// Every daily quest, for the CODZIENNE tab's admin-only management section.
+final allDailyQuestsProvider = StreamProvider<List<Quest>>((ref) async* {
+  final user = await ref.watch(appUserProvider.future);
+  if (user == null) {
+    yield const <Quest>[];
+    return;
+  }
+  yield* ref.watch(questRepositoryProvider).watchAllDaily();
+});
+
 final questRosterProvider = StreamProvider<List<QuestRosterEntry>>((ref) async* {
   final user = await ref.watch(appUserProvider.future);
   if (user == null) {

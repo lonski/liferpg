@@ -23,7 +23,7 @@ class QuestsScreen extends ConsumerStatefulWidget {
 class _QuestsScreenState extends ConsumerState<QuestsScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController =
-      TabController(length: 3, vsync: this);
+      TabController(length: 4, vsync: this);
 
   List<Character> _ownCharacters() {
     final user = ref.read(appUserProvider).value;
@@ -166,6 +166,24 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
         ),
       );
 
+  Future<void> _deactivateDaily(Quest quest) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Zakończyć zadanie codzienne?',
+      cancelLabel: 'Nie',
+      confirmLabel: 'Tak, zakończ',
+      confirmKey: Key('confirm-deactivate-${quest.id}'),
+    );
+    if (!confirmed || !mounted) return;
+    try {
+      await ref.read(questRepositoryProvider).cancelDaily(quest);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -219,6 +237,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
           tabs: const [
             Tab(key: Key('quests-tab-board'), text: 'TABLICA'),
             Tab(key: Key('quests-tab-mine'), text: 'MOJE'),
+            Tab(key: Key('quests-tab-daily'), text: 'CODZIENNE'),
             Tab(key: Key('quests-tab-log'), text: 'DZIENNIK'),
           ],
         ),
@@ -232,6 +251,11 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
             onComplete: _complete,
             onWithdraw: _withdraw,
             onEdit: _edit,
+          ),
+          _DailyTab(
+            onComplete: _complete,
+            onEdit: _edit,
+            onDeactivate: _deactivateDaily,
           ),
           const _LogTab(),
         ],
@@ -300,8 +324,12 @@ class _MineTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final assigned = ref.watch(myAssignedQuestsProvider).value ?? const <Quest>[];
     final posted = ref.watch(myPostedQuestsProvider).value ?? const <Quest>[];
+    // Daily quests live only on the CODZIENNE tab -- their actions
+    // (Ukończ-once-per-day, no Porzuć) don't fit this tab's semantics.
     final active = assigned
-        .where((q) => q.status == QuestStatus.assigned || q.status == QuestStatus.pendingReview)
+        .where((q) =>
+            !q.isDaily &&
+            (q.status == QuestStatus.assigned || q.status == QuestStatus.pendingReview))
         .toList();
     final myOpen = posted.where((q) => q.status == QuestStatus.open).toList();
 
@@ -366,6 +394,120 @@ class _MineTab extends ConsumerWidget {
                 ),
               ],
               onShare: () => shareQuest(context, ref, quest),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+// Outcome-style status colours, shared with _LogTab's badges below -- a
+// deliberate departure from pure crimson/gold so "due" vs "done" reads at a
+// glance, per the design spec.
+const Color _dueColor = crimson;
+const Color _doneColor = Color(0xFF3C6E3C);
+
+class _DailyTab extends ConsumerWidget {
+  const _DailyTab({
+    required this.onComplete,
+    required this.onEdit,
+    required this.onDeactivate,
+  });
+
+  final Future<void> Function(Quest quest) onComplete;
+  final Future<void> Function(Quest quest) onEdit;
+  final Future<void> Function(Quest quest) onDeactivate;
+
+  Widget? _dueBadge(Quest quest) {
+    if (quest.status == QuestStatus.pendingReview) {
+      return const Text('OCZEKUJE NA AKCEPTACJĘ',
+          style: TextStyle(fontSize: 12, color: crimson));
+    }
+    return Text(
+      quest.isDueToday ? 'DO ZROBIENIA DZIŚ' : '✓ ZROBIONE DZIŚ — WRÓCI JUTRO',
+      style: TextStyle(
+        fontFamily: fontDisplay,
+        fontSize: 11.5,
+        letterSpacing: 1,
+        color: quest.isDueToday ? _dueColor : _doneColor,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final admin = ref.watch(appUserProvider).value?.admin ?? false;
+    final assigned = ref.watch(myAssignedQuestsProvider).value ?? const <Quest>[];
+    // watchAssignedTo filters only by assignedToCharacterId, not status, so a
+    // deactivated (cancelled) daily quest -- assignment fields deliberately
+    // left in place by cancelDaily -- must be excluded here explicitly, or a
+    // retired chore would keep showing as still due.
+    final mine = assigned.where((q) => q.isDaily && q.status != QuestStatus.cancelled).toList();
+    final managed = admin
+        ? (ref.watch(allDailyQuestsProvider).value ?? const <Quest>[])
+            .where((q) => q.status != QuestStatus.cancelled)
+            .toList()
+        : const <Quest>[];
+
+    if (mine.isEmpty && managed.isEmpty) {
+      return const Center(
+        child: Text('Brak zadań codziennych', style: TextStyle(color: parchmentMuted)),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (mine.isNotEmpty) ...[
+          const _SectionLabel('✦ TWOJE ZADANIA CODZIENNE ✦'),
+          for (final quest in mine)
+            QuestCard(
+              key: Key('quest-${quest.id}'),
+              quest: quest,
+              posterOrHolderLine: 'Przypisane przez: ${quest.posterName}',
+              statusBadge: _dueBadge(quest),
+              actions: quest.status == QuestStatus.assigned && quest.isDueToday
+                  ? [
+                      QuestActionButton(
+                        key: Key('complete-quest-${quest.id}'),
+                        icon: Icons.check_circle,
+                        tooltip: 'Ukończ',
+                        onPressed: () => onComplete(quest),
+                      ),
+                    ]
+                  : const [],
+              onShare: () => shareQuest(context, ref, quest),
+            ),
+        ] else if (admin)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text('Nie masz własnych zadań codziennych.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: parchmentMuted, fontStyle: FontStyle.italic)),
+          ),
+        if (admin && managed.isNotEmpty) ...[
+          const _SectionLabel('✦ ZARZĄDZANIE (ADMIN) ✦'),
+          for (final quest in managed)
+            QuestCard(
+              key: Key('quest-manage-${quest.id}'),
+              quest: quest,
+              posterOrHolderLine:
+                  'Przypisane: ${quest.assignedToCharacterName ?? "—"}',
+              statusBadge: _dueBadge(quest),
+              actions: [
+                QuestActionButton(
+                  key: Key('edit-daily-${quest.id}'),
+                  icon: Icons.edit,
+                  tooltip: 'Edytuj',
+                  onPressed: () => onEdit(quest),
+                ),
+                QuestActionButton(
+                  key: Key('deactivate-daily-${quest.id}'),
+                  icon: Icons.remove_circle_outline,
+                  tooltip: 'Zakończ',
+                  onPressed: () => onDeactivate(quest),
+                ),
+              ],
             ),
         ],
       ],

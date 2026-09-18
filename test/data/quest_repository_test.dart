@@ -360,4 +360,124 @@ void main() {
     expect(requestData['characterId'], 'c2');
     expect(requestData['characterName'], 'Thrall');
   });
+
+  Future<String> seedDailyQuest(
+    FakeFirebaseFirestore db, {
+    String? lastCompletedDate,
+    QuestStatus status = QuestStatus.assigned,
+  }) async {
+    final ref = await db.collection('quests').add({
+      'title': 'Wyprowadzić psa',
+      'posterUid': 'admin1',
+      'posterEmail': 'admin@example.com',
+      'posterName': 'Admin',
+      'assignedToCharacterId': 'c1',
+      'assignedToCharacterName': 'Grommash',
+      'assignedToEmail': 'ala@example.com',
+      'status': status.wire,
+      'reward': {'current_xp': 10},
+      'isDaily': true,
+      'lastCompletedDate': ?lastCompletedDate,
+    });
+    return ref.id;
+  }
+
+  group('daily quests', () {
+    test('markComplete stamps lastCompletedDate on a daily quest', () async {
+      final db = FakeFirebaseFirestore();
+      final repo = QuestRepository(db);
+      final id = await seedDailyQuest(db);
+      final quest = (await repo.watchById(id).first)!;
+
+      await repo.markComplete(quest, requesterUid: 'u1', requesterEmail: 'ala@example.com');
+
+      final doc = await db.collection('quests').doc(id).get();
+      expect(doc.data()!['status'], 'pending_review');
+      expect(doc.data()!['lastCompletedDate'], dailyQuestStamp());
+    });
+
+    test('markComplete does not stamp lastCompletedDate on a non-daily quest', () async {
+      final db = FakeFirebaseFirestore();
+      final repo = QuestRepository(db);
+      await repo.create(_openQuest());
+      var quest = (await repo.watchOpen().first).single;
+      await repo.take(quest, characterId: 'c1', characterName: 'Grommash', email: 'ala@example.com');
+      quest = (await repo.watchAssignedTo(['c1']).first).single;
+
+      await repo.markComplete(quest, requesterUid: 'u1', requesterEmail: 'ala@example.com');
+
+      final doc = await db.collection('quests').doc(quest.id).get();
+      expect(doc.data()!.containsKey('lastCompletedDate'), isFalse);
+    });
+
+    test('markComplete throws QuestAlreadyCompletedToday for a daily quest already done today',
+        () async {
+      final db = FakeFirebaseFirestore();
+      final repo = QuestRepository(db);
+      final id = await seedDailyQuest(db, lastCompletedDate: dailyQuestStamp());
+      final quest = (await repo.watchById(id).first)!;
+
+      expect(
+        () => repo.markComplete(quest, requesterUid: 'u1', requesterEmail: 'ala@example.com'),
+        throwsA(isA<QuestAlreadyCompletedToday>()),
+      );
+    });
+
+    test('markComplete succeeds for a daily quest last completed on an earlier day', () async {
+      final db = FakeFirebaseFirestore();
+      final repo = QuestRepository(db);
+      final id = await seedDailyQuest(db, lastCompletedDate: '2000-01-01');
+      final quest = (await repo.watchById(id).first)!;
+
+      await repo.markComplete(quest, requesterUid: 'u1', requesterEmail: 'ala@example.com');
+
+      final doc = await db.collection('quests').doc(id).get();
+      expect(doc.data()!['status'], 'pending_review');
+      expect(doc.data()!['lastCompletedDate'], dailyQuestStamp());
+    });
+
+    test('watchAllDaily returns only isDaily quests', () async {
+      final db = FakeFirebaseFirestore();
+      final repo = QuestRepository(db);
+      await seedDailyQuest(db);
+      await repo.create(_openQuest());
+
+      final all = await repo.watchAllDaily().first;
+      expect(all, hasLength(1));
+      expect(all.single.title, 'Wyprowadzić psa');
+    });
+
+    test('editDaily updates title/description/reward without a status guard', () async {
+      final db = FakeFirebaseFirestore();
+      final repo = QuestRepository(db);
+      final id = await seedDailyQuest(db, status: QuestStatus.pendingReview);
+      final quest = (await repo.watchAllDaily().first).single;
+
+      await repo.editDaily(
+        quest,
+        title: 'Wyprowadzić psa (dwa razy)',
+        description: 'Rano i wieczorem',
+        reward: const ChangeSet(currentXp: 15),
+      );
+
+      final doc = await db.collection('quests').doc(id).get();
+      final data = doc.data()!;
+      expect(data['title'], 'Wyprowadzić psa (dwa razy)');
+      expect(data['description'], 'Rano i wieczorem');
+      expect(data['reward'], {'current_xp': 15});
+      expect(data['status'], 'pending_review', reason: 'editDaily has no status guard');
+    });
+
+    test('cancelDaily sets the quest to cancelled', () async {
+      final db = FakeFirebaseFirestore();
+      final repo = QuestRepository(db);
+      final id = await seedDailyQuest(db);
+      final quest = (await repo.watchAllDaily().first).single;
+
+      await repo.cancelDaily(quest);
+
+      final doc = await db.collection('quests').doc(id).get();
+      expect(doc.data()!['status'], 'cancelled');
+    });
+  });
 }

@@ -73,22 +73,46 @@ service cloud.firestore {
       // Board and log are visible to everyone signed in.
       allow read: if isAuthenticated();
 
-      // Posted in your own name, either open with no assignment, or
-      // assigned directly to a character that is on the public roster
-      // (quest_roster) -- never a raw gold delta.
+      // A direct assignment's target must be on the public roster
+      // (quest_roster) with a matching email -- shared by the ordinary
+      // direct-assign branch and the daily-quest branch below.
+      function isValidRosterAssignment() {
+        return exists(/databases/$(database)/documents/quest_roster/$(request.resource.data.assignedToCharacterId))
+            && get(/databases/$(database)/documents/quest_roster/$(request.resource.data.assignedToCharacterId))
+                 .data.email.lower() == request.resource.data.assignedToEmail.lower();
+      }
+
+      // Posted in your own name, never a raw gold delta, and one of:
+      //  - open, with no assignment (the board);
+      //  - assigned directly to a roster character (any user, for their own
+      //    or someone else's character -- see quest_roster);
+      //  - a daily quest: also a direct assignment, but admin-only and
+      //    never 'open' -- a recurring chore is always somebody's, never a
+      //    board pickup (see CLAUDE.md's Daily Quests section).
       allow create: if isAuthenticated()
                     && request.resource.data.posterUid == request.auth.uid
                     && request.resource.data.posterEmail.lower() == request.auth.token.email.lower()
                     && request.resource.data.reward.keys().hasAny(['current_xp', 'traits'])
                     && !('gold' in request.resource.data.reward)
                     && (
-                      (request.resource.data.status == 'open'
-                        && !('assignedToCharacterId' in request.resource.data))
+                      (
+                        (!('isDaily' in request.resource.data) || request.resource.data.isDaily == false)
+                        && request.resource.data.status == 'open'
+                        && !('assignedToCharacterId' in request.resource.data)
+                      )
                       ||
-                      (request.resource.data.status == 'assigned'
-                        && exists(/databases/$(database)/documents/quest_roster/$(request.resource.data.assignedToCharacterId))
-                        && get(/databases/$(database)/documents/quest_roster/$(request.resource.data.assignedToCharacterId))
-                             .data.email.lower() == request.resource.data.assignedToEmail.lower())
+                      (
+                        (!('isDaily' in request.resource.data) || request.resource.data.isDaily == false)
+                        && request.resource.data.status == 'assigned'
+                        && isValidRosterAssignment()
+                      )
+                      ||
+                      (
+                        request.resource.data.isDaily == true
+                        && isAdmin()
+                        && request.resource.data.status == 'assigned'
+                        && isValidRosterAssignment()
+                      )
                     );
 
       allow update: if isAdmin()
@@ -129,13 +153,17 @@ service cloud.firestore {
                         && !('gold' in request.resource.data.reward)
                         && request.resource.data.diff(resource.data).affectedKeys()
                              .hasOnly(['title', 'description', 'reward']))
-                    // mark complete: assigned -> pending_review, by the current holder
+                    // mark complete: assigned -> pending_review, by the current holder.
+                    // lastCompletedDate is only ever set here when the quest is
+                    // daily (QuestRepository.markComplete), but it's allowed as an
+                    // optional key for both kinds rather than branching the rule
+                    // on isDaily.
                     || (isAuthenticated()
                         && resource.data.status == 'assigned'
                         && request.resource.data.status == 'pending_review'
                         && resource.data.assignedToEmail.lower() == request.auth.token.email.lower()
                         && request.resource.data.diff(resource.data).affectedKeys()
-                             .hasOnly(['status', 'changeRequestId']));
+                             .hasOnly(['status', 'changeRequestId', 'lastCompletedDate']));
 
       allow delete: if false;
     }

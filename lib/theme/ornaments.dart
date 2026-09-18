@@ -67,17 +67,28 @@ class CornerOrnament extends StatelessWidget {
   }
 }
 
-/// The crimson band across the top of a card, with an optional trailing action.
+/// The crimson band across the top of a card, with an optional trailing
+/// action. [gradient]/[labelColor] default to the ordinary crimson band --
+/// a daily quest's [QuestCard] passes the gold variants instead, so its band
+/// reads as visually distinct at a glance.
 class TopBand extends StatelessWidget {
-  const TopBand({super.key, required this.label, this.trailing});
+  const TopBand({
+    super.key,
+    required this.label,
+    this.trailing,
+    this.gradient = bandGradient,
+    this.labelColor = bandLabelColor,
+  });
 
   final String label;
   final Widget? trailing;
+  final Gradient gradient;
+  final Color labelColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(gradient: bandGradient),
+      decoration: BoxDecoration(gradient: gradient),
       padding: const EdgeInsets.fromLTRB(16, 7, 8, 7),
       child: Row(
         children: [
@@ -86,11 +97,11 @@ class TopBand extends StatelessWidget {
             child: Text(
               label.toUpperCase(),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: fontDisplay,
                 fontSize: 12,
                 letterSpacing: 4,
-                color: bandLabelColor,
+                color: labelColor,
               ),
             ),
           ),

@@ -803,6 +803,99 @@ test('abandoning may not leave stale assignment values on an open quest', async 
   );
 });
 
+// --- Daily quests -----------------------------------------------------------
+
+test('a non-admin may not post a daily quest', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quest_roster/c-daily1'), {
+      characterName: 'Grommash',
+      email: 'grommash@example.com',
+    });
+  });
+  const mallory = env.authenticatedContext('mallory', { email: 'mallory@example.com' }).firestore();
+  await assertFails(
+    setDoc(doc(mallory, 'quests/q19'), {
+      title: 'Wyprowadzić psa',
+      posterUid: 'mallory',
+      posterEmail: 'mallory@example.com',
+      posterName: 'Mallory',
+      assignedToCharacterId: 'c-daily1',
+      assignedToCharacterName: 'Grommash',
+      assignedToEmail: 'grommash@example.com',
+      status: 'assigned',
+      isDaily: true,
+      reward: { current_xp: 10 },
+    })
+  );
+});
+
+test('an admin may post a daily quest directly assigned to a roster character', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'users/admin2'), { admin: true });
+    await setDoc(doc(ctx.firestore(), 'quest_roster/c-daily2'), {
+      characterName: 'Grommash',
+      email: 'grommash@example.com',
+    });
+  });
+  const admin = env.authenticatedContext('admin2', { email: 'admin2@example.com' }).firestore();
+  await assertSucceeds(
+    setDoc(doc(admin, 'quests/q20'), {
+      title: 'Wyprowadzić psa',
+      posterUid: 'admin2',
+      posterEmail: 'admin2@example.com',
+      posterName: 'Admin',
+      assignedToCharacterId: 'c-daily2',
+      assignedToCharacterName: 'Grommash',
+      assignedToEmail: 'grommash@example.com',
+      status: 'assigned',
+      isDaily: true,
+      reward: { current_xp: 10 },
+    })
+  );
+});
+
+test('a daily quest may not be posted open, even by an admin', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'users/admin3'), { admin: true });
+  });
+  const admin = env.authenticatedContext('admin3', { email: 'admin3@example.com' }).firestore();
+  await assertFails(
+    setDoc(doc(admin, 'quests/q21'), {
+      title: 'Wyprowadzić psa',
+      posterUid: 'admin3',
+      posterEmail: 'admin3@example.com',
+      posterName: 'Admin',
+      status: 'open',
+      isDaily: true,
+      reward: { current_xp: 10 },
+    })
+  );
+});
+
+test('marking a daily quest complete may also stamp lastCompletedDate', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q22'), {
+      title: 'Wyprowadzić psa',
+      posterUid: 'admin4',
+      posterEmail: 'admin4@example.com',
+      posterName: 'Admin',
+      assignedToCharacterId: 'c-daily3',
+      assignedToCharacterName: 'Grommash',
+      assignedToEmail: 'bob@example.com',
+      status: 'assigned',
+      isDaily: true,
+      reward: { current_xp: 10 },
+    });
+  });
+  const bob = env.authenticatedContext('bob', { email: 'bob@example.com' }).firestore();
+  await assertSucceeds(
+    updateDoc(doc(bob, 'quests/q22'), {
+      status: 'pending_review',
+      lastCompletedDate: '2026-09-18',
+    })
+  );
+});
+
 test('only an admin may write to quest_roster', async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(ctx.firestore(), 'users/admin1'), { admin: true });

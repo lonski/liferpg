@@ -4,6 +4,18 @@ import 'change_request.dart';
 
 String? _asString(Object? v) => v is String ? v : null;
 
+/// The device-local calendar day, `yyyy-MM-dd` -- what a daily quest's
+/// `lastCompletedDate` is stamped with and compared against. There are no
+/// Cloud Functions in this project (see CLAUDE.md), so a daily quest's
+/// reset rides the device clock the same way every other client-authoritative
+/// write in this app already does.
+String dailyQuestStamp([DateTime? now]) {
+  final d = now ?? DateTime.now();
+  return '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+}
+
 enum QuestStatus {
   open,
   assigned,
@@ -39,6 +51,8 @@ class Quest {
     required this.reward,
     this.changeRequestId,
     this.createdAt,
+    this.isDaily = false,
+    this.lastCompletedDate,
   });
 
   final String id;
@@ -59,6 +73,25 @@ class Quest {
   final String? changeRequestId;
   final DateTime? createdAt;
 
+  /// A recurring, admin-assigned chore: always created directly `assigned`
+  /// (never posted `open`), and its completion cycles the quest back to
+  /// `assigned` instead of a terminal state -- see [lastCompletedDate] and
+  /// CLAUDE.md's Daily Quests section for why this never spawns a new
+  /// document per day.
+  final bool isDaily;
+
+  /// `yyyy-MM-dd`, set when the holder reports completion for the day
+  /// (`QuestRepository.markComplete`). Only meaningful when [isDaily] is
+  /// true. Compare against [dailyQuestStamp] to know whether today's
+  /// instance is still due.
+  final String? lastCompletedDate;
+
+  /// Whether this daily quest still needs to be done today. Always false for
+  /// a non-daily quest -- callers gate the "Ukończ" action on this rather
+  /// than on [status] alone, since `assigned` alone doesn't say whether
+  /// today's instance was already reported.
+  bool get isDueToday => isDaily && lastCompletedDate != dailyQuestStamp();
+
   static DateTime? _asDate(Object? v) =>
       v is Timestamp ? v.toDate() : (v is DateTime ? v : null);
 
@@ -78,6 +111,8 @@ class Quest {
             : const ChangeSet(),
         changeRequestId: _asString(data['changeRequestId']),
         createdAt: _asDate(data['createdAt']),
+        isDaily: data['isDaily'] == true,
+        lastCompletedDate: _asString(data['lastCompletedDate']),
       );
 
   /// `createdAt` is deliberately absent: the repository writes it as a
@@ -96,5 +131,7 @@ class Quest {
         'status': status.wire,
         'reward': reward.toMap(),
         if (changeRequestId != null) 'changeRequestId': changeRequestId,
+        if (isDaily) 'isDaily': true,
+        if (lastCompletedDate != null) 'lastCompletedDate': lastCompletedDate,
       };
 }

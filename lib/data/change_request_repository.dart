@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/change_request.dart';
-import '../models/quest.dart' show QuestStatus;
+import '../models/quest.dart' show QuestStatus, dailyQuestStamp;
 
 /// Thrown when a transaction finds the request already accepted or rejected:
 /// a double-tap, or a decision taken on another device while this list was
@@ -135,6 +135,16 @@ class ChangeRequestRepository {
         throw const ChangeRequestCharacterGone();
       }
 
+      // All reads must precede all writes in a Firestore transaction, so the
+      // quest (needed below to branch on isDaily) is read here, before any
+      // tx.update call.
+      final questId = requestData['questId'];
+      var questIsDaily = false;
+      final questRef = questId is String ? _db.collection('quests').doc(questId) : null;
+      if (questRef != null) {
+        questIsDaily = (await tx.get(questRef)).data()?['isDaily'] == true;
+      }
+
       tx.update(characterRef, _applyTo(character, applied));
       tx.update(requestRef, {
         'status': ChangeRequestStatus.accepted.wire,
@@ -143,10 +153,13 @@ class ChangeRequestRepository {
         'decidedAt': FieldValue.serverTimestamp(),
       });
 
-      final questId = requestData['questId'];
-      if (questId is String) {
-        tx.update(_db.collection('quests').doc(questId), {
-          'status': QuestStatus.completed.wire,
+      // A daily quest cycles back to `assigned` (available again once its
+      // `lastCompletedDate`, stamped by markComplete, is no longer today)
+      // instead of the ordinary terminal `completed` -- see CLAUDE.md's
+      // Daily Quests section.
+      if (questRef != null) {
+        tx.update(questRef, {
+          'status': questIsDaily ? QuestStatus.assigned.wire : QuestStatus.completed.wire,
         });
       }
     });
@@ -160,6 +173,14 @@ class ChangeRequestRepository {
     final requestRef = _requests.doc(request.id);
     await _db.runTransaction((tx) async {
       final requestData = await _readPending(tx, requestRef);
+
+      final questId = requestData['questId'];
+      var questIsDaily = false;
+      final questRef = questId is String ? _db.collection('quests').doc(questId) : null;
+      if (questRef != null) {
+        questIsDaily = (await tx.get(questRef)).data()?['isDaily'] == true;
+      }
+
       tx.update(requestRef, {
         'status': ChangeRequestStatus.rejected.wire,
         'decidedBy': adminUid,
@@ -167,10 +188,12 @@ class ChangeRequestRepository {
         'rejectionReason': ?reason,
       });
 
-      final questId = requestData['questId'];
-      if (questId is String) {
-        tx.update(_db.collection('quests').doc(questId), {
-          'status': QuestStatus.failed.wire,
+      if (questRef != null) {
+        tx.update(questRef, {
+          'status': questIsDaily ? QuestStatus.assigned.wire : QuestStatus.failed.wire,
+          // The attempt wasn't approved, so today's instance is due again
+          // immediately rather than waiting for tomorrow's date rollover.
+          if (questIsDaily) 'lastCompletedDate': FieldValue.delete(),
         });
       }
     });
@@ -201,6 +224,14 @@ class ChangeRequestRepository {
               ChangeRequestStatus.rejected) {
         throw const ChangeRequestNotRejected();
       }
+
+      final questId = data['questId'];
+      var questIsDaily = false;
+      final questRef = questId is String ? _db.collection('quests').doc(questId) : null;
+      if (questRef != null) {
+        questIsDaily = (await tx.get(questRef)).data()?['isDaily'] == true;
+      }
+
       tx.update(requestRef, {
         'status': ChangeRequestStatus.pending.wire,
         'decidedBy': FieldValue.delete(),
@@ -209,14 +240,17 @@ class ChangeRequestRepository {
       });
 
       // A quest-completion request that was rejected flipped its quest to
-      // `failed` (see reject() above). Restoring the request to the live
-      // queue must undo that, or an admin who then accepts it would drive
-      // the quest straight from `failed` to `completed` -- a transition the
-      // state machine doesn't define.
-      final questId = data['questId'];
-      if (questId is String) {
-        tx.update(_db.collection('quests').doc(questId), {
+      // `failed` (see reject() above) -- or, for a daily quest, back to
+      // `assigned` with `lastCompletedDate` cleared. Restoring the request
+      // to the live queue must undo that, or an admin who then accepts it
+      // would drive a non-daily quest straight from `failed` to `completed`
+      // -- a transition the state machine doesn't define. For a daily quest,
+      // `lastCompletedDate` is re-stamped to today so a follow-up accept or
+      // reject leaves it correctly dated either way.
+      if (questRef != null) {
+        tx.update(questRef, {
           'status': QuestStatus.pendingReview.wire,
+          if (questIsDaily) 'lastCompletedDate': dailyQuestStamp(),
         });
       }
     });

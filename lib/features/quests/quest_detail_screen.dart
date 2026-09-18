@@ -189,6 +189,21 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
         ];
       case QuestStatus.assigned:
         if (!ownCharacterIds.contains(quest.assignedToCharacterId)) return const [];
+        // A daily quest has no Porzuć (it's a permanent assignment, not a
+        // one-off taken off the board) and only offers Ukończ while today's
+        // instance is still due -- same rules as the CODZIENNE tab.
+        if (quest.isDaily) {
+          return quest.isDueToday
+              ? [
+                  QuestActionButton(
+                    key: Key('complete-quest-${quest.id}'),
+                    icon: Icons.check_circle,
+                    tooltip: 'Ukończ',
+                    onPressed: () => _complete(quest),
+                  ),
+                ]
+              : const [];
+        }
         return [
           QuestActionButton(
             key: Key('complete-quest-${quest.id}'),
@@ -246,8 +261,18 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
             color: parchmentMuted,
           ),
         );
-      case QuestStatus.open:
       case QuestStatus.assigned:
+        if (!quest.isDaily) return null;
+        return Text(
+          quest.isDueToday ? 'DO ZROBIENIA DZIŚ' : '✓ ZROBIONE DZIŚ — WRÓCI JUTRO',
+          style: TextStyle(
+            fontFamily: fontDisplay,
+            fontSize: 11.5,
+            letterSpacing: 1,
+            color: quest.isDueToday ? crimson : const Color(0xFF3C6E3C),
+          ),
+        );
+      case QuestStatus.open:
         return null;
     }
   }

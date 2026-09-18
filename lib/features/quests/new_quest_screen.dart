@@ -38,6 +38,11 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
   String? _selectedPosterCharacterId;
   bool _submitting = false;
 
+  /// Only toggleable at creation (firestore.rules only ever grants an
+  /// admin-authored quest `isDaily: true`), so this seeds from `editing` but
+  /// the toggle itself is hidden in edit mode -- see [_isDaily]'s use below.
+  late bool _isDaily = widget.editing?.isDaily ?? false;
+
   @override
   void initState() {
     super.initState();
@@ -72,17 +77,22 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
     ];
   }
 
-  Future<void> _pickTarget(List<QuestRosterEntry> roster) async {
+  /// [required] omits the "— Tablica —" option (a daily quest always has a
+  /// target) and, since dismissing the dialog then returns null the same way
+  /// picking "Tablica" would on a normal quest, a dismissal in that mode
+  /// leaves `_target` untouched rather than clearing an already-made pick.
+  Future<void> _pickTarget(List<QuestRosterEntry> roster, {required bool required}) async {
     final picked = await showDialog<QuestRosterEntry?>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
         backgroundColor: parchment,
         title: const Text('Wybierz postać'),
         children: [
-          SimpleDialogOption(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('— Tablica (dowolna osoba) —'),
-          ),
+          if (!required)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('— Tablica (dowolna osoba) —'),
+            ),
           for (final entry in roster)
             SimpleDialogOption(
               onPressed: () => Navigator.of(dialogContext).pop(entry),
@@ -91,6 +101,7 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
         ],
       ),
     );
+    if (required && picked == null) return;
     setState(() => _target = picked);
   }
 
@@ -101,7 +112,13 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
   // disabled button, and a blank title silently no-op-ing is worse still.
   String? _missingRequirement(Character? selected) {
     if (_submitting) return null;
-    if (widget.editing == null && selected == null) return 'Wybierz postać';
+    if (widget.editing == null) {
+      if (_isDaily) {
+        if (_target == null) return 'Wybierz osobę';
+      } else if (selected == null) {
+        return 'Wybierz postać';
+      }
+    }
     if (_titleController.text.trim().isEmpty) return 'Podaj tytuł';
     if (int.tryParse(_xpController.text.trim()) == null) {
       return 'Wprowadź nagrodę';
@@ -152,20 +169,61 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
     if (title.isEmpty || xp == null) return;
     setState(() => _submitting = true);
     try {
-      await ref.read(questRepositoryProvider).edit(
-            editing,
-            title: title,
-            description: _descriptionController.text.trim().isEmpty
-                ? null
-                : _descriptionController.text.trim(),
-            reward: _reward(xp),
-          );
+      final description = _descriptionController.text.trim().isEmpty
+          ? null
+          : _descriptionController.text.trim();
+      final repo = ref.read(questRepositoryProvider);
+      // A daily quest is never `open` (edit()'s status guard), and its edit
+      // is an admin action rather than the poster-while-open path -- see
+      // QuestRepository.editDaily.
+      if (editing.isDaily) {
+        await repo.editDaily(editing, title: title, description: description, reward: _reward(xp));
+      } else {
+        await repo.edit(editing, title: title, description: description, reward: _reward(xp));
+      }
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Nie udało się zapisać zmian: $error')));
+    }
+  }
+
+  /// The admin-only daily-quest creation path: the poster identity is the
+  /// admin's own account (shown as "Przypisane przez: `<name>`"), not one of
+  /// their characters -- an admin managing family chores shouldn't need to
+  /// own a character of their own, unlike posting an ordinary quest.
+  Future<void> _submitDaily(AppUser user) async {
+    final title = _titleController.text.trim();
+    final xp = int.tryParse(_xpController.text.trim());
+    final target = _target;
+    if (title.isEmpty || xp == null || target == null) return;
+    setState(() => _submitting = true);
+    final quest = Quest(
+      id: '',
+      title: title,
+      description: _descriptionController.text.trim().isEmpty
+          ? null
+          : _descriptionController.text.trim(),
+      posterUid: user.uid,
+      posterEmail: user.email,
+      posterName: user.name,
+      assignedToCharacterId: target.characterId,
+      assignedToCharacterName: target.characterName,
+      assignedToEmail: target.email,
+      status: QuestStatus.assigned,
+      reward: _reward(xp),
+      isDaily: true,
+    );
+    try {
+      await ref.read(questRepositoryProvider).create(quest);
+      if (mounted) Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Nie udało się przypisać zadania: $error')));
     }
   }
 
@@ -199,13 +257,15 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
           ? null
           : () => editing != null
               ? _submitEdit(editing)
-              : _submit(selected!, user!.uid, user.email),
+              : (_isDaily ? _submitDaily(user!) : _submit(selected!, user!.uid, user.email)),
       child: Text(
         _submitting
             ? '...'
             : (editing != null
                     ? 'Zapisz zmiany'
-                    : (_target == null ? 'Wystaw na tablicę' : 'Wystaw zadanie'))
+                    : (_isDaily
+                        ? 'Przypisz zadanie codzienne'
+                        : (_target == null ? 'Wystaw na tablicę' : 'Wystaw zadanie')))
                 .toUpperCase(),
       ),
     );
@@ -256,7 +316,9 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
           ),
         ),
         title: Text(
-          editing != null ? 'Edytuj zadanie' : 'Nowy quest',
+          editing != null
+              ? 'Edytuj zadanie'
+              : (_isDaily ? 'Nowe zadanie codzienne' : 'Nowy quest'),
           style: const TextStyle(
             fontFamily: fontDisplay,
             fontSize: 14,
@@ -281,7 +343,35 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    if (editing == null && characters.length > 1)
+                    // Only an admin may post a daily quest (firestore.rules),
+                    // and only at creation -- isDaily is fixed afterwards,
+                    // same as the poster/target pickers below.
+                    if (editing == null && (user?.admin ?? false)) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Zadanie codzienne', style: TextStyle(color: inkHeading)),
+                          Switch(
+                            key: const Key('quest-daily-toggle'),
+                            value: _isDaily,
+                            onChanged: (v) => setState(() => _isDaily = v),
+                          ),
+                        ],
+                      ),
+                      if (_isDaily)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'Zadania codzienne są zawsze przypisane do jednej osoby — nie trafiają na tablicę i odnawiają się co dzień.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                              color: traitNameInk,
+                            ),
+                          ),
+                        ),
+                    ],
+                    if (editing == null && !_isDaily && characters.length > 1)
                       DropdownButtonFormField<String>(
                         key: const Key('poster-character-picker'),
                         initialValue: selected?.id,
@@ -324,9 +414,10 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
                       const SizedBox(height: 12),
                       ListTile(
                         key: const Key('quest-target-picker'),
-                        onTap: () => _pickTarget(roster),
+                        onTap: () => _pickTarget(roster, required: _isDaily),
                         title: Text(
-                          _target?.characterName ?? 'Tablica (dowolna osoba)',
+                          _target?.characterName ??
+                              (_isDaily ? 'Wybierz osobę' : 'Tablica (dowolna osoba)'),
                           style: const TextStyle(color: inkHeading),
                         ),
                         trailing: const Icon(Icons.expand_more, color: crimson),

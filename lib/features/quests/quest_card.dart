@@ -67,10 +67,14 @@ class QuestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A daily quest keeps its gold identity band for as long as it's live
+    // (assigned/pendingReview, cycling between the two); once deactivated
+    // (cancelled) it reads like an ordinary retired quest in the log.
+    final showDailyBand = quest.isDaily && quest.status != QuestStatus.cancelled;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        border: Border.all(color: crimson, width: 2),
+        border: Border.all(color: showDailyBand ? gold : crimson, width: 2),
         borderRadius: BorderRadius.circular(4),
         boxShadow: const [
           BoxShadow(color: cardShadowColor, blurRadius: 16, offset: Offset(0, 4)),
@@ -80,7 +84,13 @@ class QuestCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TopBand(label: '✦ ${_bandLabel(quest.status)} ✦'),
+          showDailyBand
+              ? const TopBand(
+                  label: '⟳ codzienne ⟳',
+                  gradient: goldBandGradient,
+                  labelColor: crimsonDeep,
+                )
+              : TopBand(label: '✦ ${_bandLabel(quest.status)} ✦'),
           Container(
             decoration: const BoxDecoration(gradient: cardGradient),
             padding: const EdgeInsets.all(14),

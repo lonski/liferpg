@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/features/quests/quest_card.dart';
 import 'package:liferpg/models/change_request.dart';
 import 'package:liferpg/models/quest.dart';
+import 'package:liferpg/theme/app_theme.dart';
 
 const _quest = Quest(
   id: 'q1',
@@ -66,5 +67,50 @@ void main() {
     expect(shareButton, findsOneWidget);
     await tester.tap(shareButton);
     expect(tapped, isTrue);
+  });
+
+  const dailyQuest = Quest(
+    id: 'q2',
+    title: 'Wyprowadzić psa',
+    posterUid: 'admin1',
+    posterEmail: 'admin@example.com',
+    posterName: 'Admin',
+    status: QuestStatus.assigned,
+    reward: ChangeSet(currentXp: 10),
+    isDaily: true,
+  );
+
+  testWidgets('a live daily quest gets a gold border and the CODZIENNE band', (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(body: QuestCard(quest: dailyQuest)),
+    ));
+
+    expect(find.textContaining('CODZIENNE'), findsOneWidget);
+    final container = tester.widget<Container>(find.byType(Container).first);
+    final decoration = container.decoration as BoxDecoration;
+    expect((decoration.border as Border).top.color, gold);
+  });
+
+  testWidgets('a cancelled (deactivated) daily quest reverts to the ordinary crimson band',
+      (tester) async {
+    final quest = Quest(
+      id: dailyQuest.id,
+      title: dailyQuest.title,
+      posterUid: dailyQuest.posterUid,
+      posterEmail: dailyQuest.posterEmail,
+      posterName: dailyQuest.posterName,
+      status: QuestStatus.cancelled,
+      reward: dailyQuest.reward,
+      isDaily: true,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: QuestCard(quest: quest)),
+    ));
+
+    expect(find.textContaining('CODZIENNE'), findsNothing);
+    expect(find.textContaining('WYCOFANE'), findsOneWidget);
+    final container = tester.widget<Container>(find.byType(Container).first);
+    final decoration = container.decoration as BoxDecoration;
+    expect((decoration.border as Border).top.color, crimson);
   });
 }

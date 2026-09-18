@@ -48,6 +48,14 @@ const LinearGradient bandGradient = LinearGradient(
   colors: [crimsonDeep, crimsonBright, crimsonDeep],
 );
 
+// The daily-quest band and border accent -- gold rather than crimson, so a
+// recurring chore reads as visually distinct from an ordinary quest at a
+// glance, without introducing a hue outside the existing palette.
+const Color goldBandDeep = Color(0xFF6B4405);
+const LinearGradient goldBandGradient = LinearGradient(
+  colors: [goldBandDeep, gold, goldBandDeep],
+);
+
 const LinearGradient appBarGradient = LinearGradient(
   colors: [Color(0xFF280606), Color(0xFF4A0E0E), Color(0xFF280606)],
 );

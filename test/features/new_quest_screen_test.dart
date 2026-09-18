@@ -295,4 +295,117 @@ void main() {
       expect(data['posterUid'], 'u1');
     });
   });
+
+  group('daily quests', () {
+    Future<FakeFirebaseFirestore> seedAdmin() async {
+      final db = FakeFirebaseFirestore();
+      await db.collection('users').doc('u1').set({
+        'uid': 'u1', 'name': 'Admin Ala', 'email': 'ala@example.com', 'admin': true, 'readOnlyOthers': false,
+      });
+      await db.collection('quest_roster').doc('c1').set({
+        'characterName': 'Grommash', 'email': 'grommash@example.com',
+      });
+      return db;
+    }
+
+    testWidgets('the daily toggle is hidden for a non-admin', (tester) async {
+      final db = await _seed();
+      await _pump(tester, db);
+
+      expect(find.byKey(const Key('quest-daily-toggle')), findsNothing);
+    });
+
+    testWidgets('the daily toggle appears for an admin, hides the poster picker, and requires a target',
+        (tester) async {
+      final db = await seedAdmin();
+      await _pump(tester, db);
+
+      expect(find.byKey(const Key('quest-daily-toggle')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('quest-daily-toggle')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nowe zadanie codzienne'), findsOneWidget);
+      expect(find.byKey(const Key('poster-character-picker')), findsNothing);
+      expect(find.text('Wybierz osobę'), findsOneWidget);
+
+      await tester.enterText(find.byKey(const Key('quest-title')), 'Wyprowadzić psa');
+      await tester.enterText(find.byKey(const Key('quest-reward-xp')), '10');
+      await tester.pump();
+
+      ElevatedButton button() =>
+          tester.widget<ElevatedButton>(find.byKey(const Key('submit-quest')));
+      expect(button().onPressed, isNull, reason: 'no target picked yet');
+
+      await tester.tap(find.byKey(const Key('quest-target-picker')));
+      await tester.pumpAndSettle();
+      expect(find.text('— Tablica (dowolna osoba) —'), findsNothing,
+          reason: 'a daily quest is always assigned to somebody');
+      await tester.tap(find.text('Grommash').last);
+      await tester.pumpAndSettle();
+
+      expect(button().onPressed, isNotNull);
+      await tester.tap(find.byKey(const Key('submit-quest')));
+      await tester.pumpAndSettle();
+
+      final quest = (await db.collection('quests').get()).docs.single.data();
+      expect(quest['status'], 'assigned');
+      expect(quest['isDaily'], true);
+      expect(quest['assignedToCharacterId'], 'c1');
+      expect(quest['posterUid'], 'u1');
+      expect(quest['posterName'], 'Admin Ala', reason: 'the account name, not a character name');
+    });
+
+    testWidgets('editing a daily quest saves via editDaily even though it is not open',
+        (tester) async {
+      final db = await seedAdmin();
+      final ref = await db.collection('quests').add({
+        'title': 'Wyprowadzić psa',
+        'posterUid': 'u1',
+        'posterEmail': 'ala@example.com',
+        'posterName': 'Admin Ala',
+        'assignedToCharacterId': 'c1',
+        'assignedToCharacterName': 'Grommash',
+        'assignedToEmail': 'grommash@example.com',
+        'status': 'assigned',
+        'reward': {'current_xp': 10},
+        'isDaily': true,
+      });
+      final quest = Quest(
+        id: ref.id,
+        title: 'Wyprowadzić psa',
+        posterUid: 'u1',
+        posterEmail: 'ala@example.com',
+        posterName: 'Admin Ala',
+        assignedToCharacterId: 'c1',
+        assignedToCharacterName: 'Grommash',
+        assignedToEmail: 'grommash@example.com',
+        status: QuestStatus.assigned,
+        reward: const ChangeSet(currentXp: 10),
+        isDaily: true,
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          firestoreProvider.overrideWithValue(db),
+          firebaseAuthProvider.overrideWithValue(MockFirebaseAuth(
+            signedIn: true,
+            mockUser: MockUser(uid: 'u1', email: 'ala@example.com'),
+          )),
+        ],
+        child: MaterialApp(home: NewQuestScreen(editing: quest)),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('quest-daily-toggle')), findsNothing,
+          reason: 'isDaily is fixed at creation');
+      await tester.enterText(find.byKey(const Key('quest-reward-xp')), '20');
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('submit-quest')));
+      await tester.pumpAndSettle();
+
+      final data = (await db.collection('quests').doc(ref.id).get()).data()!;
+      expect(data['reward'], {'current_xp': 20});
+      expect(data['status'], 'assigned', reason: 'editDaily has no status guard to trip');
+    });
+  });
 }
