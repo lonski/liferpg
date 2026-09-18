@@ -246,13 +246,15 @@ void main() {
     expect(find.byIcon(Icons.cloud_off), findsNothing);
   });
 
-  testWidgets('offers the quest FAB when the user has a character',
+  testWidgets(
+      'offers the change-request FAB when the user has a character',
       (tester) async {
     await pumpHome(tester, await seed());
-    expect(find.byKey(const Key('quest-fab')), findsOneWidget);
+    expect(find.byKey(const Key('change-request-fab')), findsOneWidget);
   });
 
-  testWidgets('hides the quest FAB when the user owns no character',
+  testWidgets(
+      'hides the change-request FAB when the user owns no character',
       (tester) async {
     final db = FakeFirebaseFirestore();
     await db.collection('users').doc('u1').set({
@@ -263,7 +265,7 @@ void main() {
       'readOnlyOthers': false,
     });
     await pumpHome(tester, db);
-    expect(find.byKey(const Key('quest-fab')), findsNothing);
+    expect(find.byKey(const Key('change-request-fab')), findsNothing);
   });
 
   testWidgets('shows the change-request queue action only for admins',
@@ -275,12 +277,10 @@ void main() {
     expect(find.byKey(const Key('open-change-requests')), findsOneWidget);
   });
 
-  testWidgets('the FAB opens the request screen via the speed-dial',
+  testWidgets('the FAB opens the change-request screen directly',
       (tester) async {
     await pumpHome(tester, await seed());
-    await tester.tap(find.byKey(const Key('quest-fab')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('quest-fab-change-request')));
+    await tester.tap(find.byKey(const Key('change-request-fab')));
     await tester.pumpAndSettle();
     expect(find.byType(NewChangeRequestScreen), findsOneWidget);
   });
@@ -310,7 +310,7 @@ void main() {
     });
     await pumpHome(tester, db);
     expect(find.byType(CharacterCard), findsOneWidget);
-    expect(find.byKey(const Key('quest-fab')), findsNothing);
+    expect(find.byKey(const Key('change-request-fab')), findsNothing);
   });
 
   testWidgets(
@@ -328,7 +328,7 @@ void main() {
     });
     await pumpHome(tester, db);
     expect(find.byType(CharacterCard), findsNWidgets(2));
-    expect(find.byKey(const Key('quest-fab')), findsOneWidget);
+    expect(find.byKey(const Key('change-request-fab')), findsOneWidget);
   });
 
   testWidgets(
@@ -461,29 +461,27 @@ void main() {
     expect(find.text('Nie znaleziono nowszej wersji'), findsOneWidget);
   });
 
-  testWidgets('the FAB opens a speed-dial with quests and change-request destinations', (tester) async {
+  testWidgets('tapping the quests summary card opens QuestsScreen',
+      (tester) async {
     await pumpHome(tester, await seed());
-
-    expect(find.byKey(const Key('quest-fab-quests')), findsNothing);
-    await tester.tap(find.byKey(const Key('quest-fab')));
+    await tester.tap(find.byKey(const Key('quests-summary-card')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('quest-fab-quests')), findsOneWidget);
-    expect(find.byKey(const Key('quest-fab-change-request')), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('quest-fab-change-request')));
-    await tester.pumpAndSettle();
-    expect(find.byType(NewChangeRequestScreen), findsOneWidget);
+    expect(find.byType(QuestsScreen), findsOneWidget);
   });
 
-  testWidgets('the quests destination opens QuestsScreen', (tester) async {
-    await pumpHome(tester, await seed());
-    await tester.tap(find.byKey(const Key('quest-fab')));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('quest-fab-quests')));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(QuestsScreen), findsOneWidget);
+  testWidgets(
+      'the quests summary card is offered even to a user who owns no '
+      'character', (tester) async {
+    final db = FakeFirebaseFirestore();
+    await db.collection('users').doc('u1').set({
+      'uid': 'u1',
+      'name': 'Ala',
+      'email': 'ala@example.com',
+      'admin': false,
+      'readOnlyOthers': false,
+    });
+    await pumpHome(tester, db);
+    expect(find.byKey(const Key('quests-summary-card')), findsOneWidget);
   });
 
   // Last in the file: PackageInfo's mock value is a package-level static
