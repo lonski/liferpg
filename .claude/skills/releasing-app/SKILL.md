@@ -43,12 +43,25 @@ the two ever disagree.)
 7. Tag using **just the semver part** of the pubspec version, prefixed with
    `v` (drop the `+build` suffix — it's Android/iOS build-number
    bookkeeping, not part of the release's public name):
-   `git tag -a v<X.Y.Z> -m "<summary>"`.
-   The `-m` message becomes the tag's annotation and is what
-   `action-gh-release` shows as the release notes, so write a terse,
-   human-readable summary of what this release actually contains (e.g.
-   `"Change-request review flow; fix tiny form field labels"`) — not just
-   the version number repeated.
+   `git tag -a v<X.Y.Z> -m "<notes>"`.
+   The `-m` message becomes the tag's annotation, which the release workflow
+   extracts (`git tag --format='%(contents)'`) into the GitHub Release body —
+   and that same release body is what the app's own update-available modal
+   shows the user (`UpdateRepository` reads the release's `body` field
+   straight into `UpdateInfo.releaseNotes`). So these are real, user-facing
+   release notes, not an internal changelog entry:
+   - **Write them in Polish** — the app's UI is Polish throughout, and this
+     text renders inside it.
+   - **One logical line per paragraph/bullet — never hand-wrap.** The modal
+     renders this as plain, unrendered text (no markdown), so a manually
+     wrapped line becomes a literal line break mid-sentence with a ragged
+     hanging indent; let the `Text` widget (and GitHub's markdown renderer)
+     do their own wrapping. A `-m` with multiple paragraphs/bullets needs
+     one flag per line or a `-F <file>` with each bullet as a single line
+     in the file — never a paragraph broken across several `\n`-joined
+     lines at ~70 chars.
+   - Prefer `•` over `-` for bullets — reads as an actual bullet rather than
+     a stray hyphen in plain text.
 8. Pushing the tag is what actually fires the release build and creates a
    public GitHub Release with a downloadable APK — treat it as the
    consequential step and confirm with the user before running
