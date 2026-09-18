@@ -82,8 +82,20 @@ jobs:
           flutter build apk --release
           --dart-define=GOOGLE_SERVER_CLIENT_ID=$GOOGLE_SERVER_CLIENT_ID
 
+      # action-gh-release doesn't read the pushed tag's own annotation, so
+      # without this the release body is just empty -- extract it explicitly
+      # and hand it over as body_path. This is also what the app's in-app
+      # update dialog shows (UpdateRepository reads the release's `body`),
+      # so the annotated tag message (git tag -a -m "...") is the one place
+      # release notes get written.
+      - name: Extract release notes from the annotated tag
+        run: |
+          git tag -l --format='%(contents)' "$GITHUB_REF_NAME" \
+            > "$RUNNER_TEMP/release_notes.md"
+
       # tag_name/name default to the pushed tag (github.ref_name).
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: build/app/outputs/flutter-apk/app-release.apk
+          body_path: ${{ runner.temp }}/release_notes.md
