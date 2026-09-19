@@ -8,6 +8,7 @@ import 'package:liferpg/data/change_request_notification_service.dart';
 import 'package:liferpg/data/firebase_providers.dart';
 import 'package:liferpg/data/shared_preferences_provider.dart';
 import 'package:liferpg/features/quests/new_quest_screen.dart';
+import 'package:liferpg/features/quests/quest_card.dart';
 import 'package:liferpg/features/quests/quests_screen.dart';
 import 'package:liferpg/models/quest.dart' show dailyQuestStamp;
 import 'package:liferpg/providers/change_request_notification_providers.dart';
@@ -340,6 +341,21 @@ void main() {
 
       expect(find.byTooltip('Edytuj'), findsOneWidget);
       expect(find.byTooltip('Zakończ'), findsOneWidget);
+    });
+
+    testWidgets('the ZARZĄDZANIE row is a compact list item, not the player-facing QuestCard',
+        (tester) async {
+      final db = await seedDailyAsAdmin();
+      await _pump(tester, db);
+      await tester.tap(find.byKey(const Key('quests-tab-daily')));
+      await tester.pumpAndSettle();
+
+      // The same quest is both admin's own (rendered as a QuestCard in
+      // "TWOJE ZADANIA CODZIENNE") and admin-managed -- exactly one
+      // QuestCard should exist, not two, because the ZARZĄDZANIE row uses a
+      // distinct, flatter widget rather than reusing QuestCard.
+      expect(find.byType(QuestCard), findsOneWidget);
+      expect(find.text('CZEKA'), findsOneWidget);
     });
 
     testWidgets('tapping Zakończ and confirming deactivates the daily quest', (tester) async {

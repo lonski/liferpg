@@ -231,6 +231,13 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
+          // Fixed (fill) tabs clipped "CODZIENNE" once a 4th tab joined the
+          // original 3 -- scrollable sizes each tab to its own text instead
+          // of dividing the AppBar width evenly, so nothing is ever cut off
+          // regardless of screen width or the user's text-scale setting.
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          labelPadding: const EdgeInsets.symmetric(horizontal: 14),
           labelColor: parchmentLight,
           unselectedLabelColor: parchmentMuted,
           indicatorColor: gold,
@@ -488,29 +495,138 @@ class _DailyTab extends ConsumerWidget {
         if (admin && managed.isNotEmpty) ...[
           const _SectionLabel('✦ ZARZĄDZANIE (ADMIN) ✦'),
           for (final quest in managed)
-            QuestCard(
+            _DailyManageRow(
               key: Key('quest-manage-${quest.id}'),
               quest: quest,
-              posterOrHolderLine:
-                  'Przypisane: ${quest.assignedToCharacterName ?? "—"}',
-              statusBadge: _dueBadge(quest),
-              actions: [
-                QuestActionButton(
-                  key: Key('edit-daily-${quest.id}'),
-                  icon: Icons.edit,
-                  tooltip: 'Edytuj',
-                  onPressed: () => onEdit(quest),
-                ),
-                QuestActionButton(
-                  key: Key('deactivate-daily-${quest.id}'),
-                  icon: Icons.remove_circle_outline,
-                  tooltip: 'Zakończ',
-                  onPressed: () => onDeactivate(quest),
-                ),
-              ],
+              onEdit: () => onEdit(quest),
+              onDeactivate: () => onDeactivate(quest),
             ),
         ],
       ],
+    );
+  }
+}
+
+// Chip/row tokens for _DailyManageRow only -- narrow enough in scope that
+// they don't belong in app_theme.dart alongside the broadly-reused palette.
+const Color _rowBg = Color(0x0DF5E8D0); // ~5% parchment tint on bgDark
+const Color _goldChipBg = Color(0x2EC8860A); // ~18% gold
+const Color _doneChipBg = Color(0x333C6E3C); // ~20% of _doneColor
+
+/// A compact admin-only management row for one daily quest -- deliberately
+/// flatter and denser than [QuestCard] (no parchment card, no ornaments) so
+/// the ZARZĄDZANIE section reads as an admin tool distinct from the
+/// player-facing card used everywhere else, per the design mockup.
+class _DailyManageRow extends StatelessWidget {
+  const _DailyManageRow({
+    super.key,
+    required this.quest,
+    required this.onEdit,
+    required this.onDeactivate,
+  });
+
+  final Quest quest;
+  final VoidCallback onEdit;
+  final VoidCallback onDeactivate;
+
+  String get _rewardSummary {
+    final r = quest.reward;
+    final parts = <String>[
+      if (r.currentXp != null) '+${r.currentXp} XP',
+      for (final t in r.traits) '${t.name} ${t.value}',
+    ];
+    return parts.join(' · ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = quest.status == QuestStatus.pendingReview;
+    final due = quest.isDueToday;
+    final chipLabel = pending ? 'OCZEKUJE' : (due ? 'CZEKA' : 'ZROBIONE');
+    final chipColor = pending ? crimson : (due ? gold : _doneColor);
+    final chipBg = pending ? crimsonFaint : (due ? _goldChipBg : _doneChipBg);
+    final name = quest.assignedToCharacterName ?? '—';
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: _rowBg,
+        border: Border.all(color: goldBorderFaint),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: crimsonDeep,
+              border: Border.fromBorderSide(BorderSide(color: gold)),
+            ),
+            child: Text(
+              initial,
+              style: const TextStyle(fontFamily: fontDisplay, fontSize: 14, color: parchmentLight),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  quest.title,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontFamily: fontDisplay, fontSize: 14, color: parchmentLight),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$name · $_rewardSummary',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11.5, color: parchmentMuted),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(color: chipBg, borderRadius: BorderRadius.circular(10)),
+            child: Text(
+              chipLabel,
+              style: TextStyle(
+                fontFamily: fontDisplay,
+                fontSize: 9.5,
+                letterSpacing: 1,
+                color: chipColor,
+              ),
+            ),
+          ),
+          // Not QuestActionButton -- its icon colour (crimson) is tuned for
+          // the parchment QuestCard background, and would read as low
+          // contrast on this row's dark background.
+          IconButton(
+            key: Key('edit-daily-${quest.id}'),
+            tooltip: 'Edytuj',
+            icon: const Icon(Icons.edit, size: 18),
+            color: parchmentMuted,
+            visualDensity: VisualDensity.compact,
+            onPressed: onEdit,
+          ),
+          IconButton(
+            key: Key('deactivate-daily-${quest.id}'),
+            tooltip: 'Zakończ',
+            icon: const Icon(Icons.remove_circle_outline, size: 18),
+            color: parchmentMuted,
+            visualDensity: VisualDensity.compact,
+            onPressed: onDeactivate,
+          ),
+        ],
+      ),
     );
   }
 }
