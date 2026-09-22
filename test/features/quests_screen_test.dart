@@ -34,6 +34,12 @@ class _FakeNotificationService implements ChangeRequestNotificationService {
 
 Future<void> _pump(WidgetTester tester, FakeFirebaseFirestore db) async {
   SharedPreferences.setMockInitialValues({});
+  // sharedPreferencesProvider throws unless overridden (see CLAUDE.md's
+  // Conventions section) -- without this, any action that touches the
+  // quest-notification providers (e.g. taking a quest) fails inside a
+  // try/catch and surfaces as an error SnackBar instead of crashing, which
+  // can then obscure a later tap in the same test.
+  final prefs = await SharedPreferences.getInstance();
   await tester.pumpWidget(ProviderScope(
     overrides: [
       firestoreProvider.overrideWithValue(db),
@@ -41,6 +47,7 @@ Future<void> _pump(WidgetTester tester, FakeFirebaseFirestore db) async {
         signedIn: true,
         mockUser: MockUser(uid: 'u1', email: 'ala@example.com'),
       )),
+      sharedPreferencesProvider.overrideWithValue(prefs),
     ],
     child: const MaterialApp(home: QuestsScreen()),
   ));
@@ -376,6 +383,90 @@ void main() {
 
       final quest = (await db.collection('quests').get()).docs.single.data();
       expect(quest['status'], 'cancelled');
+    });
+
+    group('dailyShared (no fixed character)', () {
+      Future<FakeFirebaseFirestore> seedOpenSharedDaily() async {
+        final db = FakeFirebaseFirestore();
+        await db.collection('users').doc('u1').set({
+          'uid': 'u1', 'name': 'Ala', 'email': 'ala@example.com', 'admin': false, 'readOnlyOthers': false,
+        });
+        await db.collection('characters').doc('c1').set({
+          'name': 'Grommash', 'email': 'ala@example.com', 'current_xp': 0, 'next_level_xp': 100, 'favour': 0, 'traits': [],
+        });
+        await db.collection('quests').add({
+          'title': 'Umyć okna',
+          'posterUid': 'admin1',
+          'posterEmail': 'admin@example.com',
+          'posterName': 'Admin',
+          'status': 'open',
+          'reward': {'current_xp': 10},
+          'isDaily': true,
+          'dailyShared': true,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        return db;
+      }
+
+      testWidgets('an unclaimed dailyShared quest shows on TABLICA with a Podejmij action',
+          (tester) async {
+        final db = await seedOpenSharedDaily();
+        await _pump(tester, db);
+
+        expect(find.text('Umyć okna'), findsOneWidget);
+        expect(find.byTooltip('Podejmij'), findsOneWidget);
+      });
+
+      testWidgets('taking it moves it to CODZIENNE with Ukończ and Porzuć', (tester) async {
+        final db = await seedOpenSharedDaily();
+        await _pump(tester, db);
+
+        await tester.tap(find.byTooltip('Podejmij'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('TAK, PODEJMIJ'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Umyć okna'), findsNothing, reason: 'no longer open, so off the board');
+
+        await tester.tap(find.byKey(const Key('quests-tab-daily')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Umyć okna'), findsOneWidget);
+        expect(find.byTooltip('Ukończ'), findsOneWidget);
+        expect(find.byTooltip('Porzuć'), findsOneWidget);
+      });
+
+      testWidgets('tapping Porzuć and confirming returns it to the open board', (tester) async {
+        final db = await seedOpenSharedDaily();
+        await _pump(tester, db);
+        await tester.tap(find.byTooltip('Podejmij'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('TAK, PODEJMIJ'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('quests-tab-daily')));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byTooltip('Porzuć'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('TAK, PORZUĆ'));
+        await tester.pumpAndSettle();
+
+        final quest = (await db.collection('quests').get()).docs.single.data();
+        expect(quest['status'], 'open');
+        expect(quest.containsKey('assignedToCharacterId'), isFalse);
+      });
+
+      testWidgets('an admin sees an unclaimed dailyShared quest in ZARZĄDZANIE as NA TABLICY',
+          (tester) async {
+        final db = await seedOpenSharedDaily();
+        await db.collection('users').doc('u1').update({'admin': true});
+        await _pump(tester, db);
+        await tester.tap(find.byKey(const Key('quests-tab-daily')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('NA TABLICY'), findsOneWidget);
+        expect(find.text('Dowolna osoba · +10 XP'), findsOneWidget);
+      });
     });
   });
 }

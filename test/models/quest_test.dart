@@ -115,6 +115,44 @@ void main() {
       expect(quest.isDaily, isFalse);
       expect(quest.toMap().containsKey('isDaily'), isFalse);
     });
+
+    test('toMap/fromMap round trip for a dailyShared quest open on the board', () {
+      const quest = Quest(
+        id: 'q10',
+        title: 'Umyć okna',
+        posterUid: 'admin1',
+        posterEmail: 'admin@example.com',
+        posterName: 'Admin',
+        status: QuestStatus.open,
+        reward: ChangeSet(currentXp: 10),
+        isDaily: true,
+        dailyShared: true,
+      );
+
+      final map = quest.toMap();
+      expect(map['dailyShared'], true);
+      expect(map.containsKey('assignedToCharacterId'), isFalse);
+
+      final roundTripped = Quest.fromMap('q10', map);
+      expect(roundTripped.dailyShared, isTrue);
+      expect(roundTripped.status, QuestStatus.open);
+    });
+
+    test('dailyShared defaults to false and is omitted from the map', () {
+      const quest = Quest(
+        id: 'q11',
+        title: 'Wyprowadzić psa',
+        posterUid: 'admin1',
+        posterEmail: 'admin@example.com',
+        posterName: 'Admin',
+        status: QuestStatus.assigned,
+        reward: ChangeSet(currentXp: 10),
+        isDaily: true,
+      );
+
+      expect(quest.dailyShared, isFalse);
+      expect(quest.toMap().containsKey('dailyShared'), isFalse);
+    });
   });
 
   group('Quest.isDueToday', () {

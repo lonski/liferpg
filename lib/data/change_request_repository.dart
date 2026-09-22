@@ -136,13 +136,16 @@ class ChangeRequestRepository {
       }
 
       // All reads must precede all writes in a Firestore transaction, so the
-      // quest (needed below to branch on isDaily) is read here, before any
-      // tx.update call.
+      // quest (needed below to branch on isDaily/dailyShared) is read here,
+      // before any tx.update call.
       final questId = requestData['questId'];
       var questIsDaily = false;
+      var questDailyShared = false;
       final questRef = questId is String ? _db.collection('quests').doc(questId) : null;
       if (questRef != null) {
-        questIsDaily = (await tx.get(questRef)).data()?['isDaily'] == true;
+        final questData = (await tx.get(questRef)).data();
+        questIsDaily = questData?['isDaily'] == true;
+        questDailyShared = questData?['dailyShared'] == true;
       }
 
       tx.update(characterRef, _applyTo(character, applied));
@@ -153,13 +156,22 @@ class ChangeRequestRepository {
         'decidedAt': FieldValue.serverTimestamp(),
       });
 
-      // A daily quest cycles back to `assigned` (available again once its
-      // `lastCompletedDate`, stamped by markComplete, is no longer today)
-      // instead of the ordinary terminal `completed` -- see CLAUDE.md's
-      // Daily Quests section.
+      // A daily quest cycles back to a live state instead of the ordinary
+      // terminal `completed` -- see CLAUDE.md's Daily Quests section. A
+      // shared one is released back to the open board (assignment cleared)
+      // so anyone can take it next, rather than staying with this holder;
+      // `lastCompletedDate` is left untouched either way, so `isDueToday`
+      // still correctly reads "already done today" for whoever takes it.
       if (questRef != null) {
         tx.update(questRef, {
-          'status': questIsDaily ? QuestStatus.assigned.wire : QuestStatus.completed.wire,
+          'status': !questIsDaily
+              ? QuestStatus.completed.wire
+              : (questDailyShared ? QuestStatus.open.wire : QuestStatus.assigned.wire),
+          if (questIsDaily && questDailyShared) ...{
+            'assignedToCharacterId': FieldValue.delete(),
+            'assignedToCharacterName': FieldValue.delete(),
+            'assignedToEmail': FieldValue.delete(),
+          },
         });
       }
     });

@@ -77,22 +77,21 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
     ];
   }
 
-  /// [required] omits the "— Tablica —" option (a daily quest always has a
-  /// target) and, since dismissing the dialog then returns null the same way
-  /// picking "Tablica" would on a normal quest, a dismissal in that mode
-  /// leaves `_target` untouched rather than clearing an already-made pick.
-  Future<void> _pickTarget(List<QuestRosterEntry> roster, {required bool required}) async {
+  /// A target is always optional -- for an ordinary quest, leaving it unset
+  /// posts to the board; for a daily quest, it's what makes the difference
+  /// between a standing personal chore and a `dailyShared` one anyone can
+  /// take (see `Quest.dailyShared`'s doc comment).
+  Future<void> _pickTarget(List<QuestRosterEntry> roster) async {
     final picked = await showDialog<QuestRosterEntry?>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
         backgroundColor: parchment,
         title: const Text('Wybierz postać'),
         children: [
-          if (!required)
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('— Tablica (dowolna osoba) —'),
-            ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('— Tablica (dowolna osoba) —'),
+          ),
           for (final entry in roster)
             SimpleDialogOption(
               onPressed: () => Navigator.of(dialogContext).pop(entry),
@@ -101,7 +100,6 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
         ],
       ),
     );
-    if (required && picked == null) return;
     setState(() => _target = picked);
   }
 
@@ -112,13 +110,7 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
   // disabled button, and a blank title silently no-op-ing is worse still.
   String? _missingRequirement(Character? selected) {
     if (_submitting) return null;
-    if (widget.editing == null) {
-      if (_isDaily) {
-        if (_target == null) return 'Wybierz osobę';
-      } else if (selected == null) {
-        return 'Wybierz postać';
-      }
-    }
+    if (widget.editing == null && !_isDaily && selected == null) return 'Wybierz postać';
     if (_titleController.text.trim().isEmpty) return 'Podaj tytuł';
     if (int.tryParse(_xpController.text.trim()) == null) {
       return 'Wprowadź nagrodę';
@@ -193,13 +185,16 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
   /// The admin-only daily-quest creation path: the poster identity is the
   /// admin's own account (shown as "Przypisane przez: `<name>`"), not one of
   /// their characters -- an admin managing family chores shouldn't need to
-  /// own a character of their own, unlike posting an ordinary quest.
+  /// own a character of their own, unlike posting an ordinary quest. Leaving
+  /// the target unset (same "— Tablica —" picker option as an ordinary
+  /// quest) posts it `open` and `dailyShared: true` instead of directly
+  /// `assigned` -- see `Quest.dailyShared`'s doc comment.
   Future<void> _submitDaily(AppUser user) async {
     final title = _titleController.text.trim();
     final xp = int.tryParse(_xpController.text.trim());
-    final target = _target;
-    if (title.isEmpty || xp == null || target == null) return;
+    if (title.isEmpty || xp == null) return;
     setState(() => _submitting = true);
+    final target = _target;
     final quest = Quest(
       id: '',
       title: title,
@@ -209,12 +204,13 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
       posterUid: user.uid,
       posterEmail: user.email,
       posterName: user.name,
-      assignedToCharacterId: target.characterId,
-      assignedToCharacterName: target.characterName,
-      assignedToEmail: target.email,
-      status: QuestStatus.assigned,
+      assignedToCharacterId: target?.characterId,
+      assignedToCharacterName: target?.characterName,
+      assignedToEmail: target?.email,
+      status: target == null ? QuestStatus.open : QuestStatus.assigned,
       reward: _reward(xp),
       isDaily: true,
+      dailyShared: target == null,
     );
     try {
       await ref.read(questRepositoryProvider).create(quest);
@@ -263,9 +259,9 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
             ? '...'
             : (editing != null
                     ? 'Zapisz zmiany'
-                    : (_isDaily
-                        ? 'Przypisz zadanie codzienne'
-                        : (_target == null ? 'Wystaw na tablicę' : 'Wystaw zadanie')))
+                    : (_target == null
+                        ? (_isDaily ? 'Wystaw zadanie codzienne' : 'Wystaw na tablicę')
+                        : (_isDaily ? 'Przypisz zadanie codzienne' : 'Wystaw zadanie')))
                 .toUpperCase(),
       ),
     );
@@ -362,7 +358,8 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
                         const Padding(
                           padding: EdgeInsets.only(bottom: 8),
                           child: Text(
-                            'Zadania codzienne są zawsze przypisane do jednej osoby — nie trafiają na tablicę i odnawiają się co dzień.',
+                            'Zadanie codzienne odnawia się co dzień. Wybierz osobę, aby przypisać je na stałe, '
+                            'albo zostaw bez wyboru, żeby trafiło na tablicę i mogła je podjąć dowolna osoba.',
                             style: TextStyle(
                               fontSize: 12,
                               fontStyle: FontStyle.italic,
@@ -414,10 +411,9 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
                       const SizedBox(height: 12),
                       ListTile(
                         key: const Key('quest-target-picker'),
-                        onTap: () => _pickTarget(roster, required: _isDaily),
+                        onTap: () => _pickTarget(roster),
                         title: Text(
-                          _target?.characterName ??
-                              (_isDaily ? 'Wybierz osobę' : 'Tablica (dowolna osoba)'),
+                          _target?.characterName ?? 'Tablica (dowolna osoba)',
                           style: const TextStyle(color: inkHeading),
                         ),
                         trailing: const Icon(Icons.expand_more, color: crimson),

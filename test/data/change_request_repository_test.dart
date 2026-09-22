@@ -516,6 +516,52 @@ void main() {
         reason: 'accept must not touch a date markComplete already stamped');
   });
 
+  test('accept releases a dailyShared quest back to open and clears its assignment', () async {
+    final db = FakeFirebaseFirestore();
+    final questRef = await db.collection('quests').add({
+      'title': 'Umyć okna',
+      'posterUid': 'admin1',
+      'posterEmail': 'admin@example.com',
+      'posterName': 'Admin',
+      'assignedToCharacterId': 'c1',
+      'assignedToCharacterName': 'Grommash',
+      'assignedToEmail': 'ala@example.com',
+      'status': 'pending_review',
+      'reward': {'current_xp': 10},
+      'isDaily': true,
+      'dailyShared': true,
+      'lastCompletedDate': '2026-09-18',
+    });
+    await db.collection('characters').doc('c1').set({
+      'name': 'Grommash',
+      'email': 'ala@example.com',
+      'current_xp': 10,
+    });
+    final repo = ChangeRequestRepository(db);
+    await repo.create(ChangeRequest(
+      id: '',
+      characterId: 'c1',
+      characterName: 'Grommash',
+      requesterUid: 'u1',
+      requesterEmail: 'ala@example.com',
+      status: ChangeRequestStatus.pending,
+      changes: const ChangeSet(currentXp: 10),
+      questId: questRef.id,
+      questTitle: 'Umyć okna',
+    ));
+    final saved = (await repo.watchPending().first).single;
+
+    await repo.accept(saved, adminUid: 'admin1');
+
+    final data = (await db.collection('quests').doc(questRef.id).get()).data()!;
+    expect(data['status'], 'open');
+    expect(data.containsKey('assignedToCharacterId'), isFalse);
+    expect(data.containsKey('assignedToCharacterName'), isFalse);
+    expect(data.containsKey('assignedToEmail'), isFalse);
+    expect(data['lastCompletedDate'], '2026-09-18',
+        reason: 'still done for today, so the next taker cannot re-claim it today');
+  });
+
   test('reject cycles a daily quest back to assigned and clears lastCompletedDate', () async {
     final db = FakeFirebaseFirestore();
     final questRef = await db.collection('quests').add({

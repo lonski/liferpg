@@ -53,6 +53,7 @@ class Quest {
     this.createdAt,
     this.isDaily = false,
     this.lastCompletedDate,
+    this.dailyShared = false,
   });
 
   final String id;
@@ -73,11 +74,10 @@ class Quest {
   final String? changeRequestId;
   final DateTime? createdAt;
 
-  /// A recurring, admin-assigned chore: always created directly `assigned`
-  /// (never posted `open`), and its completion cycles the quest back to
-  /// `assigned` instead of a terminal state -- see [lastCompletedDate] and
-  /// CLAUDE.md's Daily Quests section for why this never spawns a new
-  /// document per day.
+  /// A recurring, admin-created chore whose completion cycles the quest
+  /// back to a live state instead of a terminal one -- see
+  /// [lastCompletedDate], [dailyShared], and CLAUDE.md's Daily Quests
+  /// section for why this never spawns a new document per day.
   final bool isDaily;
 
   /// `yyyy-MM-dd`, set when the holder reports completion for the day
@@ -85,6 +85,18 @@ class Quest {
   /// true. Compare against [dailyQuestStamp] to know whether today's
   /// instance is still due.
   final String? lastCompletedDate;
+
+  /// Only meaningful when [isDaily] is true. `false` (the default, and what
+  /// every daily quest predating this field means): created directly
+  /// `assigned` to one character, and an accepted completion cycles it back
+  /// to `assigned` to that same character -- a standing personal chore.
+  /// `true`: created `open` with no target, so it behaves like an ordinary
+  /// board quest until taken -- but an accepted completion releases it back
+  /// to `open` (assignment fields cleared) rather than staying `assigned`,
+  /// so it's up for grabs by anyone again, not just whoever held it. Its
+  /// `lastCompletedDate` is untouched by that release, so `isDueToday` still
+  /// correctly reads "already done today" for whoever takes it next.
+  final bool dailyShared;
 
   /// Whether this daily quest still needs to be done today. Always false for
   /// a non-daily quest -- callers gate the "Ukończ" action on this rather
@@ -113,6 +125,7 @@ class Quest {
         createdAt: _asDate(data['createdAt']),
         isDaily: data['isDaily'] == true,
         lastCompletedDate: _asString(data['lastCompletedDate']),
+        dailyShared: data['dailyShared'] == true,
       );
 
   /// `createdAt` is deliberately absent: the repository writes it as a
@@ -133,5 +146,6 @@ class Quest {
         if (changeRequestId != null) 'changeRequestId': changeRequestId,
         if (isDaily) 'isDaily': true,
         if (lastCompletedDate != null) 'lastCompletedDate': lastCompletedDate,
+        if (dailyShared) 'dailyShared': true,
       };
 }

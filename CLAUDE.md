@@ -110,6 +110,7 @@ assignedToCharacterId, assignedToCharacterName, assignedToEmail (all optional)
 reward: { current_xp?, traits?: [{name, value}] }  (never gold)
 changeRequestId (optional), createdAt (server timestamp)
 isDaily (optional bool), lastCompletedDate (optional, 'yyyy-MM-dd')
+dailyShared (optional bool)
 ```
 
 **`quest_roster/{characterId}`**
@@ -145,8 +146,8 @@ characterName, email
   `ChangeRequestRepository`.
 - **Daily quests** (`isDaily: true`) are a separate lifecycle grafted onto the
   same document/state machine rather than a second collection — see the Key
-  Behaviors entry below for the full picture; `isDaily`/`lastCompletedDate`
-  are the only two fields it adds.
+  Behaviors entry below for the full picture; `isDaily`/`lastCompletedDate`/
+  `dailyShared` are the only three fields it adds.
 
 ## Key Behaviors
 
@@ -192,19 +193,18 @@ characterName, email
   gate on `showConfirmDialog` (`lib/theme/dialogs.dart`) before touching
   Firestore, so a mis-tap on the now-dense action row doesn't immediately
   fire.
-- **Daily quests**: an admin-only recurring chore, always created already
-  `assigned` directly to a `quest_roster` character (never `open` — a daily
-  quest is somebody's, never a board pickup) via the same "Zadanie
-  codzienne" toggle in `NewQuestScreen`, gated in the UI on `user.admin` and
-  enforced server-side by `firestore.rules`' quest create rule (an
-  `isDaily: true` document requires `isAdmin()`). Its poster identity is the
-  admin's own account name (`AppUser.name`), not one of their characters —
-  unlike an ordinary quest, an admin managing chores shouldn't need to own a
-  character. **No duplication, by construction**: there are no Cloud
-  Functions in this project (see below) to run a nightly job that would
-  spawn a fresh document per day, so a daily quest is one persistent
-  document whose completion *cycles* rather than terminates. Completing it
-  still raises a `change_requests` document exactly like an ordinary quest
+- **Daily quests**: an admin-only recurring chore, created via the same
+  "Zadanie codzienne" toggle in `NewQuestScreen`, gated in the UI on
+  `user.admin` and enforced server-side by `firestore.rules`' quest create
+  rule (an `isDaily: true` document requires `isAdmin()`, whether directly
+  assigned or open). Its poster identity is the admin's own account name
+  (`AppUser.name`), not one of their characters — unlike an ordinary quest,
+  an admin managing chores shouldn't need to own a character. **No
+  duplication, by construction**: there are no Cloud Functions in this
+  project (see below) to run a nightly job that would spawn a fresh document
+  per day, so a daily quest is one persistent document whose completion
+  *cycles* rather than terminates. Completing it still raises a
+  `change_requests` document exactly like an ordinary quest
   (`QuestRepository.markComplete`, which also stamps `lastCompletedDate` —
   device-local `yyyy-MM-dd`, from `dailyQuestStamp()` in
   `lib/models/quest.dart` — at the moment of reporting, not when an admin
@@ -212,33 +212,57 @@ characterName, email
   on review latency); but `ChangeRequestRepository.accept`/`reject` branch on
   the linked quest's `isDaily` (read inside the same transaction, before any
   write, to respect Firestore's read-then-write ordering) and flip it back
-  to `assigned` instead of the terminal `completed`/`failed` — a reject also
-  clears `lastCompletedDate` so the attempt is immediately retryable the same
-  day, while `restoreToPending` re-stamps it to today so a follow-up
-  accept/reject still lands correctly. `Quest.isDueToday`
+  to a live state instead of the terminal `completed`/`failed` — a reject
+  always returns it to `assigned` to the same holder (a rejected attempt
+  means "try again", not "up for grabs"), also clearing `lastCompletedDate`
+  so the attempt is immediately retryable the same day, while
+  `restoreToPending` re-stamps it to today so a follow-up accept/reject
+  still lands correctly. `Quest.isDueToday`
   (`lastCompletedDate != dailyQuestStamp()`) is what every screen gates the
-  Ukończ action on,
-  and `QuestRepository.markComplete` re-checks the same condition against a
-  fresh server read (throwing `QuestAlreadyCompletedToday`) rather than
-  trusting client-side state. Visually, a live (non-cancelled) daily quest
-  gets a gold border and an "⟳ CODZIENNE ⟳" band (`goldBandGradient`,
-  `TopBand`'s `gradient`/`labelColor` params) instead of the ordinary
-  crimson one, so it reads as a different category at a glance, per
-  `QuestCard`. The CODZIENNE tab (`_DailyTab` in
-  `lib/features/quests/quests_screen.dart`) shows the signed-in user's own
-  daily quests (due-today vs. done-today, via the same `isDueToday`
-  distinction) and, admin-only, a "ZARZĄDZANIE" section listing *every*
-  daily quest (`QuestRepository.watchAllDaily`, unconstrained like the board
-  and log) with Edytuj (`QuestRepository.editDaily` — no `open` status guard,
-  since a daily quest is never `open` and only an admin can call it in the
-  first place) and Zakończ (`QuestRepository.cancelDaily`, a permanent
-  deactivation — surfaces in DZIENNIK like any other retired quest). A daily
-  quest is deliberately excluded from `_MineTab`'s "PRZYPISANE DO MNIE"
-  section (no Porzuć — it's a standing assignment, not a one-off taken off
-  the board) and, once deactivated, from the CODZIENNE tab's own "your daily
-  quests" list too (`watchAssignedTo` filters only by
+  Ukończ action on, and `QuestRepository.markComplete` re-checks the same
+  condition against a fresh server read (throwing
+  `QuestAlreadyCompletedToday`) rather than trusting client-side state.
+  Visually, a live (non-cancelled) daily quest gets a gold border and an
+  "⟳ CODZIENNE ⟳" band (`goldBandGradient`, `TopBand`'s
+  `gradient`/`labelColor` params) instead of the ordinary crimson one, so it
+  reads as a different category at a glance, per `QuestCard`. The CODZIENNE
+  tab (`_DailyTab` in `lib/features/quests/quests_screen.dart`) shows the
+  signed-in user's own daily quests (due-today vs. done-today, via the same
+  `isDueToday` distinction) and, admin-only, a "ZARZĄDZANIE" section listing
+  *every* daily quest (`QuestRepository.watchAllDaily`, unconstrained like
+  the board and log) as a compact `_DailyManageRow` — deliberately not a
+  `QuestCard`, so this admin tool reads as visually distinct from the
+  player-facing card — with Edytuj (`QuestRepository.editDaily` — no `open`
+  status guard, since a daily quest's status can be anything and only an
+  admin can call it in the first place) and Zakończ
+  (`QuestRepository.cancelDaily`, a permanent deactivation — surfaces in
+  DZIENNIK like any other retired quest). A personal daily quest (target
+  chosen at creation) is deliberately excluded from `_MineTab`'s "PRZYPISANE
+  DO MNIE" section (no Porzuć — it's a standing assignment, not a one-off
+  taken off the board) and, once deactivated, from the CODZIENNE tab's own
+  "your daily quests" list too (`watchAssignedTo` filters only by
   `assignedToCharacterId`, not status, and `cancelDaily` deliberately leaves
   the assignment fields in place, so that exclusion is client-side).
+  - **`dailyShared`** (`Quest.dailyShared`): the target picker in
+    `NewQuestScreen` is optional for a daily quest exactly like an ordinary
+    one — picking "— Tablica —" instead of a roster character posts it
+    `open` with `dailyShared: true` instead of directly `assigned`. It then
+    behaves like an ordinary board quest (shows on TABLICA with the same
+    gold daily styling, Podejmij via the existing generic open→assigned
+    rule) until taken — and, unlike a personal daily quest, its holder gets
+    a Porzuć action too (`_DailyTab`, gated on
+    `status == assigned && dailyShared`), since giving an unwanted chore
+    back to the pool is exactly the point. The one behavioral difference
+    from a personal daily quest is on `accept`: instead of cycling back to
+    `assigned` to the same holder, `dailyShared` releases it back to `open`
+    (assignment fields cleared via `FieldValue.delete()`) so *anyone* can
+    take it next — `lastCompletedDate` is left untouched by that release, so
+    `isDueToday` still correctly reads "already done today" for whoever
+    takes it, which is what makes a freshly-released slot actually become
+    available "the next day" rather than immediately re-completable by a
+    new taker the same day. `_DailyManageRow` shows an unclaimed
+    (`status == open`) dailyShared quest as "NA TABLICY" with a people-icon
+    avatar in place of an assignee's initial.
 - **Editing a posted quest**: the poster of a quest may edit its
   title/description/reward — but only while it is still `open` (unassigned,
   sitting on the board or already withdrawn back to it by nobody taking it);

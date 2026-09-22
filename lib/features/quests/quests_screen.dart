@@ -260,6 +260,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
             onEdit: _edit,
           ),
           _DailyTab(
+            onAbandon: _abandon,
             onComplete: _complete,
             onEdit: _edit,
             onDeactivate: _deactivateDaily,
@@ -416,11 +417,13 @@ const Color _doneColor = Color(0xFF3C6E3C);
 
 class _DailyTab extends ConsumerWidget {
   const _DailyTab({
+    required this.onAbandon,
     required this.onComplete,
     required this.onEdit,
     required this.onDeactivate,
   });
 
+  final Future<void> Function(Quest quest) onAbandon;
   final Future<void> Function(Quest quest) onComplete;
   final Future<void> Function(Quest quest) onEdit;
   final Future<void> Function(Quest quest) onDeactivate;
@@ -473,16 +476,25 @@ class _DailyTab extends ConsumerWidget {
               quest: quest,
               posterOrHolderLine: 'Przypisane przez: ${quest.posterName}',
               statusBadge: _dueBadge(quest),
-              actions: quest.status == QuestStatus.assigned && quest.isDueToday
-                  ? [
-                      QuestActionButton(
-                        key: Key('complete-quest-${quest.id}'),
-                        icon: Icons.check_circle,
-                        tooltip: 'Ukończ',
-                        onPressed: () => onComplete(quest),
-                      ),
-                    ]
-                  : const [],
+              actions: [
+                if (quest.status == QuestStatus.assigned && quest.isDueToday)
+                  QuestActionButton(
+                    key: Key('complete-quest-${quest.id}'),
+                    icon: Icons.check_circle,
+                    tooltip: 'Ukończ',
+                    onPressed: () => onComplete(quest),
+                  ),
+                // Only a dailyShared quest can be given back to the pool --
+                // a personal one is a standing assignment, so it has no
+                // Porzuć, same as before this quest could ever be `open`.
+                if (quest.status == QuestStatus.assigned && quest.dailyShared)
+                  QuestActionButton(
+                    key: Key('abandon-quest-${quest.id}'),
+                    icon: Icons.undo,
+                    tooltip: 'Porzuć',
+                    onPressed: () => onAbandon(quest),
+                  ),
+              ],
               onShare: () => shareQuest(context, ref, quest),
             ),
         ] else if (admin)
@@ -540,13 +552,15 @@ class _DailyManageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unclaimed = quest.status == QuestStatus.open;
     final pending = quest.status == QuestStatus.pendingReview;
     final due = quest.isDueToday;
-    final chipLabel = pending ? 'OCZEKUJE' : (due ? 'CZEKA' : 'ZROBIONE');
-    final chipColor = pending ? crimson : (due ? gold : _doneColor);
-    final chipBg = pending ? crimsonFaint : (due ? _goldChipBg : _doneChipBg);
-    final name = quest.assignedToCharacterName ?? '—';
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final chipLabel =
+        unclaimed ? 'NA TABLICY' : (pending ? 'OCZEKUJE' : (due ? 'CZEKA' : 'ZROBIONE'));
+    final chipColor = unclaimed ? gold : (pending ? crimson : (due ? gold : _doneColor));
+    final chipBg = unclaimed ? _goldChipBg : (pending ? crimsonFaint : (due ? _goldChipBg : _doneChipBg));
+    final name = quest.assignedToCharacterName;
+    final initial = name != null && name.isNotEmpty ? name[0].toUpperCase() : null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 9),
@@ -567,10 +581,12 @@ class _DailyManageRow extends StatelessWidget {
               color: crimsonDeep,
               border: Border.fromBorderSide(BorderSide(color: gold)),
             ),
-            child: Text(
-              initial,
-              style: const TextStyle(fontFamily: fontDisplay, fontSize: 14, color: parchmentLight),
-            ),
+            child: initial == null
+                ? const Icon(Icons.people_outline, size: 16, color: parchmentLight)
+                : Text(
+                    initial,
+                    style: const TextStyle(fontFamily: fontDisplay, fontSize: 14, color: parchmentLight),
+                  ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -585,7 +601,7 @@ class _DailyManageRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$name · $_rewardSummary',
+                  '${name ?? "Dowolna osoba"} · $_rewardSummary',
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 11.5, color: parchmentMuted),
                 ),

@@ -854,20 +854,85 @@ test('an admin may post a daily quest directly assigned to a roster character', 
   );
 });
 
-test('a daily quest may not be posted open, even by an admin', async () => {
+test('an admin may post a dailyShared quest open on the board with no target', async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(ctx.firestore(), 'users/admin3'), { admin: true });
   });
   const admin = env.authenticatedContext('admin3', { email: 'admin3@example.com' }).firestore();
-  await assertFails(
+  await assertSucceeds(
     setDoc(doc(admin, 'quests/q21'), {
-      title: 'Wyprowadzić psa',
+      title: 'Umyć okna',
       posterUid: 'admin3',
       posterEmail: 'admin3@example.com',
       posterName: 'Admin',
       status: 'open',
       isDaily: true,
+      dailyShared: true,
       reward: { current_xp: 10 },
+    })
+  );
+});
+
+test('a non-admin may not post an open daily quest either', async () => {
+  const db = env.authenticatedContext('mallory', { email: 'mallory@example.com' }).firestore();
+  await assertFails(
+    setDoc(doc(db, 'quests/q21b'), {
+      title: 'Umyć okna',
+      posterUid: 'mallory',
+      posterEmail: 'mallory@example.com',
+      posterName: 'Mallory',
+      status: 'open',
+      isDaily: true,
+      dailyShared: true,
+      reward: { current_xp: 10 },
+    })
+  );
+});
+
+test('an open daily quest still may not carry an assignment', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'users/admin3b'), { admin: true });
+  });
+  const admin = env.authenticatedContext('admin3b', { email: 'admin3b@example.com' }).firestore();
+  await assertFails(
+    setDoc(doc(admin, 'quests/q21c'), {
+      title: 'Umyć okna',
+      posterUid: 'admin3b',
+      posterEmail: 'admin3b@example.com',
+      posterName: 'Admin',
+      status: 'open',
+      assignedToCharacterId: 'c-daily1',
+      isDaily: true,
+      dailyShared: true,
+      reward: { current_xp: 10 },
+    })
+  );
+});
+
+test('taking a dailyShared quest off the board works exactly like an ordinary open quest', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'quests/q23'), {
+      title: 'Umyć okna',
+      posterUid: 'admin5',
+      posterEmail: 'admin5@example.com',
+      posterName: 'Admin',
+      status: 'open',
+      isDaily: true,
+      dailyShared: true,
+      reward: { current_xp: 10 },
+    });
+    await setDoc(doc(ctx.firestore(), 'characters/c-daily4'), {
+      name: 'Bob the Bold',
+      email: 'bob@example.com',
+    });
+  });
+  const bob = env.authenticatedContext('bob', { email: 'bob@example.com' }).firestore();
+  await assertSucceeds(
+    updateDoc(doc(bob, 'quests/q23'), {
+      status: 'assigned',
+      assignedToCharacterId: 'c-daily4',
+      assignedToCharacterName: 'Bob the Bold',
+      assignedToEmail: 'bob@example.com',
     })
   );
 });

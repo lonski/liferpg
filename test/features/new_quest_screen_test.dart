@@ -315,8 +315,8 @@ void main() {
       expect(find.byKey(const Key('quest-daily-toggle')), findsNothing);
     });
 
-    testWidgets('the daily toggle appears for an admin, hides the poster picker, and requires a target',
-        (tester) async {
+    testWidgets('the daily toggle appears for an admin, hides the poster picker, and directly '
+        'assigns when a target is picked', (tester) async {
       final db = await seedAdmin();
       await _pump(tester, db);
 
@@ -326,7 +326,6 @@ void main() {
 
       expect(find.text('Nowe zadanie codzienne'), findsOneWidget);
       expect(find.byKey(const Key('poster-character-picker')), findsNothing);
-      expect(find.text('Wybierz osobę'), findsOneWidget);
 
       await tester.enterText(find.byKey(const Key('quest-title')), 'Wyprowadzić psa');
       await tester.enterText(find.byKey(const Key('quest-reward-xp')), '10');
@@ -334,25 +333,52 @@ void main() {
 
       ElevatedButton button() =>
           tester.widget<ElevatedButton>(find.byKey(const Key('submit-quest')));
-      expect(button().onPressed, isNull, reason: 'no target picked yet');
+      expect(button().onPressed, isNotNull, reason: 'a target is optional for a daily quest too');
 
       await tester.tap(find.byKey(const Key('quest-target-picker')));
       await tester.pumpAndSettle();
-      expect(find.text('— Tablica (dowolna osoba) —'), findsNothing,
-          reason: 'a daily quest is always assigned to somebody');
+      expect(find.text('— Tablica (dowolna osoba) —'), findsOneWidget,
+          reason: 'a daily quest may be left unassigned so anyone can take it');
       await tester.tap(find.text('Grommash').last);
       await tester.pumpAndSettle();
 
-      expect(button().onPressed, isNotNull);
+      await tester.ensureVisible(find.byKey(const Key('submit-quest')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('submit-quest')));
       await tester.pumpAndSettle();
 
       final quest = (await db.collection('quests').get()).docs.single.data();
       expect(quest['status'], 'assigned');
       expect(quest['isDaily'], true);
+      expect(quest.containsKey('dailyShared'), isFalse);
       expect(quest['assignedToCharacterId'], 'c1');
       expect(quest['posterUid'], 'u1');
       expect(quest['posterName'], 'Admin Ala', reason: 'the account name, not a character name');
+    });
+
+    testWidgets('leaving the target unset posts a dailyShared quest open on the board',
+        (tester) async {
+      final db = await seedAdmin();
+      await _pump(tester, db);
+
+      await tester.tap(find.byKey(const Key('quest-daily-toggle')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('quest-title')), 'Umyć okna');
+      await tester.enterText(find.byKey(const Key('quest-reward-xp')), '10');
+      await tester.pump();
+      // The longer daily-mode caption pushes the submit button below the
+      // test viewport's fold.
+      await tester.ensureVisible(find.byKey(const Key('submit-quest')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('submit-quest')));
+      await tester.pumpAndSettle();
+
+      final quest = (await db.collection('quests').get()).docs.single.data();
+      expect(quest['status'], 'open');
+      expect(quest['isDaily'], true);
+      expect(quest['dailyShared'], true);
+      expect(quest.containsKey('assignedToCharacterId'), isFalse);
+      expect(quest['posterName'], 'Admin Ala');
     });
 
     testWidgets('editing a daily quest saves via editDaily even though it is not open',
