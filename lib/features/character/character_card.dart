@@ -27,10 +27,15 @@ class CharacterCard extends StatefulWidget {
     super.key,
     required this.character,
     required this.canEdit,
+    this.electronics,
   });
 
   final Character character;
   final bool canEdit;
+
+  /// The "Dni elektroniki" section, built by the home screen (it needs
+  /// providers this widget deliberately doesn't).
+  final Widget? electronics;
 
   @override
   State<CharacterCard> createState() => _CharacterCardState();
@@ -106,6 +111,10 @@ class _CharacterCardState extends State<CharacterCard> {
                         const SizedBox(height: 10),
                       ],
                       if (c.gold != null) _GoldRow(character: c),
+                      if (widget.electronics != null) ...[
+                        const SizedBox(height: 14),
+                        widget.electronics!,
+                      ],
                       if (kShowFavour) ...[
                         const SizedBox(height: 8),
                         Text(
@@ -115,7 +124,7 @@ class _CharacterCardState extends State<CharacterCard> {
                       ],
                       if (c.traits.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        const _TraitsHeading(),
+                        const LabelledDivider(label: 'Cechy'),
                         const SizedBox(height: 8),
                         _TraitPills(traits: c.traits),
                       ],
@@ -306,22 +315,6 @@ class _GoldRow extends StatelessWidget {
         children: [
           Text('Złoto'.toUpperCase(), style: _statLabel),
           Text('${character.gold} zł', style: _goldValue),
-        ],
-      );
-}
-
-class _TraitsHeading extends StatelessWidget {
-  const _TraitsHeading();
-
-  @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          const Expanded(child: Divider(color: crimsonBorderStrong, height: 1)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text('Cechy'.toUpperCase(), style: traitsDividerLabel),
-          ),
-          const Expanded(child: Divider(color: crimsonBorderStrong, height: 1)),
         ],
       );
 }

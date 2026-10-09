@@ -134,3 +134,23 @@ class BottomBand extends StatelessWidget {
     );
   }
 }
+
+/// A centred label between two hairlines -- the Cechy / Dni elektroniki
+/// section headings on the character card.
+class LabelledDivider extends StatelessWidget {
+  const LabelledDivider({super.key, required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          const Expanded(child: Divider(color: crimsonBorderStrong, height: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(label.toUpperCase(), style: traitsDividerLabel),
+          ),
+          const Expanded(child: Divider(color: crimsonBorderStrong, height: 1)),
+        ],
+      );
+}

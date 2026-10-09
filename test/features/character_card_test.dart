@@ -135,4 +135,16 @@ void main() {
     expect(favourEmoji(1), '😊');
     expect(favourEmoji(9), '😊');
   });
+
+  testWidgets('renders the electronics slot between gold and traits', (tester) async {
+    await tester.pumpWidget(wrap(CharacterCard(
+      character: sample(traits: const [Trait(name: 'Siła', value: '18')]),
+      canEdit: false,
+      electronics: const Text('SLOT', key: Key('slot')),
+    )));
+    final gold = tester.getTopLeft(find.text('250 zł')).dy;
+    final slot = tester.getTopLeft(find.byKey(const Key('slot'))).dy;
+    final traits = tester.getTopLeft(find.text('CECHY')).dy;
+    expect(gold < slot && slot < traits, isTrue);
+  });
 }
