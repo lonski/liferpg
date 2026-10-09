@@ -54,8 +54,13 @@ electronics: {
 
 - A character with no `electronics` map behaves as
   `{days: 0, as_of: kElectronicsDaysEpoch, claimed: []}`, where
-  `kElectronicsDaysEpoch` is a code constant set to the release date. No
-  migration is needed and every character gets the section.
+  `kElectronicsDaysEpoch` is a code constant for the first full day after
+  the release, 2026-10-10. No migration is needed and every character gets
+  the section.
+- In Dart, days are plain `int`s counting days since 1970-01-01. They are
+  built with `DateTime.utc(y, m, d)` from the local date, which keeps them
+  DST-proof and `const`-friendly. They are converted to and from
+  `'YYYY-MM-DD'` only at the Firestore boundary.
 - Parsing is tolerant in the style of `Character.fromMap`: a non-numeric
   `days` reads as 0, an unparseable `as_of` as the epoch, non-string
   `claimed` entries are dropped.
@@ -124,8 +129,9 @@ claim can only be started from the card.
 The admin sees **Odbierz** on every card, their own included. Its
 confirmation reads "Odbierasz dzień dla postaci <name>. Licznik spadnie od
 razu…" with ANULUJ / ODBIERZ, and confirming runs "apply claim of today" in a
-`runTransaction` on the character. If the player had a pending request for
-the same day, accepting it later is a no-op, per the idempotency rule above.
+`runTransaction` on the character. While a player's claim for today is
+pending, the admin's card shows state 2 without a button, and the admin
+decides it from the inbox.
 
 ### Who sees the button
 
@@ -151,13 +157,16 @@ button. Polish copy is verbatim:
 | State | Condition | Ring | Medallion badge | Headline | Status | Button |
 |---|---|---|---|---|---|---|
 | 1 Charging | default | gold arc = elapsed fraction of today | — | Ładowanie… | dzień bez elektroniki | **ODBIERZ** (filled crimson) |
-| 2 Pending | the viewer's own pending request for today exists | same arc, faded crimson | gold, hourglass | Dzień z elektroniką? | czeka na akceptację | **✕ ANULUJ PROŚBĘ** (outlined) → "ANULOWAĆ PROŚBĘ?" dialog (NIE / TAK, ANULUJ) |
+| 2 Pending | a pending claim request for today exists for this character (visible to the requester and admins) | same arc, faded crimson | gold, hourglass | Dzień z elektroniką? | czeka na akceptację | **✕ ANULUJ PROŚBĘ** (outlined) → "ANULOWAĆ PROŚBĘ?" dialog (NIE / TAK, ANULUJ) |
 | 3 Claimed | today ∈ `claimed` | dashed crimson circle | crimson ✕ | Dzień z elektroniką | odebrano dzisiaj | none |
 | 4 Empty | `available == 0`, not claimed | gold arc | — | Ładowanie… | dzień bez elektroniki | none |
 
-State 2 is derived from `myChangeRequestsProvider`, so it shows only to the
-requester. An admin looking at that card sees state 1 with the direct
-button.
+State 2 is derived from the pending claim requests the viewer can read: the
+requester's own (`myChangeRequestsProvider`) and, for an admin, the whole
+queue (`pendingChangeRequestsProvider`). So both the requester and admins
+see "czeka na akceptację". Only the requester gets the **ANULUJ PROŚBĘ**
+button. An admin sees state 2 with no button, because the request is already
+in their inbox to accept or reject.
 
 The ring needs a clock. A `clockProvider` (a `DateTime Function()`,
 overridable in tests) feeds a one-minute ticker that rebuilds the section, so
@@ -171,8 +180,10 @@ Mockups: https://claude.ai/artifact/P5sNjq6FyQ3BiKnviLV4Rb
 `available` value, with −/+ steppers and a numeric field. Saving with a
 changed value writes `electronics` as "set value" (settle, then
 `days = value`, `as_of = today`, `claimed` kept). An unchanged value leaves
-the map untouched. `Character.toMap()`/`fromMap()` round-trip the map so an
-ordinary edit-screen save never drops it.
+the map untouched. `Character.fromMap()` parses the map. `Character.toMap()` deliberately
+leaves it out, so the edit screen's ordinary `update(toMap())` never touches
+it, and never overwrites a claim accepted while the screen was open. The
+counter is written only by the dedicated transactional repository methods.
 
 ## Firestore rules
 
