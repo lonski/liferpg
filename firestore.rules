@@ -54,7 +54,13 @@ service cloud.firestore {
                     && !('appliedChanges' in request.resource.data)
                     && request.resource.data.changes.keys().size() > 0
                     && get(/databases/$(database)/documents/characters/$(request.resource.data.characterId))
-                         .data.email.lower() == request.auth.token.email.lower();
+                         .data.email.lower() == request.auth.token.email.lower()
+                    // An electronics-day claim is its own kind of request:
+                    // the date the player tapped, nothing else alongside it.
+                    && (!('electronics_claim' in request.resource.data.changes)
+                        || (request.resource.data.changes.keys().hasOnly(['electronics_claim'])
+                            && request.resource.data.changes.electronics_claim is string
+                            && request.resource.data.changes.electronics_claim.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')));
 
       // Accepting also writes /characters/{id}, which is already admin-only,
       // so the whole apply path runs as an admin. The one non-admin path is
@@ -95,6 +101,7 @@ service cloud.firestore {
                     && request.resource.data.posterEmail.lower() == request.auth.token.email.lower()
                     && request.resource.data.reward.keys().hasAny(['current_xp', 'traits'])
                     && !('gold' in request.resource.data.reward)
+                    && !('electronics_claim' in request.resource.data.reward)
                     && (
                       (
                         (!('isDaily' in request.resource.data) || request.resource.data.isDaily == false)

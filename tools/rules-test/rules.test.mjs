@@ -975,3 +975,53 @@ test('only an admin may write to quest_roster', async () => {
     setDoc(doc(admin, 'quest_roster/c1'), { characterName: 'Grommash', email: 'g@example.com' })
   );
 });
+
+// --- electronics days ------------------------------------------------------
+
+function claimRequest(user, characterId, changes) {
+  return {
+    characterId,
+    characterName: 'Alicja',
+    requesterUid: user.uid,
+    requesterEmail: user.email,
+    status: 'pending',
+    changes,
+    createdAt: serverTimestamp(),
+  };
+}
+
+test('a user may request an electronics day for their own character', async () => {
+  await assertSucceeds(setDoc(doc(ctxFor(ALICE), 'change_requests/el-ok'),
+    claimRequest(ALICE, 'c-alice', { electronics_claim: '2026-10-22' })));
+});
+
+test("a user may not request an electronics day for somebody else's character", async () => {
+  await assertFails(setDoc(doc(ctxFor(BOB), 'change_requests/el-bob'),
+    claimRequest(BOB, 'c-alice', { electronics_claim: '2026-10-22' })));
+});
+
+test('an electronics claim may not be combined with other changes', async () => {
+  await assertFails(setDoc(doc(ctxFor(ALICE), 'change_requests/el-mixed'),
+    claimRequest(ALICE, 'c-alice', { electronics_claim: '2026-10-22', current_xp: 50 })));
+});
+
+test('an electronics claim must be a YYYY-MM-DD string', async () => {
+  await assertFails(setDoc(doc(ctxFor(ALICE), 'change_requests/el-bad1'),
+    claimRequest(ALICE, 'c-alice', { electronics_claim: 'jutro' })));
+  await assertFails(setDoc(doc(ctxFor(ALICE), 'change_requests/el-bad2'),
+    claimRequest(ALICE, 'c-alice', { electronics_claim: 20261022 })));
+});
+
+test('a quest reward may not carry an electronics claim', async () => {
+  const db = env.authenticatedContext('alice', { email: 'alice@example.com' }).firestore();
+  await assertFails(
+    setDoc(doc(db, 'quests/q-el'), {
+      title: 'Ugotuj obiad',
+      posterUid: 'alice',
+      posterEmail: 'alice@example.com',
+      posterName: 'Alice',
+      status: 'open',
+      reward: { current_xp: 30, electronics_claim: '2026-10-22' },
+    })
+  );
+});
