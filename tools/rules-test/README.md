@@ -24,5 +24,5 @@ npx --yes firebase-tools emulators:exec \
 ```
 
 Any project id works — the emulator never contacts a real project — but keep
-it consistent with CI (`liferpg-rules-test`). The emulator needs a JDK on the
-PATH. Both GitHub workflows run exactly this command.
+it consistent with CI (`liferpg-rules-test`). The emulator needs a JDK ≥ 21 on the
+PATH (current `firebase-tools` rejects JDK 17). Both GitHub workflows run exactly this command.

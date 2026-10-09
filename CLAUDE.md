@@ -51,19 +51,40 @@ uid, name, email, authProvider, admin (bool), readOnlyOthers (bool)
 ```
 name, clazz, email, level, current_xp, next_level_xp, gold, favour
 traits: [{ name: string, value: string }]  (optional)
+electronics: { days: int, as_of: 'YYYY-MM-DD', claimed: ['YYYY-MM-DD'] }  (optional)
 ```
 
 - Characters are linked to users via `email`.
 - Admin users see **all** characters and can edit any; `readOnlyOthers` users see all characters but cannot edit any; regular users see only their own.
 - **This split is enforced server-side in `firestore.rules`, not just by the client query.** `/characters` reads require `isAdmin() || isReadOnlyOthers() || resource.data.email.lower() == request.auth.token.email.lower()`; writes require `isAdmin()`. A regular user's unconstrained collection query is therefore *rejected* by Firestore — the client must keep issuing `where('email', isEqualTo: <own email>)` (see `lib/data/character_repository.dart`), otherwise the home screen breaks with PERMISSION_DENIED.
 - **Case-sensitivity caveat (measured, not theoretical — half-fixed):** the rule now compares `.lower()` of both sides, so a character document whose `email` differs only in case from the owner's Google auth email (e.g. `Ala@Example.com` vs `ala@example.com`) **is allowed** to that owner at the rule level — a direct `get` succeeds. However this does **not** make the character appear in the app: the client's own-email query (`where('email', isEqualTo: <own email>)`) is matched by Firestore's server-side index using an exact, case-sensitive comparison, which the rule change cannot affect. That query still returns zero documents for a differently-cased character, so the owner's roster still shows it as missing. The rule fix only closes the direct-access hole; the underlying data (`email` on the character document) must still be corrected to match the owner's login email for the character to actually show up. A character document with no `email` field at all errors during `.lower()` evaluation, which Firestore treats as a denial for a regular user; admins and `readOnlyOthers` users still see it because their clauses in the `||` chain short-circuit before the `.lower()` comparison is evaluated (measured in `tools/rules-test/rules.test.mjs`).
+- **Electronics days accrue lazily, with no cron** (no backend can tick a
+  counter at midnight): the stored `electronics.days` is the banked count *as
+  of the start of* `as_of`, and every reader computes
+  `available = days + full local days between as_of and today`
+  (`lib/models/electronics_days.dart`, pure functions taking `today`, days
+  counted as `DateTime.utc(y,m,d)` ints so DST never makes a 23/25-hour
+  day). `as_of` may be in the future (after claiming today it is set to
+  tomorrow), in which case nothing has accrued. **Every write settles
+  first** (`days += accrued; as_of = max(as_of, today)`) and only then applies
+  its change. A character with no `electronics` map behaves as
+  `{days: 0, as_of: kElectronicsDaysEpoch, claimed: []}`, where
+  `kElectronicsDaysEpoch` is 2026-10-10, so days before it never accrued
+  (a late claim of such a day costs only 1) and no migration was needed.
+  `claimed` keeps the 31 most recent dates; parsing is tolerant like
+  `Character.fromMap` (bad `days` reads 0, bad `as_of` the epoch, non-string
+  `claimed` entries dropped). **`Character.toMap()` deliberately omits the
+  map**, so the edit screen's ordinary `update(toMap())` can never overwrite a
+  claim accepted while it was open; the map is written only by
+  `CharacterRepository.claimElectronicsDay` / `setElectronicsDays` (both
+  `runTransaction`) and the `ChangeRequestRepository.accept` transaction.
 
 **`change_requests/{id}`**
 ```
 characterId, characterName, requesterUid, requesterEmail
 status: 'pending' | 'accepted' | 'rejected' | 'cancelled'
 reason (optional), createdAt (server timestamp)
-changes:        { current_xp?, gold?, traits?: [{name, value}] }
+changes:        { current_xp?, gold?, traits?: [{name, value}], electronics_claim? }
 appliedChanges: same shape, written on accept
 decidedBy, decidedAt: written on accept/reject
 ```
@@ -101,6 +122,19 @@ decidedBy, decidedAt: written on accept/reject
   value rather than the transaction erroring. A trait's existing value gets
   the same tolerant coercion before the request's delta is added to it (so a
   free-text legacy trait value, e.g. `"Wojownik"`, is treated as `0`).
+- `changes.electronics_claim` is the **local `YYYY-MM-DD` the player tapped
+  Odbierz** (not the day the admin approves) and is a claim, not a delta. It
+  is always alone in `changes`: the create rule requires
+  `changes.keys().hasOnly(['electronics_claim'])` and a string matching
+  `^[0-9]{4}-[0-9]{2}-[0-9]{2}$` (shape only, not a real date); a quest's
+  `reward` may not carry the key, so it cannot be smuggled in via
+  `markComplete`. Accepting runs `ElectronicsDays.applyClaim` inside the
+  accept transaction: it settles, then is idempotent per date (a date already
+  in `claimed` changes nothing, so a double accept or an admin direct claim
+  in the meantime is harmless). The claimed day itself never accrues, so
+  claiming costs 1 and a **late approval of a past day takes back the
+  already-accrued day** (costs 2); a claim at 0 clamps to 0. Reject, cancel
+  and restore-to-pending never touch the character.
 
 **`quests/{id}`**
 ```
@@ -172,6 +206,32 @@ characterName, email
   on a different device see. Hidden characters can be brought back from a
   "Ukryte postacie" section in the user management
   screen. `readOnlyOthers` users do not get this affordance.
+- **Electronics days** ("Dni elektroniki"): a section on **every** character
+  card, between the gold row and Cechy (`lib/features/character/electronics_section.dart`
+  is the pure view, `electronics_panel.dart` the stateful wiring): a ring
+  medallion with the available count and a gold arc that fills over the local
+  day. Four states, checked in order claimed -> pending -> empty -> charging:
+  claimed (`Dzień z elektroniką` / `odebrano dzisiaj`, dashed crimson ring, no
+  button); pending (`Dzień z elektroniką?` / `czeka na akceptację`, with
+  **ANULUJ PROŚBĘ** for the requester only — an admin sees it with no button,
+  since the request is in their inbox); empty (`available == 0`, no button);
+  charging (`Ładowanie…` / `dzień bez elektroniki` with **ODBIERZ**). The
+  button is hidden at 0 and once today is claimed. An owner's **ODBIERZ** posts
+  a cancellable `electronics_claim` change request; an admin's, on any card
+  including their own, applies immediately via `claimElectronicsDay`; a
+  `readOnlyOthers` user sees the section but no button on others' cards. The
+  pending state is derived from `myChangeRequestsProvider` plus, for admins,
+  `pendingChangeRequestsProvider`. The inbox renders a claim as
+  `Dzień z elektroniką: <date>` and hides **Edytuj** for it (nothing to edit),
+  and the general "Prośba o zmianę" form does not offer it. The admin edit
+  screen has a **Dni elektroniki** −/+ field (shows `available`; saving a
+  changed value runs `setElectronicsDays`, an unchanged one leaves the map
+  alone). A one-minute `Timer` rebuilds the panel so the arc advances and the
+  count rolls over at midnight while the app is open. Read time only through
+  `clockProvider` (`lib/providers/clock_provider.dart`), never
+  `DateTime.now()`, so tests can drive the clock. Day boundaries are the
+  device's local time (all players share one time zone). See
+  `docs/superpowers/specs/2026-10-09-electronics-days-design.md`.
 - **Quests**: the home screen's FAB is a speed-dial (`_QuestFab`) — it
   replaces the old single-button FAB, rotating into a close icon and
   revealing two labeled mini-FABs: "Zadania" (the tabbed `QuestsScreen`
