@@ -18,8 +18,9 @@ void main() {
       expect(parseDay(null), isNull);
     });
 
-    test('dayOf uses the local calendar date and survives DST', () {
-      // 2026-10-25 is the EU DST end; a 25-hour local day.
+    test('dayOf uses the local calendar date', () {
+      // DST safety holds by construction (DateTime.utc day ints); this does
+      // not exercise a transition on a UTC runner, it checks the calendar date.
       expect(dayOf(DateTime(2026, 10, 25, 0, 30)),
           dayOf(DateTime(2026, 10, 25, 23, 30)));
       expect(dayOf(DateTime(2026, 10, 26, 0, 1)) - dayOf(DateTime(2026, 10, 25, 23, 59)), 1);

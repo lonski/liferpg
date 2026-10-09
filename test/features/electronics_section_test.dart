@@ -81,4 +81,18 @@ void main() {
     expect(find.text('Ładowanie…'), findsOneWidget);
     expect(find.byKey(const Key('electronics-claim')), findsNothing);
   });
+
+  testWidgets('a 3-digit count at 2x text scale does not overflow the medallion',
+      (tester) async {
+    await tester.pumpWidget(MediaQuery(
+      data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+      child: wrap(const ElectronicsSection(
+        available: 365,
+        state: ElectronicsCardState.charging,
+        dayFraction: 0.3,
+      )),
+    ));
+    expect(find.text('365'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

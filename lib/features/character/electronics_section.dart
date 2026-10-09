@@ -183,30 +183,34 @@ class _Medallion extends StatelessWidget {
                 border: Border.all(color: crimson, width: 2),
               ),
               alignment: Alignment.center,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '$available',
-                    key: const Key('electronics-count'),
-                    style: const TextStyle(
-                      fontFamily: fontDisplay,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      height: 1,
-                      color: inkHeading,
+              padding: const EdgeInsets.all(8),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$available',
+                      key: const Key('electronics-count'),
+                      style: const TextStyle(
+                        fontFamily: fontDisplay,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        height: 1,
+                        color: inkHeading,
+                      ),
                     ),
-                  ),
-                  const Text(
-                    'dostępne',
-                    style: TextStyle(
-                      fontFamily: fontBody,
-                      fontSize: 8,
-                      fontStyle: FontStyle.italic,
-                      color: crimson,
+                    const Text(
+                      'dostępne',
+                      style: TextStyle(
+                        fontFamily: fontBody,
+                        fontSize: 8,
+                        fontStyle: FontStyle.italic,
+                        color: crimson,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

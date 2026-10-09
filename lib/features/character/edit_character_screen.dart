@@ -336,12 +336,16 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text('Dni elektroniki'.toUpperCase(),
-                                        style: _fieldLabel),
+                                    Flexible(
+                                      child: Text('Dni elektroniki'.toUpperCase(),
+                                          style: _fieldLabel),
+                                    ),
                                     Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         IconButton(
                                           key: const Key('electronics-minus'),
+                                          visualDensity: VisualDensity.compact,
                                           color: crimson,
                                           icon: const Icon(Icons.remove),
                                           onPressed: () => _stepElectronics(-1),
@@ -353,6 +357,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                         ),
                                         IconButton(
                                           key: const Key('electronics-plus'),
+                                          visualDensity: VisualDensity.compact,
                                           color: crimson,
                                           icon: const Icon(Icons.add),
                                           onPressed: () => _stepElectronics(1),

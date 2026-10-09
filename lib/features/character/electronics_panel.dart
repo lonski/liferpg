@@ -28,12 +28,14 @@ class ElectronicsPanel extends ConsumerStatefulWidget {
   ConsumerState<ElectronicsPanel> createState() => _ElectronicsPanelState();
 }
 
-class _ElectronicsPanelState extends ConsumerState<ElectronicsPanel> {
+class _ElectronicsPanelState extends ConsumerState<ElectronicsPanel>
+    with WidgetsBindingObserver {
   Timer? _ticker;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _ticker = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -41,8 +43,26 @@ class _ElectronicsPanelState extends ConsumerState<ElectronicsPanel> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker?.cancel();
     super.dispose();
+  }
+
+  /// A resume can cross midnight without the ticker having fired.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) setState(() {});
+  }
+
+  /// The local day right now, read at tap time rather than captured by build.
+  int _clockDay() => dayOf(ref.read(clockProvider)());
+
+  /// True (after refreshing the card) when the day is no longer [builtDay], so
+  /// a claim never carries a day other than the one the player tapped on.
+  bool _dayMoved(int builtDay) {
+    if (_clockDay() == builtDay) return false;
+    if (mounted) setState(() {});
+    return true;
   }
 
   Future<void> _run(Future<void> Function() action, String done) async {
@@ -83,13 +103,14 @@ class _ElectronicsPanelState extends ConsumerState<ElectronicsPanel> {
     VoidCallback? onClaim;
     if (user != null && isAdmin) {
       onClaim = () async {
+        if (_dayMoved(today)) return;
         final ok = await _confirmClaim(
           available,
           'Odbierasz dzień dla postaci ${c.name}. Licznik spadnie od razu, '
               'a dzisiejszy dzień się nie doliczy.',
           'Odbierz',
         );
-        if (!ok || !mounted) return;
+        if (!ok || !mounted || _dayMoved(today)) return;
         await _run(
           () => ref.read(characterRepositoryProvider).claimElectronicsDay(c.id),
           'Odebrano dzień elektroniki',
@@ -97,13 +118,14 @@ class _ElectronicsPanelState extends ConsumerState<ElectronicsPanel> {
       };
     } else if (user != null && isOwner) {
       onClaim = () async {
+        if (_dayMoved(today)) return;
         final ok = await _confirmClaim(
           available,
           'Prośba trafi do admina. Po akceptacji licznik spadnie o jeden, '
               'a dzisiejszy dzień się nie doliczy.',
           'Wyślij prośbę',
         );
-        if (!ok || !mounted) return;
+        if (!ok || !mounted || _dayMoved(today)) return;
         await _run(
           () => ref.read(changeRequestRepositoryProvider).create(ChangeRequest(
                 id: '',

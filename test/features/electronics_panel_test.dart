@@ -181,4 +181,72 @@ void main() {
     await tester.pump(const Duration(minutes: 1));
     expect(find.text('4'), findsOneWidget);
   });
+
+  testWidgets('a tap after midnight but before the ticker opens no dialog',
+      (tester) async {
+    final db = await seed(uid: 'u1', email: _owner);
+    var now = DateTime(2026, 10, 22, 23, 59, 50);
+    await pumpPanel(tester, db, uid: 'u1', email: _owner, clock: () => now);
+
+    now = DateTime(2026, 10, 23, 0, 0, 20);
+    await tester.tap(find.byKey(const Key('electronics-claim')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('DZIEŃ Z ELEKTRONIKĄ?'), findsNothing);
+    expect((await db.collection('change_requests').get()).docs, isEmpty);
+    // The card refreshed onto the new day (3 banked + 1 accrued).
+    expect(find.text('4'), findsOneWidget);
+  });
+
+  testWidgets('a dialog left open across midnight writes nothing',
+      (tester) async {
+    final db = await seed(uid: 'u1', email: _owner);
+    var now = DateTime(2026, 10, 22, 23, 59, 50);
+    await pumpPanel(tester, db, uid: 'u1', email: _owner, clock: () => now);
+
+    await tester.tap(find.byKey(const Key('electronics-claim')));
+    await tester.pumpAndSettle();
+    expect(find.text('DZIEŃ Z ELEKTRONIKĄ?'), findsOneWidget);
+
+    now = DateTime(2026, 10, 23, 0, 0, 20);
+    await tester.tap(find.byKey(const Key('electronics-claim-confirm')));
+    await tester.pumpAndSettle();
+
+    expect((await db.collection('change_requests').get()).docs, isEmpty);
+  });
+
+  testWidgets('an admin dialog left open across midnight writes nothing',
+      (tester) async {
+    final db = await seed(uid: 'a1', email: 'admin@example.com', admin: true);
+    var now = DateTime(2026, 10, 22, 23, 59, 50);
+    await pumpPanel(tester, db,
+        uid: 'a1', email: 'admin@example.com', clock: () => now);
+
+    await tester.tap(find.byKey(const Key('electronics-claim')));
+    await tester.pumpAndSettle();
+    now = DateTime(2026, 10, 23, 0, 0, 20);
+    await tester.tap(find.byKey(const Key('electronics-claim-confirm')));
+    await tester.pumpAndSettle();
+
+    final e = (await db.collection('characters').doc('c1').get())
+        .data()!['electronics'] as Map;
+    expect(e['claimed'], isEmpty);
+    expect(e['days'], 3);
+  });
+
+  testWidgets('a readOnlyOthers user can claim on their own character',
+      (tester) async {
+    final db = await seed(uid: 'r1', email: _owner, readOnlyOthers: true);
+    await pumpPanel(tester, db, uid: 'r1', email: _owner, clock: noon);
+
+    await tester.tap(find.byKey(const Key('electronics-claim')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('electronics-claim-confirm')));
+    await tester.pumpAndSettle();
+
+    final reqs = await db.collection('change_requests').get();
+    expect(reqs.docs, hasLength(1));
+    expect(reqs.docs.single.data()['changes'], {'electronics_claim': '2026-10-22'});
+    expect(reqs.docs.single.data()['requesterUid'], 'r1');
+  });
 }

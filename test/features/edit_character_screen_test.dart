@@ -326,4 +326,16 @@ void main() {
     await tester.pump();
     expect(find.widgetWithText(TextFormField, '0'), findsOneWidget);
   });
+
+  testWidgets('the Dni elektroniki row fits a 360 dp wide phone', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final (db, character) = await seed();
+    await pumpEdit(tester, db, character, clock: () => DateTime(2026, 10, 22, 9));
+
+    expect(find.byKey(const Key('electronics-minus')), findsOneWidget);
+    expect(find.byKey(const Key('electronics-plus')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

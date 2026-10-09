@@ -129,9 +129,10 @@ decidedBy, decidedAt: written on accept/reject
   `^[0-9]{4}-[0-9]{2}-[0-9]{2}$` (shape only, not a real date); a quest's
   `reward` may not carry the key, so it cannot be smuggled in via
   `markComplete`. Accepting runs `ElectronicsDays.applyClaim` inside the
-  accept transaction: it settles, then is idempotent per date (a date already
-  in `claimed` changes nothing, so a double accept or an admin direct claim
-  in the meantime is harmless). The claimed day itself never accrues, so
+  accept transaction: it checks `claimed` first and returns unchanged for a date already
+  in it (the no-op path still rewrites the normalised map), so a double
+  accept or an admin direct claim in the meantime is harmless; otherwise it
+  settles, then claims. The claimed day itself never accrues, so
   claiming costs 1 and a **late approval of a past day takes back the
   already-accrued day** (costs 2); a claim at 0 clamps to 0. Reject, cancel
   and restore-to-pending never touch the character.
@@ -229,7 +230,11 @@ characterName, email
   alone). A one-minute `Timer` rebuilds the panel so the arc advances and the
   count rolls over at midnight while the app is open. Read time only through
   `clockProvider` (`lib/providers/clock_provider.dart`), never
-  `DateTime.now()`, so tests can drive the clock. Day boundaries are the
+  `DateTime.now()` (sanctioned exception: repository constructors default
+  `clock` to `DateTime.now` and `clockProvider` defaults to it), so tests can
+  drive the clock. `ElectronicsPanel` re-reads the clock at tap time and again
+  on confirm (and rebuilds on app resume), so a claim never carries a stale day
+  — if the day moved it just refreshes the card instead of writing. Day boundaries are the
   device's local time (all players share one time zone). See
   `docs/superpowers/specs/2026-10-09-electronics-days-design.md`.
 - **Quests**: the home screen's FAB is a speed-dial (`_QuestFab`) — it
