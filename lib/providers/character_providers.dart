@@ -3,9 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/character_repository.dart';
 import '../data/firebase_providers.dart';
 import 'auth_providers.dart';
+import 'clock_provider.dart';
 
 final characterRepositoryProvider = Provider<CharacterRepository>(
-  (ref) => CharacterRepository(ref.watch(firestoreProvider)),
+  (ref) => CharacterRepository(
+    ref.watch(firestoreProvider),
+    clock: ref.watch(clockProvider),
+  ),
 );
 
 final charactersProvider = StreamProvider<CharacterFeed>((ref) async* {

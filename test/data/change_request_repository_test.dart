@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/data/change_request_repository.dart';
 import 'package:liferpg/models/change_request.dart';
 import 'package:liferpg/models/character.dart';
+import 'package:liferpg/models/electronics_days.dart';
 import 'package:liferpg/models/quest.dart' show dailyQuestStamp;
 
 ChangeRequest _request({
@@ -646,5 +647,79 @@ void main() {
     await repo.accept(saved, adminUid: 'admin1');
 
     expect((await db.collection('quests').get()).docs, isEmpty);
+  });
+
+  group('electronics claims', () {
+    Future<(FakeFirebaseFirestore, ChangeRequestRepository, ChangeRequest)> setUpClaim({
+      required String claimDay,
+      required DateTime now,
+      Map<String, dynamic>? electronics,
+    }) async {
+      final db = FakeFirebaseFirestore();
+      await db.collection('characters').doc('c1').set({
+        'name': 'Grommash',
+        'email': 'ala@example.com',
+        'electronics': ?electronics,
+      });
+      final repo = ChangeRequestRepository(db, clock: () => now);
+      await repo.create(_request(changes: ChangeSet(electronicsClaim: claimDay)));
+      final request = (await repo.watchPending().first).single;
+      return (db, repo, request);
+    }
+
+    test('accepting a same-day claim spends a day and skips today', () async {
+      final (db, repo, request) = await setUpClaim(
+        claimDay: '2026-10-22',
+        now: DateTime(2026, 10, 22, 20),
+        electronics: {'days': 3, 'as_of': '2026-10-20', 'claimed': []},
+      );
+      await repo.accept(request, adminUid: 'admin');
+      final data = (await db.collection('characters').doc('c1').get()).data()!;
+      expect(data['electronics'], {
+        'days': 4,
+        'as_of': '2026-10-23',
+        'claimed': ['2026-10-22'],
+      });
+      final req = (await db.collection('change_requests').doc(request.id).get()).data()!;
+      expect(req['status'], 'accepted');
+    });
+
+    test('a claim accepted the next morning takes back the accrued day', () async {
+      final (db, repo, request) = await setUpClaim(
+        claimDay: '2026-10-22',
+        now: DateTime(2026, 10, 23, 8),
+        electronics: {'days': 3, 'as_of': '2026-10-20', 'claimed': []},
+      );
+      await repo.accept(request, adminUid: 'admin');
+      final e = ElectronicsDays.fromMap(
+          (await db.collection('characters').doc('c1').get()).data()!['electronics']);
+      // 3 + 20th + 21st = 5; 22nd claimed: -1 and not accrued -> 4.
+      expect(e.available(parseDay('2026-10-23')!), 4);
+    });
+
+    test('accepting a claim for an already-claimed date changes nothing', () async {
+      final (db, repo, request) = await setUpClaim(
+        claimDay: '2026-10-22',
+        now: DateTime(2026, 10, 22, 20),
+        electronics: {'days': 4, 'as_of': '2026-10-23', 'claimed': ['2026-10-22']},
+      );
+      await repo.accept(request, adminUid: 'admin');
+      final data = (await db.collection('characters').doc('c1').get()).data()!;
+      expect(data['electronics'], {
+        'days': 4,
+        'as_of': '2026-10-23',
+        'claimed': ['2026-10-22'],
+      });
+    });
+
+    test('an XP request does not touch electronics', () async {
+      final db = FakeFirebaseFirestore();
+      await db.collection('characters').doc('c1').set({'name': 'G', 'email': 'a@x', 'current_xp': 1});
+      final repo = ChangeRequestRepository(db, clock: () => DateTime(2026, 10, 22));
+      await repo.create(_request());
+      await repo.accept((await repo.watchPending().first).single, adminUid: 'admin');
+      final data = (await db.collection('characters').doc('c1').get()).data()!;
+      expect(data.containsKey('electronics'), isFalse);
+    });
   });
 }

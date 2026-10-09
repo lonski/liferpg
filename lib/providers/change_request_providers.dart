@@ -4,9 +4,13 @@ import '../data/change_request_repository.dart';
 import '../data/firebase_providers.dart';
 import '../models/change_request.dart';
 import 'auth_providers.dart';
+import 'clock_provider.dart';
 
 final changeRequestRepositoryProvider = Provider<ChangeRequestRepository>(
-  (ref) => ChangeRequestRepository(ref.watch(firestoreProvider)),
+  (ref) => ChangeRequestRepository(
+    ref.watch(firestoreProvider),
+    clock: ref.watch(clockProvider),
+  ),
 );
 
 /// The admin queue. Empty for everyone else — the security rule would reject

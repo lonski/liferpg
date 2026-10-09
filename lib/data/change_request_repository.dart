@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/change_request.dart';
+import '../models/electronics_days.dart';
 import '../models/quest.dart' show QuestStatus, dailyQuestStamp;
 
 /// Thrown when a transaction finds the request already accepted or rejected:
@@ -36,9 +37,11 @@ class ChangeRequestNotRejected implements Exception {
 }
 
 class ChangeRequestRepository {
-  ChangeRequestRepository(this._db);
+  ChangeRequestRepository(this._db, {DateTime Function()? clock})
+      : _clock = clock ?? DateTime.now;
 
   final FirebaseFirestore _db;
+  final DateTime Function() _clock;
 
   CollectionReference<Map<String, dynamic>> get _requests =>
       _db.collection('change_requests');
@@ -323,6 +326,17 @@ class ChangeRequestRepository {
         }
       }
       updates['traits'] = traits;
+    }
+
+    // An electronics claim spends the day the player tapped, settled
+    // against the accepting device's today. applyClaim is a no-op for a
+    // date already claimed, so a double accept (or an admin's direct claim
+    // in the meantime) can never spend the same day twice.
+    final claimDay = parseDay(changes.electronicsClaim);
+    if (claimDay != null) {
+      updates['electronics'] = ElectronicsDays.fromMap(character['electronics'])
+          .applyClaim(claimDay, dayOf(_clock()))
+          .toMap();
     }
 
     return updates;
