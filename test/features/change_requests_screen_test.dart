@@ -393,4 +393,21 @@ void main() {
 
     expect(find.textContaining('Posprzątaj garaż'), findsOneWidget);
   });
+
+  testWidgets('an electronics claim shows its date and offers no Edytuj', (tester) async {
+    final db = await seed();
+    await db.collection('change_requests').doc(requestId).update({
+      'changes': {'electronics_claim': '2026-10-22'},
+    });
+    await pumpScreen(tester, db);
+
+    expect(find.text('Dzień z elektroniką: 2026-10-22'), findsOneWidget);
+    expect(find.byKey(Key('accept-$requestId')), findsOneWidget);
+    expect(find.byKey(Key('edit-$requestId')), findsNothing);
+  });
+
+  testWidgets('an ordinary request still offers Edytuj', (tester) async {
+    await pumpScreen(tester, await seed());
+    expect(find.byKey(Key('edit-$requestId')), findsOneWidget);
+  });
 }

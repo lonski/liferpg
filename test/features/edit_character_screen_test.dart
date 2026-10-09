@@ -7,6 +7,7 @@ import 'package:liferpg/data/firebase_providers.dart';
 import 'package:liferpg/data/shared_preferences_provider.dart';
 import 'package:liferpg/features/character/edit_character_screen.dart';
 import 'package:liferpg/models/character.dart';
+import 'package:liferpg/providers/clock_provider.dart';
 import 'package:liferpg/providers/hidden_characters_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,8 +41,9 @@ Future<(FakeFirebaseFirestore, Character)> seed({
 Future<void> pumpEdit(
   WidgetTester tester,
   FakeFirebaseFirestore db,
-  Character character,
-) async {
+  Character character, {
+  DateTime Function()? clock,
+}) async {
   // All three seams must be overridden: the screen reads traitNamesProvider
   // (which reaches back through charactersProvider to appUserProvider and
   // auth) and, for the hide action, hiddenCharacterIdsProvider (which needs
@@ -57,6 +59,7 @@ Future<void> pumpEdit(
       sharedPreferencesProvider.overrideWithValue(
         await SharedPreferences.getInstance(),
       ),
+      if (clock != null) clockProvider.overrideWithValue(clock),
     ],
     child: MaterialApp(home: EditCharacterScreen(character: character)),
   ));
@@ -282,5 +285,45 @@ void main() {
         .map((t) => Map<String, dynamic>.from(t as Map))
         .toList();
     expect(traits.map((t) => t['name']), contains('Honor'));
+  });
+
+  testWidgets('shows today\'s electronics days and saves a +1 bonus', (tester) async {
+    final (db, _) = await seed();
+    final id = (await db.collection('characters').get()).docs.single.id;
+    await db.collection('characters').doc(id).update({
+      'electronics': {'days': 3, 'as_of': '2026-10-20', 'claimed': []},
+    });
+    final character = Character.fromMap(
+        id, (await db.collection('characters').doc(id).get()).data()!);
+    await pumpEdit(tester, db, character, clock: () => DateTime(2026, 10, 22, 9));
+
+    expect(find.text('DNI ELEKTRONIKI'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, '5'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('electronics-plus')));
+    await tester.pump();
+    expect(find.widgetWithText(TextFormField, '6'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    final e = (await db.collection('characters').doc(id).get()).data()!['electronics'];
+    expect(e, {'days': 6, 'as_of': '2026-10-22', 'claimed': []});
+  });
+
+  testWidgets('an unchanged electronics value is not written', (tester) async {
+    final (db, character) = await seed();
+    await pumpEdit(tester, db, character, clock: () => DateTime(2026, 10, 22, 9));
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+    final data = (await db.collection('characters').doc(character.id).get()).data()!;
+    expect(data.containsKey('electronics'), isFalse);
+  });
+
+  testWidgets('minus never goes below zero', (tester) async {
+    final (db, character) = await seed();
+    await pumpEdit(tester, db, character, clock: () => DateTime(2026, 10, 10, 9));
+    expect(find.widgetWithText(TextFormField, '0'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('electronics-minus')));
+    await tester.pump();
+    expect(find.widgetWithText(TextFormField, '0'), findsOneWidget);
   });
 }

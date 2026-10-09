@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../feature_flags.dart';
 import '../../models/character.dart';
+import '../../models/electronics_days.dart';
 import '../../providers/character_providers.dart';
+import '../../providers/clock_provider.dart';
 import '../../providers/hidden_characters_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
@@ -59,6 +61,7 @@ class EditCharacterScreen extends ConsumerStatefulWidget {
 class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
   final _formKey = GlobalKey<FormState>();
   late final Map<String, TextEditingController> _controllers;
+  late final int _initialElectronics;
   late List<Trait> _traits;
   // Stable per-row identity, independent of list position, so that removing
   // a trait in the middle of the list doesn't confuse Flutter's element
@@ -89,6 +92,10 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
       'current_xp': TextEditingController(text: c.currentXp.toString()),
       'next_level_xp': TextEditingController(text: c.nextLevelXp.toString()),
     };
+    _initialElectronics =
+        c.electronics.available(dayOf(ref.read(clockProvider)()));
+    _controllers['electronics'] =
+        TextEditingController(text: '$_initialElectronics');
     _traits = List<Trait>.from(c.traits);
     _traitKeys = [for (final _ in _traits) _nextTraitKey++];
     _favour = c.favour;
@@ -149,6 +156,12 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
     Navigator.of(context).pop();
   }
 
+  void _stepElectronics(int delta) {
+    final current = int.tryParse(_controllers['electronics']!.text.trim()) ?? 0;
+    final next = (current + delta) < 0 ? 0 : current + delta;
+    setState(() => _controllers['electronics']!.text = '$next');
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
@@ -163,6 +176,13 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
         traits: _traits,
       );
       await ref.read(characterRepositoryProvider).updateCharacter(updated);
+      final electronicsText = _controllers['electronics']!.text.trim();
+      final electronics = int.tryParse(electronicsText);
+      if (electronics != null && electronics != _initialElectronics) {
+        await ref
+            .read(characterRepositoryProvider)
+            .setElectronicsDays(original.id, electronics < 0 ? 0 : electronics);
+      }
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
@@ -307,6 +327,35 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                           width: 64,
                                           child: _numberField('next_level_xp',
                                               _controllers['next_level_xp']!),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('Dni elektroniki'.toUpperCase(),
+                                        style: _fieldLabel),
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          key: const Key('electronics-minus'),
+                                          color: crimson,
+                                          icon: const Icon(Icons.remove),
+                                          onPressed: () => _stepElectronics(-1),
+                                        ),
+                                        SizedBox(
+                                          width: 48,
+                                          child: _numberField('electronics',
+                                              _controllers['electronics']!),
+                                        ),
+                                        IconButton(
+                                          key: const Key('electronics-plus'),
+                                          color: crimson,
+                                          icon: const Icon(Icons.add),
+                                          onPressed: () => _stepElectronics(1),
                                         ),
                                       ],
                                     ),

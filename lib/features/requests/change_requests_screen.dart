@@ -423,11 +423,13 @@ class _RequestCard extends StatelessWidget {
                           onPressed: onReject,
                           child: const Text('Odrzuć'),
                         ),
-                        TextButton(
-                          key: Key('edit-${request.id}'),
-                          onPressed: onEdit,
-                          child: const Text('Edytuj'),
-                        ),
+                        // An electronics claim has nothing to edit: it is just a date.
+                        if (request.changes.electronicsClaim == null)
+                          TextButton(
+                            key: Key('edit-${request.id}'),
+                            onPressed: onEdit,
+                            child: const Text('Edytuj'),
+                          ),
                       ],
                     ),
                   ],
