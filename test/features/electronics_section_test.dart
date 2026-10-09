@@ -52,8 +52,8 @@ void main() {
     await tester.pumpWidget(wrap(const ElectronicsSection(
       available: 3, state: ElectronicsCardState.pending, dayFraction: 0.6)));
     expect(find.text('czeka na akceptację'), findsOneWidget);
-    expect(find.byType(TextButton), findsNothing);
-    expect(find.byType(OutlinedButton), findsNothing);
+    expect(find.byKey(const Key('electronics-cancel')), findsNothing);
+    expect(find.byKey(const Key('electronics-claim')), findsNothing);
   });
 
   testWidgets('claimed: no button, odebrano dzisiaj', (tester) async {

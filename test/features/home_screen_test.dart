@@ -326,6 +326,10 @@ void main() {
       'favour': 0,
       'traits': <dynamic>[],
     });
+    // The ListView builds lazily and the electronics section made each card
+    // taller, so give the viewport room for both cards.
+    await tester.binding.setSurfaceSize(const Size(800, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await pumpHome(tester, db);
     expect(find.byType(CharacterCard), findsNWidgets(2));
     expect(find.byKey(const Key('change-request-fab')), findsOneWidget);

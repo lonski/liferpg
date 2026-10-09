@@ -10,6 +10,7 @@ import '../../providers/hidden_characters_providers.dart';
 import '../../providers/update_providers.dart';
 import '../../theme/app_theme.dart';
 import '../character/character_card.dart';
+import '../character/electronics_panel.dart';
 import '../quests/quests_summary_card.dart';
 import '../requests/change_requests_screen.dart';
 import '../requests/new_change_request_screen.dart';
@@ -197,6 +198,7 @@ class HomeScreen extends ConsumerWidget {
                     CharacterCard(
                       character: c,
                       canEdit: user?.canEdit ?? false,
+                      electronics: ElectronicsPanel(character: c),
                     ),
               ],
             ),
