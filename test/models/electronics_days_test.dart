@@ -100,6 +100,12 @@ void main() {
       expect(e.applyClaim(d('2026-10-22'), d('2026-10-22')).available(d('2026-10-22')), 0);
     });
 
+    test('a pre-epoch claim costs only the claim: that day never accrued', () {
+      const e = ElectronicsDays(days: 5, asOf: kElectronicsDaysEpoch);
+      final c = e.applyClaim(kElectronicsDaysEpoch - 1, kElectronicsDaysEpoch);
+      expect(c.available(kElectronicsDaysEpoch), 4);
+    });
+
     test('keeps only the 31 most recent claimed dates', () {
       var e = ElectronicsDays(days: 100, asOf: d('2026-10-01'));
       for (var i = 0; i < 40; i++) {
@@ -116,6 +122,13 @@ void main() {
     test('missing or non-map reads as the default', () {
       expect(ElectronicsDays.fromMap(null).available(kElectronicsDaysEpoch + 2), 2);
       expect(ElectronicsDays.fromMap('x').days, 0);
+    });
+
+    test('non-finite days read as 0 instead of throwing', () {
+      expect(ElectronicsDays.fromMap({'days': double.nan}).days, 0);
+      expect(ElectronicsDays.fromMap({'days': double.infinity}).days, 0);
+      expect(ElectronicsDays.fromMap({'days': 'Infinity'}).days, 0);
+      expect(ElectronicsDays.fromMap({'days': 'NaN'}).days, 0);
     });
 
     test('tolerates stringly and garbage values', () {

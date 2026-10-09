@@ -73,11 +73,13 @@ class ElectronicsDays {
   factory ElectronicsDays.fromMap(Object? raw) {
     if (raw is! Map) return const ElectronicsDays();
     final rawDays = raw['days'];
-    final days = rawDays is num
-        ? rawDays.toInt()
+    final num? n = rawDays is num
+        ? rawDays
         : rawDays is String
-            ? (num.tryParse(rawDays.trim())?.toInt() ?? 0)
-            : 0;
+            ? num.tryParse(rawDays.trim())
+            : null;
+    // Non-finite values (NaN, +/-Infinity) cannot be truncated to an int.
+    final days = (n != null && n.isFinite) ? n.toInt() : 0;
     final rawClaimed = raw['claimed'];
     final claimed = rawClaimed is List
         ? (rawClaimed.map(parseDay).whereType<int>().toSet().toList()..sort())
@@ -116,15 +118,16 @@ class ElectronicsDays {
       );
 
   /// Spends [day]: costs one, and [day] itself never adds one. A [day] that
-  /// already passed (late approval) has accrued, so it is taken back too.
-  /// Claiming a date already in [claimed] changes nothing.
+  /// already passed (late approval) has accrued, so it is taken back too --
+  /// except days before [kElectronicsDaysEpoch], which never accrued, so they
+  /// cost only the claim. Claiming a date already in [claimed] changes nothing.
   ElectronicsDays applyClaim(int day, int today) {
     if (isClaimed(day)) return this;
     final settled = settle(today);
     var nextDays = settled.days - 1;
     var nextAsOf = settled.asOf;
     if (day < today) {
-      nextDays -= 1;
+      if (day >= kElectronicsDaysEpoch) nextDays -= 1;
     } else {
       nextAsOf = math.max(nextAsOf, day + 1);
     }
