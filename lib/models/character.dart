@@ -1,3 +1,5 @@
+import 'electronics_days.dart';
+
 /// The live Firestore database was populated by a React web app that wrote
 /// numbers and strings interchangeably (JS renders `{gold} zł` identically
 /// for 250 and "250"), so these coerce whatever type actually landed there
@@ -38,6 +40,7 @@ class Character {
     this.gold,
     required this.favour,
     required this.traits,
+    this.electronics = const ElectronicsDays(),
   });
 
   final String id;
@@ -50,6 +53,9 @@ class Character {
   final num? gold;
   final int favour;
   final List<Trait> traits;
+
+  /// See ElectronicsDays. Written only by CharacterRepository's transactional electronics methods and the change-request accept transaction -- never by toMap().
+  final ElectronicsDays electronics;
 
   factory Character.fromMap(String id, Map<String, dynamic> data) {
     final rawTraits = data['traits'];
@@ -71,9 +77,11 @@ class Character {
       gold: _asNum(data['gold']),
       favour: _asInt(data['favour']) ?? 0,
       traits: traits,
+      electronics: ElectronicsDays.fromMap(data['electronics']),
     );
   }
 
+  // Deliberately omits `electronics`: the edit screen saves via update(toMap()), and including a snapshot of the counter here would overwrite a claim accepted while the screen was open.
   Map<String, dynamic> toMap() => {
         'name': name,
         'clazz': clazz,
@@ -107,6 +115,7 @@ class Character {
         gold: gold ?? this.gold,
         favour: favour ?? this.favour,
         traits: traits ?? this.traits,
+        electronics: electronics,
       );
 
   /// Progress towards the next level, 0.0–1.0, for the XP bar.

@@ -43,14 +43,22 @@ class ChangeSet {
     this.currentXp,
     this.gold,
     this.traits = const [],
+    this.electronicsClaim,
   });
 
   final num? currentXp;
   final num? gold;
   final List<TraitChange> traits;
 
+  /// A request to spend one electronics day: the local 'YYYY-MM-DD' the
+  /// player tapped Odbierz. Always the only entry in its ChangeSet.
+  final String? electronicsClaim;
+
   bool get isEmpty =>
-      currentXp == null && gold == null && traits.isEmpty;
+      currentXp == null &&
+      gold == null &&
+      traits.isEmpty &&
+      electronicsClaim == null;
 
   factory ChangeSet.fromMap(Map<String, dynamic> data) {
     final rawTraits = data['traits'];
@@ -63,6 +71,7 @@ class ChangeSet {
               .map((t) => TraitChange.fromMap(Map<String, dynamic>.from(t)))
               .toList()
           : const <TraitChange>[],
+      electronicsClaim: _asString(data['electronics_claim']),
     );
   }
 
@@ -71,6 +80,7 @@ class ChangeSet {
         if (gold != null) 'gold': gold,
         if (traits.isNotEmpty)
           'traits': traits.map((t) => t.toMap()).toList(),
+        if (electronicsClaim != null) 'electronics_claim': electronicsClaim,
       };
 }
 

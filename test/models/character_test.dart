@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/models/character.dart';
+import 'package:liferpg/models/electronics_days.dart';
 
 Map<String, dynamic> raw() => {
       'name': 'Grommash',
@@ -133,5 +134,31 @@ void main() {
     final map = c.toMap();
     expect(map['gold'], isA<num>());
     expect(map['gold'], 250);
+  });
+
+  test('parses the electronics map', () {
+    final c = Character.fromMap('c1', {
+      'name': 'Ala',
+      'email': 'a@example.com',
+      'electronics': {'days': 4, 'as_of': '2026-10-23', 'claimed': ['2026-10-22']},
+    });
+    expect(c.electronics.days, 4);
+    expect(formatDay(c.electronics.asOf), '2026-10-23');
+  });
+
+  test('a character without electronics gets the default', () {
+    final c = Character.fromMap('c1', {'name': 'Ala', 'email': 'a@example.com'});
+    expect(c.electronics.days, 0);
+    expect(c.electronics.asOf, kElectronicsDaysEpoch);
+  });
+
+  test('toMap never writes electronics, so edit-screen saves cannot clobber it', () {
+    final c = Character.fromMap('c1', {
+      'name': 'Ala',
+      'email': 'a@example.com',
+      'electronics': {'days': 4, 'as_of': '2026-10-23'},
+    });
+    expect(c.toMap().containsKey('electronics'), isFalse);
+    expect(c.copyWith(level: 2).electronics.days, 4);
   });
 }

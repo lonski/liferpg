@@ -143,4 +143,12 @@ void main() {
     expect(request.toMap().containsKey('questId'), isFalse);
     expect(request.questId, isNull);
   });
+
+  test('ChangeSet round-trips electronics_claim and counts it as non-empty', () {
+    final s = ChangeSet.fromMap({'electronics_claim': '2026-10-22'});
+    expect(s.electronicsClaim, '2026-10-22');
+    expect(s.isEmpty, isFalse);
+    expect(s.toMap(), {'electronics_claim': '2026-10-22'});
+    expect(const ChangeSet().toMap().containsKey('electronics_claim'), isFalse);
+  });
 }

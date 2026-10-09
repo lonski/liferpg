@@ -27,4 +27,6 @@ List<String> changeSetLines(ChangeSet changes) => [
       if (changes.currentXp != null) 'XP: ${signedDelta(changes.currentXp!)}',
       if (changes.gold != null) 'Złoto: ${signedDelta(changes.gold!)}',
       for (final trait in changes.traits) '${trait.name}: ${trait.value}',
+      if (changes.electronicsClaim != null)
+        'Dzień z elektroniką: ${changes.electronicsClaim}',
     ];
