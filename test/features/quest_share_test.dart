@@ -4,11 +4,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liferpg/data/quest_share_service.dart';
+import 'package:liferpg/data/share_service.dart';
 import 'package:liferpg/features/quests/quest_share.dart';
 import 'package:liferpg/models/change_request.dart';
 import 'package:liferpg/models/quest.dart';
-import 'package:liferpg/providers/quest_providers.dart';
+import 'package:liferpg/providers/share_providers.dart';
 
 const _quest = Quest(
   id: 'q1',
@@ -26,7 +26,7 @@ class _Call {
   final Uint8List? imageBytes;
 }
 
-class _FakeQuestShareService implements QuestShareService {
+class _FakeShareService implements ShareService {
   final calls = <_Call>[];
 
   @override
@@ -42,12 +42,12 @@ class _FakeQuestShareService implements QuestShareService {
 void main() {
   testWidgets('shareQuest shares the title, deep link, and a captured image',
       (tester) async {
-    final fakeService = _FakeQuestShareService();
+    final fakeService = _FakeShareService();
     late BuildContext capturedContext;
     late WidgetRef capturedRef;
 
     await tester.pumpWidget(ProviderScope(
-      overrides: [questShareServiceProvider.overrideWithValue(fakeService)],
+      overrides: [shareServiceProvider.overrideWithValue(fakeService)],
       child: MaterialApp(
         home: Consumer(builder: (context, ref, _) {
           capturedContext = context;
