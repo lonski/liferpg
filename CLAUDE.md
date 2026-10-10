@@ -34,7 +34,8 @@ Add `--dart-define=SHOW_FAVOUR=true` to enable the favour UI.
 ## Project Structure
 
 `lib/` holds `main.dart` (Firebase + SharedPreferences init, auth gate),
-`theme/` (palette, ornaments), `models/`, `data/` (repositories plus the
+`theme/` (`RpgTheme` palettes, `RpgDecor` ornaments/illustrations,
+ornament widgets), `models/`, `data/` (repositories plus the
 `firebaseAuthProvider` / `firestoreProvider` / `sharedPreferencesProvider`
 test seams), `providers/` (Riverpod), and `features/` (login, home,
 character, users). Tests mirror that tree under `test/`.
@@ -209,8 +210,9 @@ characterName, email
 - **Favour**: integer; rendered as mood emoji (< -1 = very unhappy, -1 = unhappy, 0 = neutral, > 0 = happy).
 - **Currency**: `gold` = PLN (złoty), displayed as a chip if present.
 - **XP badge**: tapping the XP progress bar toggles a chip showing XP remaining to next level.
-- **Change requests**: a round `+` FAB on the home screen (shown to any user
-  who owns a character) opens a form for requesting XP / gold / trait changes.
+- **Change requests**: a round FAB on the home screen (shown to any user
+  who owns a character; Kurczaki dresses it as a chick's face with a `+`
+  badge) opens a form for requesting XP / gold / trait changes.
   Admins get an inbox action in the AppBar opening the queue, where each
   request can be accepted, edited-then-accepted, or rejected; a rejected
   request can be restored to pending by an admin, and a requester can cancel
@@ -276,10 +278,9 @@ characterName, email
   closes, so a dialog survives the app being killed). A first snapshot with
   no baseline seeds silently, and a **cache-only** first snapshot neither
   seeds nor announces. Revoking sends nothing.
-- **Quests**: the home screen's FAB is a speed-dial (`_QuestFab`) — it
-  replaces the old single-button FAB, rotating into a close icon and
-  revealing two labeled mini-FABs: "Zadania" (the tabbed `QuestsScreen`
-  below) and the existing "Prośba o zmianę" form. `QuestsScreen` has four
+- **Quests**: the home screen's `QuestsSummaryCard` (above the roster,
+  counting the user's assigned / open / awaiting-review quests) opens the
+  tabbed `QuestsScreen`; the FAB is change-request-only. `QuestsScreen` has four
   tabs: TABLICA (the open board, with a Podejmij action per quest), MOJE
   (ordinary quests assigned to or posted by your own characters, with
   Ukończ/Porzuć/Wycofaj actions, plus Edytuj on a still-open quest you
@@ -438,6 +439,33 @@ characterName, email
   `docs/superpowers/specs/2026-09-17-quest-deep-link-app-links-design.md`
   for the full design.
 
+- **Themes ("Wygląd")**: a palette icon in the home AppBar opens
+  `ThemePickerSheet` (`lib/features/theme/`), one previewed tile per
+  `AppThemeId`: **Kronika** (the original crimson/parchment look, the
+  default) and **Kurczaki** (straw, eggshell, comb red, yolk — with chicken
+  illustrations). The choice is per device, in SharedPreferences under
+  `app_theme` (`AppThemeRepository` / `appThemeProvider`), never Firestore,
+  so it already applies on the login screen; `LifeRpgApp` builds its
+  `ThemeData` from it. Everything themable lives in the `RpgTheme`
+  `ThemeExtension` (`lib/theme/rpg_theme.dart`): colours (role names
+  inherited from Kronika — `crimson` is "the accent", `parchment*` "card
+  surface / light text on a band", `bgDark` "the scaffold", even when
+  Kurczaki fills them with comb red and light straw), fonts, card shapes
+  and `decor`. `RpgDecor` (`lib/theme/decor.dart`) is Kronika's text
+  glyphs (✦ ❧ ⚔ ⟳) with every illustration hook returning null;
+  `KurczakiDecor` overrides them with the SVGs in `assets/kurczaki/`
+  (`KurczakArt`): chick heads flanking band labels, footprints in card
+  corners, a hen nesting on the character card (`Perched`, never taking
+  taps — it must not shadow the edit button), a chick running the XP bar,
+  a golden egg by the gold, trait values in eggs (only up to 3 characters;
+  longer legacy text stays text), badges drawn as metal eggs in straw
+  nests (`eggBadges`), the electronics count in a yolk-filling egg with a
+  thin Fredoka Light digit (`eggMedallion`), and scenes closing lists
+  (`FooterSceneView`) and the login screen. Kurczaki's display font is
+  **Baloo 2** — Fredoka has no Polish diacritics (ą ę ś ż…), so it ships
+  only in Light for that digit. See
+  `docs/superpowers/specs/2026-10-10-themes-design.md`.
+
 ## UI Language
 
 The UI is in **Polish**. Labels (Poziom, Złoto, XP, Przychylność, etc.) are verbatim from the retired React app and must never be translated. Four label styles render uppercase via `.toUpperCase()` at the point of use while the Dart string literals themselves stay in normal casing — don't "fix" the casing in the literals.
@@ -450,7 +478,18 @@ The UI is in **Polish**. Labels (Poziom, Złoto, XP, Przychylność, etc.) are v
   exists and therefore cannot route through a provider. `SharedPreferences.getInstance()`
   carries the identical rule and the identical one exception, via
   `lib/data/shared_preferences_provider.dart`'s `sharedPreferencesProvider`.
-- Colours are `const Color(0xAARRGGBB)` literals with alpha baked in.
+- Colours are `const Color(0xAARRGGBB)` literals with alpha baked in, and
+  live only in `RpgTheme`'s two instances (badge metals excepted — metal is
+  metal in every theme, so those stay constants in `app_theme.dart`).
+  Widgets read them as `context.rpg.<role>` — never a hard-coded palette
+  colour — so a new theme is a new `RpgTheme` (+ `RpgDecor`), not an edit
+  of every screen. Text and icons drawn straight on the scaffold use
+  `onBg` / `onBgMuted` / `onBgFaint` / `onBgGhost`, not `parchment*`
+  (light in Kronika, dark in Kurczaki's light straw); text on a card or a
+  band keeps the card/band roles. Card frames take
+  `cardRadius` / `cardBorderWidth` / `innerRadius` / `cardShadows()`.
+  Tests pumping a bare `MaterialApp` still work: `context.rpg` falls back to
+  `RpgTheme.kronika` when no extension is installed.
 - Firestore field names stay snake_case (`current_xp`, `next_level_xp`);
   Dart-side names are camelCase and mapped in the models.
 - `google-services.json`, `firebase_options.dart` and `android/key.properties`
