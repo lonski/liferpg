@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'decor.dart';
+import 'lagotto_decor.dart';
 
 /// The selectable looks. The persisted value is [name], so renaming a
 /// constant silently resets everyone's choice to the default.
 enum AppThemeId {
   kronika,
-  kurczaki;
+  kurczaki,
+  lagotto;
 
   static AppThemeId fromName(String? name) => AppThemeId.values.firstWhere(
         (id) => id.name == name,
@@ -16,6 +18,7 @@ enum AppThemeId {
   RpgTheme get theme => switch (this) {
         AppThemeId.kronika => RpgTheme.kronika,
         AppThemeId.kurczaki => RpgTheme.kurczaki,
+        AppThemeId.lagotto => RpgTheme.lagotto,
       };
 }
 
@@ -354,6 +357,83 @@ class RpgTheme extends ThemeExtension<RpgTheme> {
     actionFill: Color(0xFFFFC83D),
     onActionFill: Color(0xFF4A2A12),
     actionBorder: Color(0xFFB83224),
+  );
+
+  /// Curly Lagotto Romagnolo dogs hunting truffles in an oak wood: honey
+  /// gold, chocolate leather, arancio and cream -- see the "motyw Lagotto"
+  /// mockups referenced from its design doc.
+  static const RpgTheme lagotto = RpgTheme(
+    id: AppThemeId.lagotto,
+    decor: LagottoDecor(),
+    fontDisplay: 'Fraunces',
+    fontBody: 'Nunito',
+    crimsonDeep: Color(0xFF4A2C1A),
+    crimson: Color(0xFF6B4128),
+    crimsonBright: Color(0xFF8A5634),
+    gold: Color(0xFFE08A3C),
+    parchment: Color(0xFFF8EEDC),
+    parchmentLight: Color(0xFFFFFBF3),
+    parchmentDim: Color(0xFFECDABB),
+    inkDark: Color(0xFF3B2A20),
+    bgDark: Color(0xFFF2D58A),
+    inkHeading: Color(0xFF3B2A20),
+    traitNameInk: Color(0xFF6B4A35),
+    crimsonFaint: Color(0x1A6B4128),
+    crimsonBgFaint: Color(0x146B4128),
+    crimsonBorder: Color(0x596B4128),
+    crimsonBorderStrong: Color(0x736B4128),
+    crimsonBorderFaint: Color(0x336B4128),
+    ornamentInk: Color(0x8C6B4128),
+    goldBorder: Color(0xB3F3B866),
+    goldBorderFaint: Color(0x80F3B866),
+    goldGlyph: Color(0xCCF3B866),
+    goldSubtitle: Color(0xFF4A2C1A),
+    parchmentMuted: Color(0xB3FFF3E0),
+    parchmentSoft: Color(0xA6FFF3E0),
+    parchmentFaint: Color(0x8CFFF3E0),
+    parchmentMedium: Color(0x99FFF3E0),
+    parchmentGhost: Color(0x4DFFF3E0),
+    bandLabelColor: Color(0xFFFFF3E0),
+    onBg: Color(0xFF3B2A20),
+    onBgMuted: Color(0xD93B2A20),
+    onBgFaint: Color(0xA63B2A20),
+    onBgGhost: Color(0x8C3B2A20),
+    bgTint: Color(0x99FFFBF3),
+    cardMuted: Color(0xFF8A6A50),
+    cardShadowColor: Color(0x403B2A20),
+    dialogShadowColor: Color(0x663B2A20),
+    buttonShadowColor: Color(0x4D3B2A20),
+    cardLedgeColor: Color(0xFFC49A45),
+    goldBandDeep: Color(0xFFC86F2A),
+    bandGradient: LinearGradient(
+      colors: [Color(0xFF4A2C1A), Color(0xFF7A4A2C), Color(0xFF4A2C1A)],
+    ),
+    goldBandGradient: LinearGradient(
+      colors: [Color(0xFFC86F2A), Color(0xFFF0A55A), Color(0xFFC86F2A)],
+    ),
+    appBarGradient: LinearGradient(
+      colors: [Color(0xFF3F2516), Color(0xFF6B4128), Color(0xFF3F2516)],
+    ),
+    xpGradient: LinearGradient(colors: [Color(0xFFF3B866), Color(0xFFE08A3C)]),
+    buttonGradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF4A2C1A), Color(0xFF7A4A2C)],
+    ),
+    cardGradient: RadialGradient(
+      center: Alignment(0, -1),
+      radius: 1.2,
+      colors: [Color(0xFFFFFBF3), Color(0xFFF8EEDC), Color(0xFFECDABB)],
+      stops: [0.0, 0.6, 1.0],
+    ),
+    cardRadius: 20,
+    cardBorderWidth: 2.5,
+    innerRadius: 14,
+    buttonRadius: 12,
+    tileRadius: 16,
+    actionFill: Color(0xFFE08A3C),
+    onActionFill: Color(0xFF3B2A20),
+    actionBorder: Color(0xFF6B4128),
   );
 
   @override

@@ -57,8 +57,10 @@ void main() {
 
     expect(find.text('Kronika'), findsOneWidget);
     expect(find.text('Kurczaki'), findsOneWidget);
+    expect(find.text('Lagotto'), findsOneWidget);
     expect(find.byKey(const Key('theme-option-kronika')), findsOneWidget);
     expect(find.byKey(const Key('theme-option-kurczaki')), findsOneWidget);
+    expect(find.byKey(const Key('theme-option-lagotto')), findsOneWidget);
     // Only the active tile carries the check mark.
     expect(find.byIcon(Icons.check), findsOneWidget);
   });
@@ -76,6 +78,35 @@ void main() {
     expect(_activeTheme(tester), 'kurczaki');
     expect(find.byType(ThemePickerSheet), findsNothing);
     expect(prefs.getString('app_theme'), 'kurczaki');
+  });
+
+  testWidgets('choosing Lagotto, on the second row, re-themes the app',
+      (tester) async {
+    final prefs = await _pump(tester);
+    await tester.tap(find.byKey(const Key('open')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('theme-option-lagotto')));
+    await tester.tap(find.byKey(const Key('theme-option-lagotto')));
+    await tester.pumpAndSettle();
+
+    expect(_activeTheme(tester), 'lagotto');
+    expect(prefs.getString('app_theme'), 'lagotto');
+  });
+
+  testWidgets('three tiles fit a phone without overflowing', (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await _pump(tester);
+    await tester.tap(find.byKey(const Key('open')));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    // Two a row: Lagotto starts a second row under Kronika.
+    final kronika = tester.getTopLeft(find.byKey(const Key('theme-option-kronika')));
+    final lagotto = tester.getTopLeft(find.byKey(const Key('theme-option-lagotto')));
+    expect(lagotto.dx, kronika.dx);
+    expect(lagotto.dy, greaterThan(kronika.dy));
   });
 
   testWidgets('a remembered choice applies from the first frame', (tester) async {

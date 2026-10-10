@@ -1,9 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
 import 'decor.dart';
 
-export 'decor.dart' show BandOrnament, FooterScene, PerchSpot;
+export 'decor.dart' show BadgeShape, BandOrnament, FooterScene, MedallionShape, PerchSpot;
 
 /// A horizontal rule broken by the theme's glyph (✦ in Kronika), fading out
 /// towards the ends.
@@ -115,30 +117,32 @@ class TopBand extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.rpg;
-    return Container(
-      decoration: BoxDecoration(gradient: gradient ?? t.bandGradient),
-      padding: const EdgeInsets.fromLTRB(16, 7, 8, 7),
-      child: Row(
-        children: [
-          const SizedBox(width: 32),
-          Expanded(
-            child: Center(
-              child: t.decor.ornamentedLabel(
-                context,
-                label.toUpperCase(),
-                TextStyle(
-                  fontFamily: t.fontDisplay,
-                  fontSize: 12,
-                  fontWeight: t.id == AppThemeId.kronika ? null : FontWeight.w600,
-                  letterSpacing: 4,
-                  color: labelColor ?? t.bandLabelColor,
+    return Stitched(
+      child: Container(
+        decoration: BoxDecoration(gradient: gradient ?? t.bandGradient),
+        padding: const EdgeInsets.fromLTRB(16, 7, 8, 7),
+        child: Row(
+          children: [
+            const SizedBox(width: 32),
+            Expanded(
+              child: Center(
+                child: t.decor.ornamentedLabel(
+                  context,
+                  label.toUpperCase(),
+                  TextStyle(
+                    fontFamily: t.fontDisplay,
+                    fontSize: 12,
+                    fontWeight: t.id == AppThemeId.kronika ? null : FontWeight.w600,
+                    letterSpacing: 4,
+                    color: labelColor ?? t.bandLabelColor,
+                  ),
+                  ornament: ornament,
                 ),
-                ornament: ornament,
               ),
             ),
-          ),
-          SizedBox(width: 32, child: trailing),
-        ],
+            SizedBox(width: 32, child: trailing),
+          ],
+        ),
       ),
     );
   }
@@ -154,13 +158,54 @@ class BottomBand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(gradient: gradient ?? context.rpg.bandGradient),
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      alignment: Alignment.center,
-      child: context.rpg.decor.bottomBandContent(context, label),
+    return Stitched(
+      child: Container(
+        decoration: BoxDecoration(gradient: gradient ?? context.rpg.bandGradient),
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        alignment: Alignment.center,
+        child: context.rpg.decor.bottomBandContent(context, label),
+      ),
     );
   }
+}
+
+/// [child] (a band) with a dashed seam along its top and bottom edges when
+/// the theme stitches its bands (Lagotto's leather collar); otherwise just
+/// [child].
+class Stitched extends StatelessWidget {
+  const Stitched({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.rpg;
+    if (!t.decor.stitchedBands) return child;
+    return CustomPaint(foregroundPainter: _SeamPainter(t.parchmentGhost), child: child);
+  }
+}
+
+class _SeamPainter extends CustomPainter {
+  const _SeamPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final seam = Paint()
+      ..color = color
+      ..strokeWidth = 1.5;
+    // Inset from the ends, clear of a card's rounded corners.
+    const inset = 16.0, dash = 5.0, gap = 3.5, edge = 3.0;
+    for (final y in [edge, size.height - edge]) {
+      for (var x = inset; x < size.width - inset; x += dash + gap) {
+        canvas.drawLine(Offset(x, y), Offset(math.min(x + dash, size.width - inset), y), seam);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SeamPainter old) => old.color != color;
 }
 
 /// A centred label between two hairlines -- the Cechy / Dni elektroniki

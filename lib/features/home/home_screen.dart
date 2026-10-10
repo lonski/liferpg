@@ -248,7 +248,7 @@ class _ChangeRequestFab extends StatelessWidget {
     return FloatingActionButton(
       key: const Key('change-request-fab'),
       tooltip: 'Prośba o zmianę',
-      backgroundColor: const Color(0xFFFFD23F),
+      backgroundColor: t.actionFill,
       shape: CircleBorder(side: BorderSide(color: t.inkHeading, width: 3)),
       onPressed: open,
       child: Stack(

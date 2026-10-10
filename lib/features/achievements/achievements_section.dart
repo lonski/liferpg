@@ -150,7 +150,7 @@ class _Tile extends StatelessWidget {
                     ),
                 ],
               ),
-              SizedBox(height: context.rpg.decor.eggBadges ? 10 : 2),
+              SizedBox(height: context.rpg.decor.badgeShape == BadgeShape.egg ? 10 : 2),
               Text(
                 achievement.title,
                 textAlign: TextAlign.center,

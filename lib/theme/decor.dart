@@ -19,6 +19,14 @@ enum PerchSpot {
 /// Where a theme may stage a scene below the last item of a list.
 enum FooterScene { home, quests, achievements }
 
+/// How an achievement badge is cast: Kronika's ribboned medal, Kurczaki's
+/// metal egg, Lagotto's bone-shaped dog tag.
+enum BadgeShape { medal, egg, boneTag }
+
+/// What holds the electronics-days count: Kronika's ring, Kurczaki's
+/// yolk-filling egg, Lagotto's paw pad.
+enum MedallionShape { ring, egg, paw }
+
 /// An illustration seated on a card's top edge: [art] rises [rise] px above
 /// the card and sits [inset] px in from the [left] or right side. Keep
 /// [rise] within a few px of the art's height, so it rests on the frame
@@ -125,8 +133,8 @@ class RpgDecor {
   /// Holds a trait's value in place of the bold text; null keeps the text.
   Widget? traitValue(BuildContext context, String value) => null;
 
-  /// Badges drawn as metal eggs rather than ribboned medals.
-  bool get eggBadges => false;
+  /// How an achievement badge is drawn.
+  BadgeShape get badgeShape => BadgeShape.medal;
 
   /// Under a badge in the card section and the gallery.
   Widget? badgeNest(BuildContext context, double width) => null;
@@ -134,14 +142,18 @@ class RpgDecor {
   /// Stages the big badge on its detail screen; the base shows it alone.
   Widget badgeHero(BuildContext context, Widget badge) => badge;
 
-  /// The electronics count drawn in a yolk-filling egg rather than a ring.
-  bool get eggMedallion => false;
+  /// What holds the electronics count.
+  MedallionShape get medallionShape => MedallionShape.ring;
 
   /// A count shown in an egg (the quests summary); null keeps the disk.
   Widget? countEgg(BuildContext context, int count) => null;
 
   /// Paints the scaffold behind [child]; the base leaves it plain.
   Widget backdrop(BuildContext context, Widget child) => child;
+
+  /// Bands stitched like a leather collar: a dashed seam along each long
+  /// edge (see [Stitched]).
+  bool get stitchedBands => false;
 }
 
 class KronikaDecor extends RpgDecor {
@@ -408,7 +420,7 @@ class KurczakiDecor extends RpgDecor {
       : _EggNumber(value: value, width: 18, height: 22, fontSize: 11);
 
   @override
-  bool get eggBadges => true;
+  BadgeShape get badgeShape => BadgeShape.egg;
 
   @override
   Widget? badgeNest(BuildContext context, double width) => KurczakArt(
@@ -462,7 +474,7 @@ class KurczakiDecor extends RpgDecor {
   );
 
   @override
-  bool get eggMedallion => true;
+  MedallionShape get medallionShape => MedallionShape.egg;
 
   @override
   Widget? countEgg(BuildContext context, int count) => _EggNumber(

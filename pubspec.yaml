@@ -119,9 +119,20 @@ flutter:
           weight: 800
         - asset: assets/fonts/Nunito-Italic.ttf
           style: italic
+    # Lagotto theme. Static instances of the variable Fraunces (SOFT 100,
+    # WONK 0, opsz 36), subset to Latin + Latin Extended (Polish).
+    - family: Fraunces
+      fonts:
+        - asset: assets/fonts/Fraunces-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Fraunces-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Fraunces-ExtraBold.ttf
+          weight: 800
 
   assets:
     - assets/kurczaki/
+    - assets/lagotto/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

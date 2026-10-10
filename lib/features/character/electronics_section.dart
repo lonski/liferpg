@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/electronics_days.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/decor.dart' show eggPath;
+import '../../theme/decor.dart' show MedallionShape, eggPath;
+import '../../theme/lagotto_decor.dart' show pawPadPath, pawToePaths;
 import '../../theme/ornaments.dart';
 
 TextStyle _headline(BuildContext context) => TextStyle(
@@ -159,7 +160,8 @@ class _Medallion extends StatelessWidget {
       ElectronicsCardState.claimed => (t.crimson, t.parchmentLight, Icons.close),
       _ => null,
     };
-    final egg = t.decor.eggMedallion;
+    final shape = t.decor.medallionShape;
+    final egg = shape == MedallionShape.egg;
 
     return SizedBox(
       key: const Key('electronics-ring'),
@@ -169,9 +171,11 @@ class _Medallion extends StatelessWidget {
         children: [
           Positioned.fill(
             child: CustomPaint(
-              painter: egg
-                  ? _EggPainter(fraction: dayFraction, state: state, theme: t)
-                  : _RingPainter(fraction: dayFraction, state: state, theme: t),
+              painter: switch (shape) {
+                MedallionShape.egg => _EggPainter(fraction: dayFraction, state: state, theme: t),
+                MedallionShape.paw => _PawPainter(fraction: dayFraction, state: state, theme: t),
+                MedallionShape.ring => _RingPainter(fraction: dayFraction, state: state, theme: t),
+              },
             ),
           ),
           if (egg)
@@ -192,6 +196,29 @@ class _Medallion extends StatelessWidget {
                     fontFamily: 'Fredoka',
                     fontSize: 46,
                     fontWeight: FontWeight.w300,
+                    height: 1,
+                    color: t.inkHeading,
+                  ),
+                ),
+              ),
+            )
+          else if (shape == MedallionShape.paw)
+            // The count sits on the paw's main pad.
+            Positioned(
+              left: 13,
+              right: 13,
+              top: 27,
+              bottom: 7,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '$available',
+                  key: const Key('electronics-count'),
+                  textScaler: TextScaler.noScaling,
+                  style: TextStyle(
+                    fontFamily: t.fontDisplay,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
                     height: 1,
                     color: t.inkHeading,
                   ),
@@ -352,5 +379,61 @@ class _EggPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_EggPainter old) =>
+      old.fraction != fraction || old.state != state || old.theme != theme;
+}
+
+/// Lagotto's medallion: a paw print whose main pad fills with orange from
+/// the bottom over the day (paler while a claim is pending), drawn dashed
+/// and empty once today is claimed.
+class _PawPainter extends CustomPainter {
+  _PawPainter({required this.fraction, required this.state, required this.theme});
+
+  final double fraction;
+  final ElectronicsCardState state;
+  final RpgTheme theme;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final claimed = state == ElectronicsCardState.claimed;
+    final pad = pawPadPath(size);
+    final outline = Paint()
+      ..color = claimed ? theme.crimsonBorder : theme.crimson
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4;
+    void stroke(Path path) {
+      if (!claimed) {
+        canvas.drawPath(path, outline);
+        return;
+      }
+      for (final metric in path.computeMetrics()) {
+        for (var d = 0.0; d < metric.length; d += 6) {
+          canvas.drawPath(metric.extractPath(d, d + 3), outline);
+        }
+      }
+    }
+
+    for (final toe in pawToePaths(size)) {
+      canvas.drawPath(toe, Paint()..color = theme.parchmentLight);
+      stroke(toe);
+    }
+    canvas.drawPath(pad, Paint()..color = theme.parchmentLight);
+    if (!claimed) {
+      final bounds = pad.getBounds();
+      final level = bounds.bottom - bounds.height * fraction.clamp(0.0, 1.0);
+      canvas.save();
+      canvas.clipPath(pad);
+      canvas.drawRect(
+        Rect.fromLTRB(0, level, size.width, size.height),
+        Paint()
+          ..color = theme.gold.withValues(
+              alpha: state == ElectronicsCardState.pending ? 0.3 : 0.7),
+      );
+      canvas.restore();
+    }
+    stroke(pad);
+  }
+
+  @override
+  bool shouldRepaint(_PawPainter old) =>
       old.fraction != fraction || old.state != state || old.theme != theme;
 }

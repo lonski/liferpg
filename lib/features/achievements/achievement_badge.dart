@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import '../../models/achievement.dart';
 import '../../models/achievement_formatting.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/decor.dart' show eggPath;
+import '../../theme/decor.dart' show BadgeShape, eggPath;
+import '../../theme/lagotto_decor.dart' show bonePath;
 
 /// One tier's ring colours. Instances are const and canonical per tier.
 class BadgeMetal {
@@ -78,8 +79,13 @@ class AchievementBadge extends StatelessWidget {
         : emblem;
     final icon = _iconFor(shown);
     final s = size / 120;
-    if (context.rpg.decor.eggBadges) {
-      return _EggBadge(metal: metal, icon: icon, place: place, size: size, tier: tier);
+    switch (context.rpg.decor.badgeShape) {
+      case BadgeShape.egg:
+        return _EggBadge(metal: metal, icon: icon, place: place, size: size, tier: tier);
+      case BadgeShape.boneTag:
+        return _BoneTagBadge(metal: metal, icon: icon, place: place, size: size, tier: tier);
+      case BadgeShape.medal:
+        break;
     }
     return Semantics(
       label: 'Odznaka ${tierAdjective(tier)}',
@@ -242,6 +248,127 @@ class _EggBadgePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_EggBadgePainter old) =>
+      old.metal != metal || old.theme != theme || old.ruby != ruby;
+}
+
+/// Lagotto's badge: a bone-shaped dog tag cast in the tier's metal, hung
+/// from a split ring, with an accent bone inset carrying the emblem. Drawn
+/// on a 60×46 grid scaled to [size] (the width), at the foot of the medal's
+/// [size] × 1.25 [size] footprint.
+class _BoneTagBadge extends StatelessWidget {
+  const _BoneTagBadge({
+    required this.metal,
+    required this.icon,
+    required this.place,
+    required this.size,
+    required this.tier,
+  });
+
+  final BadgeMetal metal;
+  final IconData? icon;
+  final int? place;
+  final double size;
+  final AchievementTier tier;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.rpg;
+    final s = size / 60;
+    return Semantics(
+      label: 'Odznaka ${tierAdjective(tier)}',
+      image: true,
+      excludeSemantics: true,
+      child: SizedBox(
+        width: size,
+        height: size * 1.25,
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: SizedBox(
+            width: size,
+            height: 46 * s,
+            child: CustomPaint(
+              painter: _BoneTagPainter(metal, t, ruby: tier == AchievementTier.ruby),
+              child: Padding(
+                // The inset bone's shaft, where the emblem sits.
+                padding: EdgeInsets.only(left: 20 * s, right: 20 * s, top: 22 * s, bottom: 13 * s),
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: icon != null
+                        ? Icon(icon, size: 13 * s, color: metal.emblem)
+                        : Text(
+                            romanPlace(place!),
+                            textScaler: TextScaler.noScaling,
+                            style: TextStyle(
+                              fontFamily: t.fontDisplay,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12 * s,
+                              height: 1,
+                              color: metal.emblem,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BoneTagPainter extends CustomPainter {
+  _BoneTagPainter(this.metal, this.theme, {required this.ruby});
+
+  final BadgeMetal metal;
+  final RpgTheme theme;
+  final bool ruby;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width / 60;
+    Paint stroke(Color color, double width) => Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width * s;
+
+    // The split ring it hangs from.
+    canvas.drawCircle(Offset(30 * s, 7 * s), 5 * s, stroke(metal.dark, 2.2));
+    canvas.drawCircle(Offset(30 * s, 7 * s), 5 * s, stroke(metal.light, 0.8));
+
+    final outer = bonePath(Size(58 * s, 34 * s)).shift(Offset(1 * s, 11 * s));
+    canvas.drawPath(
+      outer,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [metal.light, metal.mid, metal.dark],
+          stops: const [0, 0.55, 1],
+        ).createShader(outer.getBounds()),
+    );
+    canvas.drawPath(outer, stroke(ruby ? metal.rim : theme.inkHeading, ruby ? 2 : 1.6));
+    // The hole the ring passes through.
+    canvas.drawCircle(Offset(30 * s, 14.5 * s), 1.8 * s, Paint()..color = metal.dark);
+
+    final inner = bonePath(Size(40 * s, 22 * s)).shift(Offset(10 * s, 17 * s));
+    canvas.drawPath(inner, Paint()..color = theme.crimson);
+    canvas.drawPath(inner, stroke(metal.dark, 1.2));
+
+    // A highlight on the metal.
+    canvas.save();
+    canvas.translate(12 * s, 20 * s);
+    canvas.rotate(0.6);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: 4.4 * s, height: 8.8 * s),
+      Paint()..color = const Color(0x80FFFFFF),
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_BoneTagPainter old) =>
       old.metal != metal || old.theme != theme || old.ruby != ruby;
 }
 

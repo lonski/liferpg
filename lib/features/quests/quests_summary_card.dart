@@ -54,76 +54,78 @@ class QuestsSummaryCard extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              decoration: BoxDecoration(gradient: context.rpg.bandGradient),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  if (countEgg != null)
-                    countEgg
-                  else
-                  Container(
-                    width: 34,
-                    height: 34,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: hasAssigned ? context.rpg.crimsonBright : context.rpg.crimsonBorderStrong,
-                      border: Border.all(
-                        color: hasAssigned ? context.rpg.gold : context.rpg.goldBorderFaint,
-                        width: hasAssigned ? 2 : 1.5,
+            Stitched(
+              child: Container(
+                decoration: BoxDecoration(gradient: context.rpg.bandGradient),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    if (countEgg != null)
+                      countEgg
+                    else
+                    Container(
+                      width: 34,
+                      height: 34,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: hasAssigned ? context.rpg.crimsonBright : context.rpg.crimsonBorderStrong,
+                        border: Border.all(
+                          color: hasAssigned ? context.rpg.gold : context.rpg.goldBorderFaint,
+                          width: hasAssigned ? 2 : 1.5,
+                        ),
+                        boxShadow: hasAssigned
+                            ? [BoxShadow(color: context.rpg.goldGlyph, blurRadius: 8)]
+                            : null,
                       ),
-                      boxShadow: hasAssigned
-                          ? [BoxShadow(color: context.rpg.goldGlyph, blurRadius: 8)]
-                          : null,
+                      child: hasAssigned
+                          ? Text(
+                              '$assignedCount',
+                              style: TextStyle(
+                                fontFamily: context.rpg.fontDisplay,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: context.rpg.parchmentLight,
+                              ),
+                            )
+                          : Icon(Icons.check, size: 16, color: context.rpg.parchmentSoft),
                     ),
-                    child: hasAssigned
-                        ? Text(
-                            '$assignedCount',
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            hasAssigned
+                                ? 'ZADANIA DO WYKONANIA'
+                                : 'BRAK PRZYPISANYCH ZADAŃ',
                             style: TextStyle(
                               fontFamily: context.rpg.fontDisplay,
                               fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: context.rpg.parchmentLight,
+                              fontSize: hasAssigned ? 12.5 : 12,
+                              letterSpacing: 1,
+                              color: hasAssigned ? context.rpg.parchmentLight : context.rpg.bandLabelColor,
                             ),
-                          )
-                        : Icon(Icons.check, size: 16, color: context.rpg.parchmentSoft),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          hasAssigned
-                              ? 'ZADANIA DO WYKONANIA'
-                              : 'BRAK PRZYPISANYCH ZADAŃ',
-                          style: TextStyle(
-                            fontFamily: context.rpg.fontDisplay,
-                            fontWeight: FontWeight.w700,
-                            fontSize: hasAssigned ? 12.5 : 12,
-                            letterSpacing: 1,
-                            color: hasAssigned ? context.rpg.parchmentLight : context.rpg.bandLabelColor,
                           ),
-                        ),
-                        Text(
-                          hasAssigned ? 'Przypisane do Ciebie' : 'Wszystko zrobione',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            fontSize: 9,
-                            color: hasAssigned ? context.rpg.parchmentSoft : context.rpg.parchmentFaint,
+                          Text(
+                            hasAssigned ? 'Przypisane do Ciebie' : 'Wszystko zrobione',
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              fontSize: 9,
+                              color: hasAssigned ? context.rpg.parchmentSoft : context.rpg.parchmentFaint,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Icon(
-                    Icons.chevron_right,
-                    color: hasAssigned ? context.rpg.gold : context.rpg.goldGlyph,
-                    size: 18,
-                  ),
-                ],
+                    Icon(
+                      Icons.chevron_right,
+                      color: hasAssigned ? context.rpg.gold : context.rpg.goldGlyph,
+                      size: 18,
+                    ),
+                  ],
+                ),
               ),
             ),
             Container(

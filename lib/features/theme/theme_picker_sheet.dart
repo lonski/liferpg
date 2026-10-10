@@ -10,6 +10,8 @@ import '../../theme/ornaments.dart';
 /// this device) and closes the sheet.
 Future<void> showThemePicker(BuildContext context) => showModalBottomSheet<void>(
       context: context,
+      // Two rows of tiles outgrow the default 9/16-of-the-screen cap.
+      isScrollControlled: true,
       backgroundColor: context.rpg.parchmentLight,
       shape: RoundedRectangleBorder(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -24,11 +26,13 @@ class ThemePickerSheet extends ConsumerWidget {
   static String nameOf(AppThemeId id) => switch (id) {
         AppThemeId.kronika => 'Kronika',
         AppThemeId.kurczaki => 'Kurczaki',
+        AppThemeId.lagotto => 'Lagotto',
       };
 
   static String blurbOf(AppThemeId id) => switch (id) {
         AppThemeId.kronika => 'karmazyn i pergamin',
         AppThemeId.kurczaki => 'słoma, jajka, grzebień',
+        AppThemeId.lagotto => 'loki, trufle, dębowy las',
       };
 
   @override
@@ -36,49 +40,59 @@ class ThemePickerSheet extends ConsumerWidget {
     final t = context.rpg;
     final selected = ref.watch(appThemeProvider);
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            OrnamentedLabel(
-              'Wygląd',
-              style: TextStyle(
-                fontFamily: t.fontDisplay,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 3,
-                color: t.crimson,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              OrnamentedLabel(
+                'Wygląd',
+                style: TextStyle(
+                  fontFamily: t.fontDisplay,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 3,
+                  color: t.crimson,
+                ),
               ),
-            ),
-            Text(
-              'Zapamiętany na tym urządzeniu',
-              style: TextStyle(
-                fontFamily: t.fontBody,
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-                color: t.traitNameInk,
+              Text(
+                'Zapamiętany na tym urządzeniu',
+                style: TextStyle(
+                  fontFamily: t.fontBody,
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  color: t.traitNameInk,
+                ),
               ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                for (final id in AppThemeId.values) ...[
-                  if (id != AppThemeId.values.first) const SizedBox(width: 12),
-                  Expanded(
-                    child: _ThemeTile(
-                      id: id,
-                      selected: id == selected,
-                      onTap: () {
-                        ref.read(appThemeProvider.notifier).select(id);
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
+              const SizedBox(height: 14),
+              // Two tiles a row: three abreast leaves each preview too narrow
+              // for its band label on a phone.
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = (constraints.maxWidth - 12) / 2;
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      for (final id in AppThemeId.values)
+                        SizedBox(
+                          width: width,
+                          child: _ThemeTile(
+                            id: id,
+                            selected: id == selected,
+                            onTap: () {
+                              ref.read(appThemeProvider.notifier).select(id);
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
