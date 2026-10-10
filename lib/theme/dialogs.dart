@@ -14,9 +14,11 @@ const TextStyle dialogActionStyle = TextStyle(
 /// button) so a confirm step never reads as a foreign widget dropped onto
 /// the dark scaffold. Returns `true` only if [confirmKey]'s button was
 /// tapped; `false` for "cancel" or dismissing the dialog any other way.
+/// [message], when given, is shown as the dialog's body.
 Future<bool> showConfirmDialog(
   BuildContext context, {
   required String title,
+  String? message,
   required String cancelLabel,
   required String confirmLabel,
   required Key confirmKey,
@@ -40,6 +42,17 @@ Future<bool> showConfirmDialog(
           color: inkHeading,
         ),
       ),
+      content: message == null
+          ? null
+          : Text(
+              message,
+              style: const TextStyle(
+                fontFamily: fontBody,
+                fontSize: 13,
+                height: 1.5,
+                color: inkDark,
+              ),
+            ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
