@@ -10,6 +10,7 @@ import 'data/flutter_local_notifications_change_request_service.dart';
 import 'data/plugin_update_installer_service.dart';
 import 'data/quest_deep_link.dart';
 import 'data/shared_preferences_provider.dart';
+import 'features/achievements/achievement_celebration_host.dart';
 import 'features/home/home_screen.dart';
 import 'features/login/login_screen.dart';
 import 'features/quests/quest_detail_screen.dart';
@@ -17,6 +18,7 @@ import 'features/quests/quests_screen.dart';
 import 'features/requests/change_requests_screen.dart';
 import 'features/requests/new_change_request_screen.dart';
 import 'firebase_options.dart';
+import 'providers/achievement_notification_providers.dart';
 import 'providers/auth_providers.dart';
 import 'providers/change_request_notification_providers.dart';
 import 'providers/quest_notification_providers.dart';
@@ -124,7 +126,10 @@ class AuthGate extends ConsumerWidget {
             // streams are watched even while the user is elsewhere in the app.
             ref.watch(changeRequestNotificationsProvider);
             ref.watch(questNotificationsProvider);
-            return const _PendingQuestLinkGate(child: HomeScreen());
+            ref.watch(achievementNotificationsProvider);
+            return const _PendingQuestLinkGate(
+              child: AchievementCelebrationHost(child: HomeScreen()),
+            );
           },
           loading: () => const Scaffold(
             backgroundColor: bgDark,
