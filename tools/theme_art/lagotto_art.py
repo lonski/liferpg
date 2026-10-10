@@ -257,6 +257,21 @@ def ground(width, height, soil='#B98A5A', moss='#8FA852', edge='#5E7A35', seed=0
             f'<path d="M0 {top + 10}H{w}" stroke="{edge}" stroke-width="2"></path>')
 
 
+def drop():
+    """A water drop shaken off a wet coat, 24 x 24."""
+    return (f'<path d="M12 2.5C9 7.5 5.5 11.5 5.5 15.5a6.5 6.5 0 0 0 13 0C18.5 11.5 15 7.5 12 2.5z" '
+            f'fill="#8EC9E8" stroke="#2F6F94" stroke-width="1.6" stroke-linejoin="round"></path>'
+            f'<path d="M9 14.5c0 1.8 1 3 2.4 3.4" stroke="#FFFFFF" stroke-width="1.6" fill="none" '
+            f'stroke-linecap="round" opacity=".8"></path>')
+
+
+def heart():
+    """A heart floating up from a scratched dog, 24 x 24."""
+    return (f'<path d="M12 20.5C6 16.5 2.5 13 2.5 8.8A4.8 4.8 0 0 1 12 6.5a4.8 4.8 0 0 1 9.5 2.3c0 4.2-3.5 7.7-9.5 11.7z" '
+            f'fill="#E8646A" stroke="{INK}" stroke-width="1.6" stroke-linejoin="round"></path>'
+            f'<ellipse cx="7.5" cy="9" rx="1.6" ry="2.2" fill="#FFFFFF" opacity=".55"></ellipse>')
+
+
 # ---------------------------------------------------------------- assets
 
 def asset(vb, body):
@@ -281,6 +296,8 @@ ASSETS = {
     'oak_leaf_brown': ('-1 -6 26 26', lambda: oak_leaf_body('#C98A4A', '#7A4A1E')),
     'oak_tree': ('0 0 90 124', lambda: oak_tree(2, 2)),
     'ground': ('0 0 400 56', lambda: ground(400, 56)),
+    'drop': ('0 0 24 24', drop),
+    'heart': ('0 0 24 24', heart),
 }
 
 

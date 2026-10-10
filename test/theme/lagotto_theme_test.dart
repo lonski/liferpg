@@ -10,6 +10,7 @@ import 'package:liferpg/features/quests/quests_screen.dart';
 import 'package:liferpg/theme/app_theme.dart';
 import 'package:liferpg/theme/decor.dart';
 import 'package:liferpg/theme/lagotto_decor.dart';
+import 'package:liferpg/theme/lively_lagotto.dart';
 import 'package:liferpg/theme/ornaments.dart';
 
 import 'theme_test_support.dart';
@@ -31,6 +32,39 @@ void main() {
       expect(find.text('3'), findsWidgets);
       // Bands are stitched.
       expect(find.byType(Stitched), findsWidgets);
+    });
+
+    testWidgets('the dog asleep on the character card answers a tap', (tester) async {
+      await pumpThemed(tester, const HomeScreen(), RpgTheme.lagotto);
+      final dog = find.byWidgetPredicate(
+        (w) => w is LivelyLagotto && w.art == Lagotto.dogLie,
+      );
+      expect(dog, findsOneWidget);
+
+      await tester.tap(dog);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(
+        find.byWidgetPredicate((w) =>
+            w is Text && LivelyLagotto.linesOf(LagottoVoice.sleepy).contains(w.data)),
+        findsOneWidget,
+      );
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('art inside a tap target stays still', (tester) async {
+      await pumpThemed(tester, const HomeScreen(), RpgTheme.lagotto);
+      // The AppBar logo, the band glyphs and the FAB face.
+      expect(
+        find.byWidgetPredicate((w) =>
+            w is LivelyLagotto &&
+            (w.art == Lagotto.dogFace || w.art == Lagotto.dogFaceTongue)),
+        findsNothing,
+      );
+      // The puppy riding the XP bar (the bar toggles the XP hint).
+      expect(
+        find.byWidgetPredicate((w) => w is LivelyLagotto && w.width == 36),
+        findsNothing,
+      );
     });
 
     testWidgets('the quests, login and badge screens render', (tester) async {

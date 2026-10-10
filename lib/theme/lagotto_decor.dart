@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'decor.dart';
+import 'lively_lagotto.dart';
 import 'rpg_theme.dart';
 
 /// The assets under assets/lagotto/, drawn by tools/theme_art/lagotto_art.py.
@@ -25,7 +26,9 @@ enum Lagotto {
   oakLeaf('oak_leaf'),
   oakLeafBrown('oak_leaf_brown'),
   oakTree('oak_tree'),
-  ground('ground');
+  ground('ground'),
+  drop('drop'),
+  heart('heart');
 
   const Lagotto(this.file);
 
@@ -211,8 +214,9 @@ class LagottoDecor extends RpgDecor {
   }
 
   @override
-  Widget loginEmblem(BuildContext context) => const LagottoArt(
+  Widget loginEmblem(BuildContext context) => const LivelyLagotto(
         Lagotto.dogSit,
+        voice: LagottoVoice.dog,
         width: 150,
         height: 162,
         label: 'Lagotto romagnolo',
@@ -230,23 +234,23 @@ class LagottoDecor extends RpgDecor {
         // The card sits 8 px down its margin; the dog's paws rest on the frame.
         PerchSpot.characterCard => const Perch(art: _CardDen(), rise: 66, inset: 0),
         PerchSpot.questsSummary => const Perch(
-            art: LagottoArt(Lagotto.puppy, width: 50, height: 40),
+            art: LivelyLagotto(Lagotto.puppy, voice: LagottoVoice.puppy, width: 50, height: 40),
             rise: 37,
             inset: 52,
           ),
         PerchSpot.questCard => const Perch(
-            art: LagottoArt(Lagotto.puppy, width: 56, height: 45, flip: true),
+            art: LivelyLagotto(Lagotto.puppy, voice: LagottoVoice.puppy, width: 56, height: 45, flip: true),
             rise: 42,
             inset: 26,
           ),
         PerchSpot.dailyQuest => const Perch(
-            art: LagottoArt(Lagotto.dogSitBrown, width: 60, height: 65),
+            art: LivelyLagotto(Lagotto.dogSitBrown, voice: LagottoVoice.dog, width: 60, height: 65),
             rise: 61,
             inset: 14,
             left: true,
           ),
         PerchSpot.achievementsSummary => const Perch(
-            art: LagottoArt(Lagotto.puppyWhite, width: 62, height: 50),
+            art: LivelyLagotto(Lagotto.puppyWhite, voice: LagottoVoice.puppy, width: 62, height: 50),
             rise: 47,
             inset: 18,
           ),
@@ -257,7 +261,7 @@ class LagottoDecor extends RpgDecor {
 
   @override
   Widget? questsTitleMascot(BuildContext context) =>
-      const LagottoArt(Lagotto.dogSit, width: 40, height: 43);
+      const LivelyLagotto(Lagotto.dogSit, voice: LagottoVoice.dog, width: 40, height: 43);
 
   @override
   Widget? xpRunner(BuildContext context) =>
@@ -293,12 +297,12 @@ class LagottoDecor extends RpgDecor {
             const Positioned(
               left: 0,
               bottom: 0,
-              child: LagottoArt(Lagotto.dogSit, width: 90, height: 97, label: 'Dumny lagotto'),
+              child: LivelyLagotto(Lagotto.dogSit, voice: LagottoVoice.dog, width: 90, height: 97, label: 'Dumny lagotto'),
             ),
             const Positioned(
               right: 8,
               bottom: 2,
-              child: LagottoArt(Lagotto.puppy, width: 58, height: 46, flip: true),
+              child: LivelyLagotto(Lagotto.puppy, voice: LagottoVoice.puppy, width: 58, height: 46, flip: true),
             ),
             Positioned(bottom: 0, child: badge),
           ],
@@ -484,7 +488,7 @@ class _CardDen extends StatelessWidget {
             Positioned(
               right: 30,
               bottom: 0,
-              child: LagottoArt(Lagotto.dogLie, width: 150, height: 77, label: 'Lagotto drzemie'),
+              child: LivelyLagotto(Lagotto.dogLie, voice: LagottoVoice.sleepy, width: 150, height: 77, label: 'Lagotto drzemie'),
             ),
           ],
         ),
@@ -501,19 +505,19 @@ class _WoodFloor extends StatelessWidget {
   Widget build(BuildContext context) {
     final cast = switch (scene) {
       FooterScene.home => const [
-          Positioned(left: 14, bottom: 30, child: LagottoArt(Lagotto.dogSniff, width: 118, height: 95, label: 'Lagotto szuka trufli')),
+          Positioned(left: 14, bottom: 30, child: LivelyLagotto(Lagotto.dogSniff, voice: LagottoVoice.dog, width: 118, height: 95, label: 'Lagotto szuka trufli')),
           Positioned(left: 134, bottom: 30, child: LagottoArt(Lagotto.truffle, width: 26, height: 26)),
-          Positioned(left: 176, bottom: 34, child: LagottoArt(Lagotto.puppyWhite, width: 60, height: 48, flip: true)),
+          Positioned(left: 176, bottom: 34, child: LivelyLagotto(Lagotto.puppyWhite, voice: LagottoVoice.puppy, width: 60, height: 48, flip: true, runs: true)),
         ],
       FooterScene.quests => const [
-          Positioned(left: 12, bottom: 28, child: LagottoArt(Lagotto.dogLieBrown, width: 140, height: 72, label: 'Lagotto śpi')),
+          Positioned(left: 12, bottom: 28, child: LivelyLagotto(Lagotto.dogLieBrown, voice: LagottoVoice.sleepy, width: 140, height: 72, label: 'Lagotto śpi')),
           Positioned(left: 170, bottom: 30, child: LagottoArt(Lagotto.basket, width: 64, height: 43)),
-          Positioned(right: 26, bottom: 32, child: LagottoArt(Lagotto.puppyWhite, width: 62, height: 50, flip: true)),
+          Positioned(right: 26, bottom: 32, child: LivelyLagotto(Lagotto.puppyWhite, voice: LagottoVoice.puppy, width: 62, height: 50, flip: true, runs: true)),
         ],
       FooterScene.achievements => const [
-          Positioned(left: 60, bottom: 28, child: LagottoArt(Lagotto.dogSit, width: 76, height: 82, label: 'Lagotto pilnuje złotej trufli')),
+          Positioned(left: 60, bottom: 28, child: LivelyLagotto(Lagotto.dogSit, voice: LagottoVoice.dog, width: 76, height: 82, label: 'Lagotto pilnuje złotej trufli')),
           Positioned(left: 150, bottom: 30, child: LagottoArt(Lagotto.truffleGold, width: 32, height: 32)),
-          Positioned(left: 196, bottom: 32, child: LagottoArt(Lagotto.puppy, width: 58, height: 46, flip: true)),
+          Positioned(left: 196, bottom: 32, child: LivelyLagotto(Lagotto.puppy, voice: LagottoVoice.puppy, width: 58, height: 46, flip: true, runs: true)),
         ],
     };
     return SizedBox(
@@ -557,9 +561,9 @@ class _LoginWood extends StatelessWidget {
               height: 64,
               child: LagottoArt(Lagotto.ground, fit: BoxFit.fill),
             ),
-            Positioned(left: 50, bottom: 38, child: LagottoArt(Lagotto.dogSniff, width: 124, height: 100, label: 'Lagotto węszy')),
+            Positioned(left: 50, bottom: 38, child: LivelyLagotto(Lagotto.dogSniff, voice: LagottoVoice.dog, width: 124, height: 100, label: 'Lagotto węszy')),
             Positioned(left: 174, bottom: 42, child: LagottoArt(Lagotto.truffle, width: 26, height: 26)),
-            Positioned(right: 104, bottom: 42, child: LagottoArt(Lagotto.puppy, width: 64, height: 51, flip: true)),
+            Positioned(right: 104, bottom: 42, child: LivelyLagotto(Lagotto.puppy, voice: LagottoVoice.puppy, width: 64, height: 51, flip: true, runs: true)),
             Positioned(right: 24, bottom: 42, child: LagottoArt(Lagotto.basket, width: 58, height: 39, label: 'Kosz trufli')),
           ],
         ),
