@@ -74,7 +74,11 @@ class ParchmentFrame extends StatelessWidget {
               decoration: const BoxDecoration(gradient: cardGradient),
               padding: const EdgeInsets.all(14),
               width: double.infinity,
+              // passthrough: the bordered body takes the card's full width,
+              // so narrower content (share image, dialog) centres instead of
+              // hugging the top-left corner.
               child: Stack(
+                fit: StackFit.passthrough,
                 children: [
                   Container(
                     decoration: BoxDecoration(

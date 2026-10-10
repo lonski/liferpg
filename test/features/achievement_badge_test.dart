@@ -68,4 +68,18 @@ void main() {
     expect(find.text('— ✦ LIFERPG ✦ —'), findsOneWidget);
     expect(find.text('treść'), findsOneWidget);
   });
+
+  testWidgets('ParchmentFrame centres content narrower than the card',
+      (tester) async {
+    await tester.pumpWidget(wrap(const SizedBox(
+      width: 360,
+      child: ParchmentFrame(
+        band: 'Odznaka',
+        child: Column(children: [Text('środek')]),
+      ),
+    )));
+    final frame = tester.getRect(find.byType(ParchmentFrame));
+    final text = tester.getCenter(find.text('środek'));
+    expect((text.dx - frame.center.dx).abs(), lessThan(1));
+  });
 }
