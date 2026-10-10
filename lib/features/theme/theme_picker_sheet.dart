@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/app_theme_providers.dart';
+import '../../providers/theme_chatter_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
 
@@ -91,9 +92,55 @@ class ThemePickerSheet extends ConsumerWidget {
                   );
                 },
               ),
+              const SizedBox(height: 8),
+              const _SoundsSwitch(),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Mutes the mascots' noises (on by default), remembered on this device.
+class _SoundsSwitch extends ConsumerWidget {
+  const _SoundsSwitch();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.rpg;
+    final on = ref.watch(themeSoundsEnabledProvider);
+    return MergeSemantics(
+      child: Row(
+        children: [
+          Icon(on ? Icons.volume_up : Icons.volume_off, color: t.crimson),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dźwięki',
+                  style: TextStyle(
+                    fontFamily: t.fontDisplay,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: t.inkHeading,
+                  ),
+                ),
+                Text(
+                  'Odgłosy, gdy stukniesz zwierzaka',
+                  style: TextStyle(fontFamily: t.fontBody, fontSize: 11, color: t.traitNameInk),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            key: const Key('theme-sounds'),
+            value: on,
+            onChanged: ref.read(themeSoundsEnabledProvider.notifier).set,
+          ),
+        ],
       ),
     );
   }

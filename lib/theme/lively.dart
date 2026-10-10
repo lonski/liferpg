@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'chatter.dart';
 import 'rpg_theme.dart';
 
 /// How a lively illustration moves on a tap (or a long press).
@@ -32,6 +33,42 @@ enum LivelyMove {
 
   /// The play bow: front down, rump up, then back.
   bow,
+
+  /// Pecking at food dropped on it: quick nods the way it faces.
+  peck,
+}
+
+/// Something a player drags from a pile onto an animal ([Lively.feeding]):
+/// grain for the birds. [kind] is what an animal's [LivelyFeeding.eats]
+/// matches against.
+class LivelyFood {
+  const LivelyFood(this.kind);
+
+  final String kind;
+
+  static const grain = LivelyFood('grain');
+  static const kibble = LivelyFood('kibble');
+}
+
+/// How an animal takes the food dropped on it: it plays [move], says one of
+/// [lines], makes [sound] (when sounds are on) and throws off [burst].
+class LivelyFeeding {
+  const LivelyFeeding({
+    required this.eats,
+    required this.lines,
+    this.move = LivelyMove.peck,
+    this.sound,
+    this.burst,
+  });
+
+  /// The [LivelyFood.kind]s it accepts.
+  final Set<String> eats;
+  final List<String> lines;
+  final LivelyMove move;
+
+  /// An asset path under `assets/`.
+  final String? sound;
+  final LivelyBurst? burst;
 }
 
 /// A handful of [piece]s thrown off by a move: feathers or water drops
@@ -66,11 +103,15 @@ class LivelySecret {
     required this.line,
     required this.piece,
     this.pops = false,
+    this.sound,
   });
 
   final String line;
   final Widget piece;
   final bool pops;
+
+  /// Played instead of the usual noise (an asset path under `assets/`).
+  final String? sound;
 
   /// Taps this close together count towards the secret.
   static const tapWindow = Duration(milliseconds: 700);
@@ -103,6 +144,8 @@ class Lively extends StatefulWidget {
     this.burst,
     this.holdBurst,
     this.secret,
+    this.sounds = const [],
+    this.feeding,
   });
 
   final Widget art;
@@ -119,6 +162,20 @@ class Lively extends StatefulWidget {
   final LivelyBurst? burst;
   final LivelyBurst? holdBurst;
   final LivelySecret? secret;
+
+  /// Its noises (asset paths under `assets/`), one played per tap while the
+  /// [ThemeChatter] above has sounds on. Empty: a silent animal.
+  final List<String> sounds;
+
+  /// Accepts food dragged onto it; null for an animal that doesn't eat.
+  final LivelyFeeding? feeding;
+
+  /// The chance a tap drops one of the [ThemeChatter] tips instead of one
+  /// of [lines], when there are tips to drop.
+  static const tipChance = 0.35;
+
+  /// A line too long for one bubble row (a tip): two rows, kept up longer.
+  static bool isLong(String line) => line.length > 22;
 
   /// Picks lines, moves and bursts; tests seed it (through each theme's
   /// wrapper) for repeatable runs.
@@ -189,7 +246,8 @@ class _LivelyState extends State<Lively> with TickerProviderStateMixin {
     _tapRunReset = Timer(LivelySecret.tapWindow, () => _quickTaps = 0);
 
     final secret = widget.secret;
-    final reveals = secret != null &&
+    final reveals =
+        secret != null &&
         _quickTaps >= LivelySecret.taps &&
         !_secret.isAnimating;
     if (reveals) {
@@ -197,7 +255,21 @@ class _LivelyState extends State<Lively> with TickerProviderStateMixin {
       _secret.forward(from: 0);
     }
 
-    _say(reveals ? secret.line : _pick(widget.lines));
+    final chatter = ThemeChatter.read(context);
+    final noise = reveals && secret.sound != null
+        ? secret.sound
+        : widget.sounds.isEmpty
+        ? null
+        : _pick(widget.sounds);
+    if (noise != null) chatter?.playSound?.call(noise);
+    final tips = chatter?.tips ?? const <String>[];
+    _say(
+      reveals
+          ? secret.line
+          : tips.isNotEmpty && _random.nextDouble() < Lively.tipChance
+          ? _pick(tips)
+          : _pick(widget.lines),
+    );
     final move = widget.runs ? LivelyMove.run : _pick(widget.moves);
     final burst = widget.burst;
     if (burst != null &&
@@ -216,12 +288,27 @@ class _LivelyState extends State<Lively> with TickerProviderStateMixin {
     _moveAs(widget.holdMove);
   }
 
+  /// Food dropped on it.
+  void _onFed(LivelyFood food) {
+    final feeding = widget.feeding;
+    if (feeding == null) return;
+    HapticFeedback.mediumImpact();
+    if (feeding.sound case final sound?) {
+      ThemeChatter.read(context)?.playSound?.call(sound);
+    }
+    _say(_pick(feeding.lines));
+    if (feeding.burst case final burst?) _throw(burst);
+    _moveAs(feeding.move);
+  }
+
   T _pick<T>(List<T> options) => options[_random.nextInt(options.length)];
 
   void _say(String line) {
     setState(() => _line = line);
     _showBubble();
-    _bubble.forward(from: 0);
+    _bubble
+      ..duration = Duration(milliseconds: Lively.isLong(line) ? 3200 : 1400)
+      ..forward(from: 0);
   }
 
   void _throw(LivelyBurst burst) {
@@ -251,6 +338,7 @@ class _LivelyState extends State<Lively> with TickerProviderStateMixin {
           LivelyMove.doze => 1800,
           LivelyMove.chase => 800,
           LivelyMove.bow => 700,
+          LivelyMove.peck => 750,
         },
       )
       ..forward(from: 0);
@@ -277,9 +365,6 @@ class _LivelyState extends State<Lively> with TickerProviderStateMixin {
     overlay.insert(entry);
   }
 
-  static const _bubbleHeight = 28.0;
-  static const _bubbleWidth = 200.0;
-
   /// Above the animal, or below it when that would run under the status
   /// bar (one in the AppBar itself).
   Widget _positionedBubble(OverlayState overlay) {
@@ -294,33 +379,36 @@ class _LivelyState extends State<Lively> with TickerProviderStateMixin {
       return const SizedBox.shrink();
     }
     final t = _bubble.value;
+    final long = Lively.isLong(line);
+    final bubbleHeight = long ? 48.0 : 28.0;
+    final bubbleWidth = long ? 240.0 : 200.0;
     final at = stage.globalToLocal(self.localToGlobal(Offset.zero));
     final dx = widget.runs && _move.isAnimating ? _runOffset(_move.value) : 0.0;
     final centreX = at.dx + self.size.width / 2 + dx;
     final safeTop = MediaQuery.paddingOf(overlay.context).top;
-    final roomAbove = at.dy - _bubbleHeight - 4 >= safeTop + 2;
+    final roomAbove = at.dy - bubbleHeight - 4 >= safeTop + 2;
     final top = roomAbove
-        ? at.dy - _bubbleHeight - 2 - 6 * t
+        ? at.dy - bubbleHeight - 2 - 6 * t
         : at.dy + self.size.height + 2 + 6 * t;
     final opacity = t < 0.15 ? t / 0.15 : (t > 0.8 ? (1 - t) / 0.2 : 1.0);
-    final left = (centreX - _bubbleWidth / 2)
-        .clamp(4.0, math.max(4.0, stage.size.width - _bubbleWidth - 4))
+    final left = (centreX - bubbleWidth / 2)
+        .clamp(4.0, math.max(4.0, stage.size.width - bubbleWidth - 4))
         .toDouble();
     return Positioned(
       left: left,
       top: top,
-      width: _bubbleWidth,
-      height: _bubbleHeight,
+      width: bubbleWidth,
+      height: bubbleHeight,
       child: IgnorePointer(
         child: Opacity(
           opacity: opacity.clamp(0.0, 1.0),
           // Pinned over the animal even where the box is clamped to the edge.
           child: Align(
             alignment: Alignment(
-              ((centreX - left) / _bubbleWidth * 2 - 1).clamp(-1.0, 1.0),
+              ((centreX - left) / bubbleWidth * 2 - 1).clamp(-1.0, 1.0),
               0,
             ),
-            child: _SpeechBubble(line),
+            child: _SpeechBubble(line, maxLines: long ? 2 : 1),
           ),
         ),
       ),
@@ -376,7 +464,18 @@ class _LivelyState extends State<Lively> with TickerProviderStateMixin {
       ),
       // Round and round after its tail, eased in and out.
       LivelyMove.chase => Transform.rotate(
-        angle: (widget.flip ? -1 : 1) * 2 * math.pi * Curves.easeInOut.transform(t),
+        angle:
+            (widget.flip ? -1 : 1) *
+            2 *
+            math.pi *
+            Curves.easeInOut.transform(t),
+        child: child,
+      ),
+      // Three quick nods down towards the food.
+      LivelyMove.peck => Transform.rotate(
+        alignment: Alignment.bottomCenter,
+        angle:
+            (widget.flip ? -1 : 1) * 0.32 * (math.sin(math.pi * 3 * t)).abs(),
         child: child,
       ),
       // Front down, rump up: tipped towards the way it faces, squashed.
@@ -401,10 +500,15 @@ class _LivelyState extends State<Lively> with TickerProviderStateMixin {
           children: [
             for (final (dir, reach, spin) in _flights)
               Positioned(
-                left: widget.width / 2 - 6 + math.cos(dir) * reach * t * (burst.rise ? 0.5 : 1),
+                left:
+                    widget.width / 2 -
+                    6 +
+                    math.cos(dir) * reach * t * (burst.rise ? 0.5 : 1),
                 top: burst.rise
                     ? widget.height * 0.25 - reach * 1.2 * t
-                    : widget.height * 0.45 + math.sin(dir) * reach * t + 30 * t * t,
+                    : widget.height * 0.45 +
+                          math.sin(dir) * reach * t +
+                          30 * t * t,
                 child: Opacity(
                   opacity: (1 - t).clamp(0.0, 1.0),
                   child: Transform.rotate(
@@ -425,7 +529,9 @@ class _LivelyState extends State<Lively> with TickerProviderStateMixin {
     if (!_secret.isAnimating || secret == null) return const SizedBox.shrink();
     final t = _secret.value;
     final roll = t < 0.25 ? 0.0 : (t - 0.25) / 0.75;
-    final lift = secret.pops && t < 0.25 ? 22 * math.sin(math.pi * t / 0.25) : 0.0;
+    final lift = secret.pops && t < 0.25
+        ? 22 * math.sin(math.pi * t / 0.25)
+        : 0.0;
     return Positioned(
       left: widget.width * 0.4 + 90 * roll,
       bottom: -4 + lift,
@@ -438,7 +544,7 @@ class _LivelyState extends State<Lively> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final body = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _onTap,
       onLongPress: _onLongPress,
@@ -448,20 +554,72 @@ class _LivelyState extends State<Lively> with TickerProviderStateMixin {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            AnimatedBuilder(animation: _move, builder: _moving, child: widget.art),
+            AnimatedBuilder(
+              animation: _move,
+              builder: _moving,
+              child: widget.art,
+            ),
             AnimatedBuilder(animation: _burst, builder: _pieces),
             AnimatedBuilder(animation: _secret, builder: _revealed),
           ],
         ),
       ),
     );
+    final feeding = widget.feeding;
+    if (feeding == null) return body;
+    return DragTarget<LivelyFood>(
+      onWillAcceptWithDetails: (details) =>
+          feeding.eats.contains(details.data.kind),
+      onAcceptWithDetails: (details) => _onFed(details.data),
+      // Perks up (grows a touch) while food hovers over it.
+      builder: (context, candidates, _) => AnimatedScale(
+        scale: candidates.isEmpty ? 1 : 1.12,
+        duration: const Duration(milliseconds: 150),
+        child: body,
+      ),
+    );
   }
 }
 
+/// A pile of [food] the player drags onto an animal ([Lively.feeding]).
+/// It never runs out: the pile stays put and a handful follows the finger.
+class LivelyFoodPile extends StatelessWidget {
+  const LivelyFoodPile({
+    super.key,
+    required this.food,
+    required this.pile,
+    required this.handful,
+  });
+
+  final LivelyFood food;
+
+  /// The pile as it lies.
+  final Widget pile;
+
+  /// What follows the finger.
+  final Widget handful;
+
+  @override
+  Widget build(BuildContext context) => Draggable<LivelyFood>(
+    data: food,
+    // The drop lands where the finger is (the default pointer anchor);
+    // the handful is drawn up and to the left of it so the finger
+    // doesn't hide it.
+    dragAnchorStrategy: pointerDragAnchorStrategy,
+    feedback: Transform.translate(
+      offset: const Offset(-20, -46),
+      child: handful,
+    ),
+    onDragStarted: HapticFeedback.selectionClick,
+    child: pile,
+  );
+}
+
 class _SpeechBubble extends StatelessWidget {
-  const _SpeechBubble(this.text);
+  const _SpeechBubble(this.text, {required this.maxLines});
 
   final String text;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -475,7 +633,9 @@ class _SpeechBubble extends StatelessWidget {
       ),
       child: Text(
         text,
-        maxLines: 1,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
         textScaler: TextScaler.noScaling,
         style: TextStyle(
           fontFamily: t.fontDisplay,

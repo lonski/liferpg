@@ -88,6 +88,33 @@ class LivelyKurczak extends StatelessWidget {
   static math.Random get random => Lively.random;
   static set random(math.Random value) => Lively.random = value;
 
+  /// The sound files (under `assets/`) each voice picks from, and the
+  /// laying hen's cackle.
+  static const sounds = {
+    KurczakVoice.hen: [
+      'kurczaki/sounds/hen_1.m4a',
+      'kurczaki/sounds/hen_2.m4a',
+      'kurczaki/sounds/hen_3.m4a',
+    ],
+    KurczakVoice.rooster: [
+      'kurczaki/sounds/rooster_1.m4a',
+      'kurczaki/sounds/rooster_2.m4a',
+    ],
+    KurczakVoice.chick: [
+      'kurczaki/sounds/chick_1.m4a',
+      'kurczaki/sounds/chick_2.m4a',
+      'kurczaki/sounds/chick_3.m4a',
+    ],
+  };
+  static const eggSound = 'kurczaki/sounds/egg.m4a';
+
+  /// What a bird says when grain is dropped on it.
+  static const feedLines = {
+    KurczakVoice.hen: ['Mniam!', 'Pyszne ziarenko!', 'Dziękuję!', 'Ko-ko, mniam!'],
+    KurczakVoice.rooster: ['Smaczne!', 'Ku-ku-mniam!', 'Dziękuję!'],
+    KurczakVoice.chick: ['Mniam mniam!', 'Pip! Pyszne!', 'Jeszcze!'],
+  };
+
   /// What a long-pressed bird says as it nods off.
   static const sleepLines = ['Zzz…', 'Chrr… Zzz…', 'Jeszcze pięć minut…'];
 
@@ -99,6 +126,16 @@ class LivelyKurczak extends StatelessWidget {
         flip: flip,
         runs: runs,
         lines: linesOf(voice),
+        sounds: sounds[voice]!,
+        feeding: LivelyFeeding(
+          eats: const {'grain'},
+          lines: feedLines[voice]!,
+          sound: sounds[voice]!.first,
+          burst: const LivelyBurst(
+            rise: true,
+            piece: KurczakArt(Kurczak.heart, key: Key('kurczak-heart'), width: 12, height: 11),
+          ),
+        ),
         moves: const [LivelyMove.hop, LivelyMove.spin, LivelyMove.shake, LivelyMove.stretch],
         holdLines: sleepLines,
         burst: voice == KurczakVoice.chick
@@ -110,6 +147,7 @@ class LivelyKurczak extends StatelessWidget {
         secret: voice == KurczakVoice.hen
             ? const LivelySecret(
                 line: eggLine,
+                sound: eggSound,
                 piece: KurczakArt(Kurczak.eggGold, key: Key('kurczak-egg'), width: 22, height: 22),
               )
             : null,

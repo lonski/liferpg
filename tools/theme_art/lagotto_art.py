@@ -272,6 +272,42 @@ def heart():
             f'<ellipse cx="7.5" cy="9" rx="1.6" ry="2.2" fill="#FFFFFF" opacity=".55"></ellipse>')
 
 
+KIBBLE = [('#8A5634', 0), ('#A86B3C', 25), ('#6E4128', -30), ('#9C6740', 50), ('#7A4A2C', -10)]
+
+
+def kibble(points, r=3.4):
+    """Kibble pieces: little rounded rings and discs of dog food."""
+    out = []
+    for i, (x, y) in enumerate(points):
+        fill, rot = KIBBLE[i % len(KIBBLE)]
+        if i % 3 == 0:  # a ring
+            out.append(f'<ellipse cx="{n(x)}" cy="{n(y)}" rx="{n(r)}" ry="{n(r * 0.82)}" fill="{fill}" '
+                       f'stroke="{INK}" stroke-width="1" transform="rotate({rot} {n(x)} {n(y)})"></ellipse>'
+                       f'<circle cx="{n(x)}" cy="{n(y)}" r="{n(r * 0.32)}" fill="#E6C08A"></circle>')
+        else:  # a disc with a highlight
+            out.append(f'<ellipse cx="{n(x)}" cy="{n(y)}" rx="{n(r)}" ry="{n(r * 0.75)}" fill="{fill}" '
+                       f'stroke="{INK}" stroke-width="1" transform="rotate({rot} {n(x)} {n(y)})"></ellipse>'
+                       f'<ellipse cx="{n(x - r * 0.3)}" cy="{n(y - r * 0.3)}" rx="{n(r * 0.35)}" ry="{n(r * 0.22)}" '
+                       f'fill="#FFFFFF" opacity=".35"></ellipse>')
+    return ''.join(out)
+
+
+def kibble_bowl():
+    """A red dog bowl heaped with kibble, 48 x 30."""
+    heap = [(12, 13), (18, 11), (24, 10), (30, 11), (36, 13), (15, 7.5), (21, 6), (27, 6), (33, 7.5), (24, 3)]
+    return (kibble(heap)
+            + f'<path d="M4 14h40l-4 12a3 3 0 0 1-2.9 2H10.9A3 3 0 0 1 8 26z" fill="#C8463A" '
+              f'stroke="{INK}" stroke-width="1.8" stroke-linejoin="round"></path>'
+            + f'<path d="M4 14h40" stroke="{INK}" stroke-width="1.8" stroke-linecap="round"></path>'
+            + f'<path d="M10 18.5h28" stroke="#F0C8A8" stroke-width="1.6" stroke-linecap="round" opacity=".7"></path>'
+            + paw_path('#F5DCC0', x=18, y=17, s=0.45))
+
+
+def kibble_handful():
+    """A handful of kibble following the finger, 40 x 30."""
+    return kibble([(8, 9), (19, 6), (31, 9), (12, 18), (24, 16), (34, 20), (7, 25), (18, 25), (28, 26)], r=3.8)
+
+
 # ---------------------------------------------------------------- assets
 
 def asset(vb, body):
@@ -298,6 +334,8 @@ ASSETS = {
     'ground': ('0 0 400 56', lambda: ground(400, 56)),
     'drop': ('0 0 24 24', drop),
     'heart': ('0 0 24 24', heart),
+    'kibble_bowl': ('0 0 48 30', kibble_bowl),
+    'kibble_handful': ('0 0 40 30', kibble_handful),
 }
 
 

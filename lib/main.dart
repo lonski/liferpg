@@ -17,6 +17,7 @@ import 'features/quests/quest_detail_screen.dart';
 import 'features/quests/quests_screen.dart';
 import 'features/requests/change_requests_screen.dart';
 import 'features/requests/new_change_request_screen.dart';
+import 'features/theme/theme_chatter_host.dart';
 import 'firebase_options.dart';
 import 'providers/achievement_notification_providers.dart';
 import 'providers/app_theme_providers.dart';
@@ -108,6 +109,8 @@ class LifeRpgApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       theme: buildAppTheme(ref.watch(appThemeProvider).theme),
+      builder: (context, child) =>
+          ThemeChatterHost(child: child ?? const SizedBox.shrink()),
       home: const AuthGate(),
     );
   }

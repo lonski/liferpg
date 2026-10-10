@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'decor.dart';
+import 'lively.dart';
 import 'lively_lagotto.dart';
 import 'rpg_theme.dart';
 
@@ -28,7 +29,9 @@ enum Lagotto {
   oakTree('oak_tree'),
   ground('ground'),
   drop('drop'),
-  heart('heart');
+  heart('heart'),
+  kibbleBowl('kibble_bowl'),
+  kibbleHandful('kibble_handful');
 
   const Lagotto(this.file);
 
@@ -508,16 +511,19 @@ class _WoodFloor extends StatelessWidget {
           Positioned(left: 14, bottom: 30, child: LivelyLagotto(Lagotto.dogSniff, voice: LagottoVoice.dog, width: 118, height: 95, label: 'Lagotto szuka trufli')),
           Positioned(left: 134, bottom: 30, child: LagottoArt(Lagotto.truffle, width: 26, height: 26)),
           Positioned(left: 176, bottom: 34, child: LivelyLagotto(Lagotto.puppyWhite, voice: LagottoVoice.puppy, width: 60, height: 48, flip: true, runs: true)),
+          Positioned(left: 246, bottom: 26, child: KibbleBowl()),
         ],
       FooterScene.quests => const [
           Positioned(left: 12, bottom: 28, child: LivelyLagotto(Lagotto.dogLieBrown, voice: LagottoVoice.sleepy, width: 140, height: 72, label: 'Lagotto śpi')),
-          Positioned(left: 170, bottom: 30, child: LagottoArt(Lagotto.basket, width: 64, height: 43)),
+          Positioned(left: 152, bottom: 30, child: LagottoArt(Lagotto.basket, width: 64, height: 43)),
+          Positioned(left: 220, bottom: 26, child: KibbleBowl()),
           Positioned(right: 26, bottom: 32, child: LivelyLagotto(Lagotto.puppyWhite, voice: LagottoVoice.puppy, width: 62, height: 50, flip: true, runs: true)),
         ],
       FooterScene.achievements => const [
           Positioned(left: 60, bottom: 28, child: LivelyLagotto(Lagotto.dogSit, voice: LagottoVoice.dog, width: 76, height: 82, label: 'Lagotto pilnuje złotej trufli')),
           Positioned(left: 150, bottom: 30, child: LagottoArt(Lagotto.truffleGold, width: 32, height: 32)),
           Positioned(left: 196, bottom: 32, child: LivelyLagotto(Lagotto.puppy, voice: LagottoVoice.puppy, width: 58, height: 46, flip: true, runs: true)),
+          Positioned(left: 262, bottom: 26, child: KibbleBowl()),
         ],
     };
     return SizedBox(
@@ -539,6 +545,24 @@ class _WoodFloor extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A bowl of kibble on the wood floor: drag a handful onto any dog to
+/// feed it.
+class KibbleBowl extends StatelessWidget {
+  const KibbleBowl({super.key});
+
+  @override
+  Widget build(BuildContext context) => const LivelyFoodPile(
+        food: LivelyFood.kibble,
+        pile: LagottoArt(
+          Lagotto.kibbleBowl,
+          width: 48,
+          height: 30,
+          label: 'Karma — przeciągnij ją na psa',
+        ),
+        handful: LagottoArt(Lagotto.kibbleHandful, width: 40, height: 30),
+      );
 }
 
 /// Two oaks, the wood floor, the brown dog nosing out a truffle, a puppy and
@@ -563,6 +587,7 @@ class _LoginWood extends StatelessWidget {
             ),
             Positioned(left: 50, bottom: 38, child: LivelyLagotto(Lagotto.dogSniff, voice: LagottoVoice.dog, width: 124, height: 100, label: 'Lagotto węszy')),
             Positioned(left: 174, bottom: 42, child: LagottoArt(Lagotto.truffle, width: 26, height: 26)),
+            Positioned(left: 8, bottom: 36, child: KibbleBowl()),
             Positioned(right: 104, bottom: 42, child: LivelyLagotto(Lagotto.puppy, voice: LagottoVoice.puppy, width: 64, height: 51, flip: true, runs: true)),
             Positioned(right: 24, bottom: 42, child: LagottoArt(Lagotto.basket, width: 58, height: 39, label: 'Kosz trufli')),
           ],

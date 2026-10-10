@@ -472,7 +472,31 @@ characterName, email
   quick-tap run is a `Timer`, not wall-clock reads). The bubble is an
   `OverlayEntry` placed over the bird (below it when there is no room
   under the status bar), so a list viewport or the AppBar never clips it.
-  Randomness goes through `LivelyKurczak.random`, which tests seed. Art that already sits inside a
+  Randomness goes through `LivelyKurczak.random`, which tests seed.
+  Taps also **play a sound** (real hen / rooster / chick recordings, public
+  domain or CC0 from Wikimedia Commons, cut into `assets/kurczaki/sounds/`
+  by `tools/theme_art/kurczaki_sounds.py`, which lists the sources; the
+  laying hen gets its own cackle) and, about a third of the time, **drop a
+  tip** in a two-line bubble: live rewards from the board and today's
+  daily chores ("Psst! Za „Zmywarka” jest aż 10 XP!",
+  `lib/models/theme_tips.dart`) plus a few evergreen hints. Both reach the
+  theme layer through `ThemeChatter`, an InheritedWidget that
+  `ThemeChatterHost` (`MaterialApp.builder`) feeds from
+  `themeTipsProvider`, `themeSoundsEnabledProvider` (per device,
+  SharedPreferences `theme_sounds`, on by default, switched in the
+  "Wygląd" sheet) and `themeSoundPlayerProvider` (`audioplayers`, one
+  low-latency player per effect; a seam tests override or simply leave
+  out — without a `ThemeChatter` above it a bird is silent and tipless).
+  Sounds and tips live in the shared `Lively` engine (`lib/theme/lively.dart`),
+  so Lagotto's dogs drop tips too (they have no sound files yet).
+  **Feeding**: `LivelyFoodPile`s lie in the scenes — a grain pile
+  (`GrainPile`) among the Kurczaki birds, a kibble bowl (`KibbleBowl`) among
+  the Lagotto dogs, in every footer scene and on the login screen. Dragging
+  a handful onto an animal whose `LivelyFeeding.eats` lists that
+  `LivelyFood.kind` (birds eat `grain`, dogs `kibble`; neither eats the
+  other's) makes it perk up while the food hovers, then peck at it, say a
+  thank-you line, make its noise and float hearts. The piles never run
+  out and nothing is recorded. Art that already sits inside a
   tap target — the AppBar logo (update check), the XP-bar chick (XP hint),
   the FAB — stays inert. Kurczaki's display font is
   **Baloo 2** — Fredoka has no Polish diacritics (ą ę ś ż…), so it ships

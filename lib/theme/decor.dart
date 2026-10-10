@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'lively.dart';
 import 'lively_kurczak.dart';
 import 'rpg_theme.dart';
 
@@ -182,6 +183,9 @@ enum Kurczak {
   feather('feather'),
   nest('nest'),
   grain('grain'),
+  grainPile('grain_pile'),
+  grainHandful('grain_handful'),
+  heart('heart'),
   grass('grass'),
   fence('fence');
 
@@ -636,6 +640,23 @@ class _CardRoost extends StatelessWidget {
   );
 }
 
+/// A pile of grain on the grass: drag a handful onto any bird to feed it.
+class GrainPile extends StatelessWidget {
+  const GrainPile({super.key});
+
+  @override
+  Widget build(BuildContext context) => const LivelyFoodPile(
+    food: LivelyFood.grain,
+    pile: KurczakArt(
+      Kurczak.grainPile,
+      width: 40,
+      height: 25,
+      label: 'Ziarno — przeciągnij je na kurczaka',
+    ),
+    handful: KurczakArt(Kurczak.grainHandful, width: 40, height: 30),
+  );
+}
+
 /// Grass with a hen and her chicks, closing a list.
 class _Meadow extends StatelessWidget {
   const _Meadow({required this.scene});
@@ -669,13 +690,9 @@ class _Meadow extends StatelessWidget {
             turns: 0.06,
           ),
         ),
+        Positioned(left: 92, bottom: 16, child: GrainPile()),
         Positioned(
-          left: 92,
-          bottom: 22,
-          child: KurczakArt(Kurczak.grain, width: 20, height: 8),
-        ),
-        Positioned(
-          left: 100,
+          left: 128,
           bottom: 26,
           child: LivelyKurczak(
             Kurczak.chick,
@@ -710,11 +727,7 @@ class _Meadow extends StatelessWidget {
             label: 'Kury dziobią ziarno',
           ),
         ),
-        Positioned(
-          left: 116,
-          bottom: 22,
-          child: KurczakArt(Kurczak.grain, width: 34, height: 10),
-        ),
+        Positioned(left: 112, bottom: 16, child: GrainPile()),
         Positioned(
           left: 150,
           bottom: 22,
@@ -763,6 +776,7 @@ class _Meadow extends StatelessWidget {
             height: 38,
           ),
         ),
+        Positioned(left: 120, bottom: 16, child: GrainPile()),
         Positioned(
           left: 172,
           bottom: 22,
@@ -864,6 +878,7 @@ class _LoginYard extends StatelessWidget {
             height: 32,
           ),
         ),
+        Positioned(right: 244, bottom: 2, child: GrainPile()),
         Positioned(
           right: 204,
           bottom: 4,

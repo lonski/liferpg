@@ -79,6 +79,13 @@ class LivelyLagotto extends StatelessWidget {
 
   static const truffleLine = 'Hau! Trufla!';
 
+  /// What a dog says when kibble is dropped on it.
+  static const feedLines = {
+    LagottoVoice.dog: ['Mniam, karma!', 'Hau! Pyszne!', 'Dziękuję!', 'Jeszcze miseczkę?'],
+    LagottoVoice.puppy: ['Mniam mniam!', 'Hał! Pyszne!', 'Jeszcze!'],
+    LagottoVoice.sleepy: ['Mhm… mniam…', 'Zzz… mniam…'],
+  };
+
   /// Picks lines, moves and drops; tests seed it for repeatable runs.
   @visibleForTesting
   static math.Random get random => Lively.random;
@@ -98,6 +105,15 @@ class LivelyLagotto extends StatelessWidget {
           ? const [LivelyMove.stretch, LivelyMove.shake]
           : const [LivelyMove.hop, LivelyMove.chase, LivelyMove.shake, LivelyMove.bow],
       holdLines: asleep ? sleepLines : petLines,
+      feeding: LivelyFeeding(
+        eats: const {'kibble'},
+        lines: feedLines[voice]!,
+        move: asleep ? LivelyMove.stretch : LivelyMove.peck,
+        burst: const LivelyBurst(
+          rise: true,
+          piece: LagottoArt(Lagotto.heart, key: Key('lagotto-fed-heart'), width: 13, height: 13),
+        ),
+      ),
       burst: asleep
           ? null
           : const LivelyBurst(

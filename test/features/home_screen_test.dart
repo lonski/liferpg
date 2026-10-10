@@ -353,7 +353,15 @@ void main() {
     final badge =
         tester.widget<Badge>(find.byKey(const Key('pending-requests-badge')));
     expect(badge.isLabelVisible, isTrue);
-    expect(find.text('1'), findsOneWidget);
+    // Scoped to the badge: the card's electronics count can read "1" too
+    // (this test runs on the real clock, and a day accrues after the epoch).
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('pending-requests-badge')),
+        matching: find.text('1'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets(

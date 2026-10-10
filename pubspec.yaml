@@ -49,6 +49,7 @@ dependencies:
   share_plus: ^13.3.0
   app_links: ^7.2.1
   flutter_svg: ^2.3.0
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:
@@ -132,6 +133,7 @@ flutter:
 
   assets:
     - assets/kurczaki/
+    - assets/kurczaki/sounds/
     - assets/lagotto/
 
   # To add assets to your application, add an assets section, like this:

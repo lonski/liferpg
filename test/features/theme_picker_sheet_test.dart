@@ -113,4 +113,19 @@ void main() {
     await _pump(tester, stored: {'app_theme': 'kurczaki'});
     expect(_activeTheme(tester), 'kurczaki');
   });
+
+  testWidgets('the Dźwięki switch mutes the mascots and is remembered', (tester) async {
+    final prefs = await _pump(tester);
+    await tester.tap(find.byKey(const Key('open')));
+    await tester.pumpAndSettle();
+
+    final toggle = find.byKey(const Key('theme-sounds'));
+    await tester.ensureVisible(toggle);
+    expect(tester.widget<Switch>(toggle).value, isTrue);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Switch>(toggle).value, isFalse);
+    expect(prefs.getBool('theme_sounds'), isFalse);
+  });
 }

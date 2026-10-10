@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/theme/app_theme.dart';
+import 'package:liferpg/theme/chatter.dart';
 import 'package:liferpg/theme/decor.dart';
 import 'package:liferpg/theme/lively_kurczak.dart';
 
@@ -147,5 +148,53 @@ void main() {
       expect(find.byKey(const Key('kurczak-feather')), findsNothing);
       await tester.pumpAndSettle();
     }
+  });
+
+  group('with ThemeChatter', () {
+    Widget chatty(Widget bird, {List<String> tips = const [], List<String>? played}) =>
+        _yard(ThemeChatter(
+          tips: tips,
+          playSound: played?.add,
+          child: bird,
+        ));
+
+    testWidgets('a tapped bird plays one of its own sounds', (tester) async {
+      final played = <String>[];
+      await tester.pumpWidget(chatty(_hen, played: played));
+      await _tap(tester);
+
+      expect(played, hasLength(1));
+      expect(LivelyKurczak.sounds[KurczakVoice.hen], contains(played.single));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the laying hen cackles with the egg sound', (tester) async {
+      final played = <String>[];
+      await tester.pumpWidget(chatty(_hen, played: played));
+      for (var i = 0; i < LivelyKurczak.eggTaps; i++) {
+        await _tap(tester);
+      }
+      expect(played.last, LivelyKurczak.eggSound);
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('with sounds switched off it stays silent', (tester) async {
+      await tester.pumpWidget(chatty(_hen));
+      await _tap(tester);
+      expect(tester.takeException(), isNull);
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('now and then it drops a tip', (tester) async {
+      const tip = 'Psst! Za „Zmywarka” jest aż 10 XP!';
+      await tester.pumpWidget(chatty(_hen, tips: const [tip]));
+      var tipped = false;
+      for (var i = 0; i < 20 && !tipped; i++) {
+        await _tap(tester);
+        tipped = find.text(tip).evaluate().isNotEmpty;
+        await tester.pumpAndSettle();
+      }
+      expect(tipped, isTrue);
+    });
   });
 }
