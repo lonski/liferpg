@@ -218,10 +218,6 @@ class Achievement {
       ? AchievementEmblem.trophy
       : emblem;
 
-  /// Drives the card's NOWA chip -- a plain age check, no seen-state.
-  bool isNewAt(DateTime now) =>
-      now.difference(awardedAt) < const Duration(days: 7);
-
   static Achievement? tryParse(Object? raw) {
     if (raw is! Map) return null;
     final id = _asText(raw['id']);

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/features/achievements/achievements_screen.dart';
 import 'package:liferpg/features/achievements/achievements_section.dart';
 import 'package:liferpg/features/achievements/award_achievement_screen.dart';
 import 'package:liferpg/models/character.dart';
+import 'package:liferpg/providers/achievement_providers.dart';
 
 import 'achievements_test_support.dart';
 
@@ -12,6 +14,23 @@ Widget host(Character c, {required bool isAdmin}) => Scaffold(
         child: AchievementsSection(character: c, isAdmin: isAdmin),
       ),
     );
+
+/// Renders the section off the live roster, so Firestore updates reach it.
+class _LiveHost extends ConsumerWidget {
+  const _LiveHost();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = ref.watch(characterByIdProvider('c1'));
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: c == null
+            ? const SizedBox()
+            : AchievementsSection(character: c, isAdmin: false),
+      ),
+    );
+  }
+}
 
 void main() {
   test('visibleFor: players need a badge, admins always see it', () {
@@ -35,7 +54,7 @@ void main() {
     expect(find.byType(AwardAchievementScreen), findsOneWidget);
   });
 
-  testWidgets('shows the 4 newest with NOWA on recent ones, and links all',
+  testWidgets('shows the 4 newest and links all',
       (tester) async {
     final db = await seedWorld(achievements: [
       for (var i = 1; i <= 5; i++)
@@ -52,8 +71,6 @@ void main() {
     expect(find.text('ODZNAKI · 5'), findsOneWidget);
     expect(find.byKey(const Key('achievement-tile-a5')), findsOneWidget);
     expect(find.byKey(const Key('achievement-tile-a1')), findsNothing);
-    // testNow is 2026-10-12: a5 (Oct 5) is within 7 days, a4 (Oct 4) is not.
-    expect(find.text('NOWA'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('achievements-all')));
     await tester.pumpAndSettle();
@@ -79,5 +96,29 @@ void main() {
       uid: 'zosia',
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('NOWA marks a badge until its detail is opened', (tester) async {
+    final db = await seedWorld(
+        achievements: [achievementMap(id: 'old', title: 'Stara')]);
+    await pumpAchievementsApp(tester, db, const _LiveHost(), uid: 'zosia');
+    // Badges that existed before the first run are not new.
+    expect(find.text('NOWA'), findsNothing);
+
+    final data = await characterData(db);
+    await db.collection('characters').doc('c1').update({
+      'achievements': [
+        ...data['achievements'] as List,
+        achievementMap(id: 'fresh', title: 'Świeża', date: '2026-10-11'),
+      ],
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('NOWA'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('achievement-tile-fresh')));
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('NOWA'), findsNothing);
   });
 }

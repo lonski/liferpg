@@ -130,11 +130,6 @@ void main() {
     expect(list.map((a) => a.id), ['sameDayLate', 'sameDayEarly', 'old']);
   });
 
-  test('isNewAt is true within 7 days of awardedAt', () {
-    final a = Achievement.tryParse(full())!;
-    expect(a.isNewAt(awardedAt.add(const Duration(days: 6))), isTrue);
-    expect(a.isNewAt(awardedAt.add(const Duration(days: 8))), isFalse);
-  });
 
   test('AchievementTier.forPlace', () {
     expect(AchievementTier.forPlace(1), AchievementTier.gold);

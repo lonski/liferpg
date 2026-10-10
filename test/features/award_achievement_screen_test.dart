@@ -1,10 +1,13 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/features/achievements/achievement_badge.dart';
 import 'package:liferpg/features/achievements/award_achievement_screen.dart';
 import 'package:liferpg/models/achievement.dart';
 import 'package:liferpg/models/character.dart';
+import 'package:liferpg/providers/seen_achievements_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'achievements_test_support.dart';
 
@@ -99,5 +102,28 @@ void main() {
     final data = await characterData(db);
     expect((data['achievements'][0] as Map)['title'], 'Wyróżnienie');
     expect(data['current_xp'], 340);
+  });
+
+  testWidgets('the awarding admin has seen the new badge', (tester) async {
+    final db = await seedWorld();
+    final c = await zosia(db);
+    await pumpAchievementsApp(
+      tester,
+      db,
+      // The home card keeps the seen-state alive in the app; stand in for it.
+      Consumer(
+        builder: (context, ref, child) {
+          ref.watch(seenAchievementsProvider);
+          return child!;
+        },
+        child: AwardAchievementScreen(character: c),
+      ),
+    );
+    await tapKey(tester, 'place-3');
+    await tapKey(tester, 'achievement-submit');
+
+    final id = ((await characterData(db))['achievements'][0] as Map)['id'];
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getStringList('seen_achievements_admin'), contains(id));
   });
 }

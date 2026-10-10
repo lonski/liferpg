@@ -7,6 +7,7 @@ import '../../models/character.dart';
 import '../../providers/achievement_providers.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/character_providers.dart';
+import '../../providers/seen_achievements_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/dialogs.dart';
 import '../../theme/ornaments.dart';
@@ -86,63 +87,80 @@ class _AchievementDetailScreenState
         .where((a) => a.id == widget.achievementId)
         .firstOrNull;
     final isAdmin = ref.watch(appUserProvider).value?.admin ?? false;
+    // Opening a badge is what clears its NOWA chip. Deferred to after the
+    // frame (a provider can't change mid-build), and only once the viewer's
+    // baseline exists -- see SeenAchievements.
+    final seen = ref.watch(seenAchievementsProvider);
+    if (achievement != null && seen != null && !seen.contains(achievement.id)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(seenAchievementsProvider.notifier).markSeen(achievement.id);
+        }
+      });
+    }
 
     return Scaffold(
       backgroundColor: bgDark,
-      appBar: achievementAppBar('Odznaka', actions: [
-        if (character != null && achievement != null)
-          IconButton(
-            key: const Key('achievement-share'),
-            tooltip: 'Udostępnij',
-            icon: const Icon(Icons.share),
-            onPressed: () =>
-                shareAchievement(context, ref, character, achievement),
-          ),
-        if (isAdmin && character != null && achievement != null) ...[
-          IconButton(
-            key: const Key('achievement-edit'),
-            tooltip: 'Edytuj',
-            icon: const Icon(Icons.edit),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => AwardAchievementScreen(
-                character: character,
-                editing: achievement,
+      appBar: achievementAppBar(
+        'Odznaka',
+        actions: [
+          if (character != null && achievement != null)
+            IconButton(
+              key: const Key('achievement-share'),
+              tooltip: 'Udostępnij',
+              icon: const Icon(Icons.share),
+              onPressed: () =>
+                  shareAchievement(context, ref, character, achievement),
+            ),
+          if (isAdmin && character != null && achievement != null) ...[
+            IconButton(
+              key: const Key('achievement-edit'),
+              tooltip: 'Edytuj',
+              icon: const Icon(Icons.edit),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => AwardAchievementScreen(
+                    character: character,
+                    editing: achievement,
+                  ),
+                ),
               ),
-            )),
-          ),
-          IconButton(
-            key: const Key('achievement-revoke'),
-            tooltip: 'Usuń',
-            icon: const Icon(Icons.delete_outline),
-            onPressed:
-                _revoking ? null : () => _revoke(character, achievement),
-          ),
+            ),
+            IconButton(
+              key: const Key('achievement-revoke'),
+              tooltip: 'Usuń',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: _revoking
+                  ? null
+                  : () => _revoke(character, achievement),
+            ),
+          ],
         ],
-      ]),
+      ),
       body: loading
           ? const Center(child: CircularProgressIndicator(color: gold))
           : achievement == null
-              ? const Center(
-                  child: Text(
-                    'Ta odznaka już nie istnieje',
-                    style: TextStyle(fontFamily: fontBody, color: parchmentLight),
+          ? const Center(
+              child: Text(
+                'Ta odznaka już nie istnieje',
+                style: TextStyle(fontFamily: fontBody, color: parchmentLight),
+              ),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Center(
+                  child: BadgeGlow(
+                    child: AchievementBadge.of(achievement, size: 150),
                   ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    Center(
-                      child: BadgeGlow(
-                        child: AchievementBadge.of(achievement, size: 150),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ParchmentFrame(
-                      band: 'Odznaka ${tierAdjective(achievement.tier)}',
-                      child: _Body(achievement: achievement),
-                    ),
-                  ],
                 ),
+                const SizedBox(height: 12),
+                ParchmentFrame(
+                  band: 'Odznaka ${tierAdjective(achievement.tier)}',
+                  child: _Body(achievement: achievement),
+                ),
+              ],
+            ),
     );
   }
 }

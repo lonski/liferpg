@@ -9,6 +9,7 @@ import '../../models/electronics_days.dart';
 import '../../providers/achievement_providers.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/clock_provider.dart';
+import '../../providers/seen_achievements_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
 import '../requests/change_request_form.dart';
@@ -146,6 +147,8 @@ class _AwardAchievementScreenState
             awardedAt: ref.read(clockProvider)(),
           ),
         );
+        // The admin who awarded it has seen it: no NOWA on their own card view.
+        ref.read(seenAchievementsProvider.notifier).markSeen(_id);
       }
       if (mounted) Navigator.of(context).pop();
     } catch (error) {

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/achievement.dart';
 import '../../models/character.dart';
-import '../../providers/clock_provider.dart';
+import '../../providers/seen_achievements_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
 import 'achievement_badge.dart';
@@ -17,9 +17,9 @@ const TextStyle _link = TextStyle(
   letterSpacing: 2,
 );
 
-/// The "Odznaki" block on a character card: the four newest badges and a
-/// link to the gallery, or -- for an admin, on a character with none yet --
-/// a way to award the first.
+/// The "Odznaki" block on a character card: the four newest badges (NOWA on
+/// ones this viewer hasn't opened yet) and a link to the gallery, or -- for
+/// an admin, on a character with none yet -- a way to award the first.
 class AchievementsSection extends ConsumerWidget {
   const AchievementsSection({
     super.key,
@@ -38,7 +38,8 @@ class AchievementsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final all = character.achievements;
-    final now = ref.watch(clockProvider)();
+    // Null until this device has a baseline: then nothing reads as new.
+    final seen = ref.watch(seenAchievementsProvider);
     void push(Widget screen) => Navigator.of(context)
         .push(MaterialPageRoute<void>(builder: (_) => screen));
 
@@ -75,7 +76,7 @@ class AchievementsSection extends ConsumerWidget {
                 Expanded(
                   child: _Tile(
                     achievement: a,
-                    isNew: a.isNewAt(now),
+                    isNew: seen != null && !seen.contains(a.id),
                     onTap: () => push(AchievementDetailScreen(
                       characterId: character.id,
                       achievementId: a.id,

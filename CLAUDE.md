@@ -258,7 +258,7 @@ characterName, email
   (złoto / srebro / brąz / rubin) is the ring's metal, the emblem (place
   I–III, puchar, nuta, szczyt, księga, gwiazda) sits on the disk. The card's
   **Odznaki** section (`AchievementsSection`, below Cechy) shows the four
-  newest with a `NOWA` chip for badges under 7 days old; players and
+  newest with a `NOWA` chip on badges the viewer hasn't opened yet (`SeenAchievements`, `lib/providers/seen_achievements_providers.dart`: per-uid, on-device SharedPreferences like hidden characters; opening the detail screen marks a badge seen, so does awarding it; the first run seeds every existing badge as seen, only from a settled server snapshot, and until then nothing reads as new); players and
   `readOnlyOthers` see it only when the character has a badge, admins always
   (with **PRZYZNAJ ODZNAKĘ** when empty). Gallery (`AchievementsScreen`,
   admin `+`), detail (`AchievementDetailScreen`: share for everyone who can
