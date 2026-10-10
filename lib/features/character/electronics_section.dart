@@ -6,13 +6,6 @@ import '../../models/electronics_days.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
 
-const TextStyle _label = TextStyle(
-  fontFamily: fontDisplay,
-  fontSize: 10,
-  letterSpacing: 2,
-  color: crimson,
-);
-
 const TextStyle _headline = TextStyle(
   fontFamily: fontBody,
   fontSize: 14,
@@ -35,9 +28,10 @@ const TextStyle _buttonText = TextStyle(
   letterSpacing: 2,
 );
 
-/// The "Dni elektroniki" block on a character card: a ring medallion with
-/// the available count, today's state, and at most one action. Purely
-/// presentational -- ElectronicsPanel decides the state and the callbacks.
+/// The "Dni elektroniki" block on a character card: one row with a small ring
+/// medallion (the available count), today's state, and at most one compact
+/// action at the right. Purely presentational -- ElectronicsPanel decides the
+/// state and the callbacks.
 class ElectronicsSection extends StatelessWidget {
   const ElectronicsSection({
     super.key,
@@ -73,35 +67,40 @@ class ElectronicsSection extends StatelessWidget {
     };
 
     final Widget? action = switch (state) {
-      ElectronicsCardState.charging when onClaim != null => FilledButton.icon(
+      ElectronicsCardState.charging when onClaim != null => FilledButton(
           key: const Key('electronics-claim'),
           onPressed: onClaim,
           style: FilledButton.styleFrom(
             backgroundColor: crimson,
             foregroundColor: parchmentLight,
-            minimumSize: const Size.fromHeight(44),
+            minimumSize: const Size(0, 36),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(3),
               side: const BorderSide(color: goldGlyph),
             ),
           ),
-          icon: const Icon(Icons.smartphone, size: 16),
-          label: Text('Odbierz'.toUpperCase(), style: _buttonText),
+          child: Text('Odbierz'.toUpperCase(), style: _buttonText),
         ),
-      ElectronicsCardState.pending when onCancel != null =>
-        OutlinedButton.icon(
-          key: const Key('electronics-cancel'),
-          onPressed: onCancel,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: crimson,
-            minimumSize: const Size.fromHeight(44),
-            side: const BorderSide(color: crimson),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(3),
+      // The full "Anuluj prośbę" would squeeze the status text on narrow
+      // screens now that the button shares the ring's row; it lives on in
+      // the tooltip.
+      ElectronicsCardState.pending when onCancel != null => Tooltip(
+          message: 'Anuluj prośbę',
+          child: OutlinedButton(
+            key: const Key('electronics-cancel'),
+            onPressed: onCancel,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: crimson,
+              minimumSize: const Size(0, 36),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              side: const BorderSide(color: crimson),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
+            child: Text('Anuluj'.toUpperCase(), style: _buttonText),
           ),
-          icon: const Icon(Icons.close, size: 16),
-          label: Text('Anuluj prośbę'.toUpperCase(), style: _buttonText),
         ),
       _ => null,
     };
@@ -111,7 +110,7 @@ class ElectronicsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const LabelledDivider(label: 'Dni elektroniki'),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Row(
           children: [
             _Medallion(
@@ -119,22 +118,21 @@ class ElectronicsSection extends StatelessWidget {
               state: state,
               dayFraction: dayFraction,
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Dzisiejszy dzień'.toUpperCase(), style: _label),
-                  const SizedBox(height: 4),
                   Text(headline, style: _headline),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(status, style: _status),
                 ],
               ),
             ),
+            if (action != null) ...[const SizedBox(width: 8), action],
           ],
         ),
-        if (action != null) ...[const SizedBox(height: 14), action],
       ],
     );
   }
@@ -162,8 +160,8 @@ class _Medallion extends StatelessWidget {
 
     return SizedBox(
       key: const Key('electronics-ring'),
-      width: 84,
-      height: 84,
+      width: 52,
+      height: 52,
       child: Stack(
         children: [
           Positioned.fill(
@@ -172,61 +170,47 @@ class _Medallion extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: 8,
-            top: 8,
+            left: 5,
+            top: 5,
             child: Container(
-              width: 68,
-              height: 68,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: crimsonFaint,
                 border: Border.all(color: crimson, width: 2),
               ),
               alignment: Alignment.center,
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '$available',
-                      key: const Key('electronics-count'),
-                      style: const TextStyle(
-                        fontFamily: fontDisplay,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        height: 1,
-                        color: inkHeading,
-                      ),
-                    ),
-                    const Text(
-                      'dostępne',
-                      style: TextStyle(
-                        fontFamily: fontBody,
-                        fontSize: 8,
-                        fontStyle: FontStyle.italic,
-                        color: crimson,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  '$available',
+                  key: const Key('electronics-count'),
+                  style: const TextStyle(
+                    fontFamily: fontDisplay,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    height: 1,
+                    color: inkHeading,
+                  ),
                 ),
               ),
             ),
           ),
           if (badge != null)
             Positioned(
-              right: 2,
-              bottom: 2,
+              right: 0,
+              bottom: 0,
               child: Container(
-                width: 22,
-                height: 22,
+                width: 16,
+                height: 16,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: badge.$1,
-                  border: Border.all(color: parchmentLight, width: 2),
+                  border: Border.all(color: parchmentLight, width: 1.5),
                 ),
-                child: Icon(badge.$3, size: 11, color: badge.$2),
+                child: Icon(badge.$3, size: 9, color: badge.$2),
               ),
             ),
         ],

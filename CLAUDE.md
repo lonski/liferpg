@@ -209,12 +209,10 @@ characterName, email
   screen. `readOnlyOthers` users do not get this affordance.
 - **Electronics days** ("Dni elektroniki"): a section on **every** character
   card, between the gold row and Cechy (`lib/features/character/electronics_section.dart`
-  is the pure view, `electronics_panel.dart` the stateful wiring): a ring
-  medallion with the available count and a gold arc that fills over the local
-  day. Four states, checked in order claimed -> pending -> empty -> charging:
+  is the pure view, `electronics_panel.dart` the stateful wiring): a single row: a small (52 px) ring medallion with the available count and a gold arc that fills over the local day, the state text, and at most one compact button at the right end. Four states, checked in order claimed -> pending -> empty -> charging:
   claimed (`Dzień z elektroniką` / `odebrano dzisiaj`, dashed crimson ring, no
   button); pending (`Dzień z elektroniką?` / `czeka na akceptację`, with
-  **ANULUJ PROŚBĘ** for the requester only — an admin sees it with no button,
+  **ANULUJ** (tooltip `Anuluj prośbę`) for the requester only — an admin sees it with no button,
   since the request is in their inbox); empty (`available == 0`, no button);
   charging (`Ładowanie…` / `dzień bez elektroniki` with **ODBIERZ**). The
   button is hidden at 0 and once today is claimed. An owner's **ODBIERZ** posts
