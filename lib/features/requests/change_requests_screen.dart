@@ -44,27 +44,27 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: parchment,
+        backgroundColor: context.rpg.parchment,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(color: crimson, width: 2),
+          borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+          side: BorderSide(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
         ),
         title: Text(
           'Odrzucić prośbę?'.toUpperCase(),
-          style: const TextStyle(
-            fontFamily: fontDisplay,
+          style: TextStyle(
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 13,
             fontWeight: FontWeight.w700,
             letterSpacing: 2,
-            color: inkHeading,
+            color: context.rpg.inkHeading,
           ),
         ),
         content: TextField(
           key: const Key('reject-reason'),
           controller: reasonController,
           maxLines: 2,
-          style: const TextStyle(color: inkHeading),
+          style: TextStyle(color: context.rpg.inkHeading),
           decoration: const InputDecoration(
             hintText: 'Powód (opcjonalnie)',
           ),
@@ -72,23 +72,23 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            style: TextButton.styleFrom(foregroundColor: crimson),
-            child: Text('Anuluj'.toUpperCase(), style: dialogActionStyle),
+            style: TextButton.styleFrom(foregroundColor: context.rpg.crimson),
+            child: Text('Anuluj'.toUpperCase(), style: dialogActionStyle(context)),
           ),
           TextButton(
             key: Key('confirm-reject-${request.id}'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(
-              backgroundColor: crimson,
-              foregroundColor: parchmentLight,
+              backgroundColor: context.rpg.crimson,
+              foregroundColor: context.rpg.parchmentLight,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(3),
-                side: const BorderSide(color: goldGlyph),
+                side: BorderSide(color: context.rpg.goldGlyph),
               ),
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            child: Text('Odrzuć'.toUpperCase(), style: dialogActionStyle),
+            child: Text('Odrzuć'.toUpperCase(), style: dialogActionStyle(context)),
           ),
         ],
       ),
@@ -122,20 +122,20 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
       // duplicating a second palette, and it matches how the same form
       // renders inside the requester's card.
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: parchment,
+        backgroundColor: context.rpg.parchment,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(color: crimson, width: 2),
+          borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+          side: BorderSide(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
         ),
         title: Text(
           'Edytuj prośbę'.toUpperCase(),
-          style: const TextStyle(
-            fontFamily: fontDisplay,
+          style: TextStyle(
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 13,
             fontWeight: FontWeight.w700,
             letterSpacing: 2,
-            color: inkHeading,
+            color: context.rpg.inkHeading,
           ),
         ),
         content: SingleChildScrollView(
@@ -148,23 +148,23 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            style: TextButton.styleFrom(foregroundColor: crimson),
-            child: Text('Anuluj'.toUpperCase(), style: dialogActionStyle),
+            style: TextButton.styleFrom(foregroundColor: context.rpg.crimson),
+            child: Text('Anuluj'.toUpperCase(), style: dialogActionStyle(context)),
           ),
           TextButton(
             key: const Key('confirm-edit'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(
-              backgroundColor: crimson,
-              foregroundColor: parchmentLight,
+              backgroundColor: context.rpg.crimson,
+              foregroundColor: context.rpg.parchmentLight,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(3),
-                side: const BorderSide(color: goldGlyph),
+                side: BorderSide(color: context.rpg.goldGlyph),
               ),
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            child: Text('Zaakceptuj'.toUpperCase(), style: dialogActionStyle),
+            child: Text('Zaakceptuj'.toUpperCase(), style: dialogActionStyle(context)),
           ),
         ],
       ),
@@ -193,8 +193,8 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
         onTap: () => setState(() => _filter = status),
         child: Container(
           decoration: BoxDecoration(
-            color: selected ? crimson : Colors.transparent,
-            border: Border.all(color: selected ? goldBorder : goldBorderFaint),
+            color: selected ? context.rpg.crimson : Colors.transparent,
+            border: Border.all(color: selected ? context.rpg.goldBorder : context.rpg.goldBorderFaint),
             borderRadius: BorderRadius.circular(3),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
@@ -202,10 +202,10 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
             label.toUpperCase(),
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: fontDisplay,
+              fontFamily: context.rpg.fontDisplay,
               fontSize: 9,
               letterSpacing: 1.5,
-              color: selected ? parchmentLight : parchmentMuted,
+              color: selected ? context.rpg.parchmentLight : context.rpg.onBgMuted,
             ),
           ),
         ),
@@ -218,30 +218,30 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
     final adminUid = ref.watch(appUserProvider).value?.uid;
 
     return Scaffold(
-      backgroundColor: bgDark,
+      backgroundColor: context.rpg.bgDark,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: parchmentMuted),
+        iconTheme: IconThemeData(color: context.rpg.parchmentMuted),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: appBarGradient,
-            border: Border(bottom: BorderSide(color: goldBorderFaint)),
+          decoration: BoxDecoration(
+            gradient: context.rpg.appBarGradient,
+            border: Border(bottom: BorderSide(color: context.rpg.goldBorderFaint)),
           ),
         ),
-        title: const Text(
+        title: Text(
           'Prośby o zmiany',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 14,
             letterSpacing: 3,
-            color: parchmentLight,
+            color: context.rpg.parchmentLight,
           ),
         ),
       ),
-      body: adminUid == null
-          ? const Center(
-              child: CircularProgressIndicator(color: gold),
+      body: ThemeBackdrop(child: adminUid == null
+          ? Center(
+              child: CircularProgressIndicator(color: context.rpg.gold),
             )
           : Column(
               children: [
@@ -267,13 +267,13 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
                   child: ref
                       .watch(changeRequestsByStatusProvider(_filter))
                       .when(
-                        loading: () => const Center(
-                          child: CircularProgressIndicator(color: gold),
+                        loading: () => Center(
+                          child: CircularProgressIndicator(color: context.rpg.gold),
                         ),
                         error: (e, _) => Center(
                           child: Text(
                             'Nie udało się wczytać próśb: $e',
-                            style: const TextStyle(color: parchmentMuted),
+                            style: TextStyle(color: context.rpg.onBgMuted),
                           ),
                         ),
                         data: (requests) => ListView(
@@ -307,7 +307,7 @@ class _ChangeRequestsScreenState extends ConsumerState<ChangeRequestsScreen> {
                       ),
                 ),
               ],
-            ),
+            )),
     );
   }
 }
@@ -339,11 +339,11 @@ class _RequestCard extends StatelessWidget {
     return Container(
       key: Key('request-${request.id}'),
       decoration: BoxDecoration(
-        border: Border.all(color: crimson, width: 2),
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: const [
+        border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
+        borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+        boxShadow: [
           BoxShadow(
-            color: cardShadowColor,
+            color: context.rpg.cardShadowColor,
             blurRadius: 16,
             offset: Offset(0, 4),
           ),
@@ -351,14 +351,14 @@ class _RequestCard extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Container(
-        decoration: const BoxDecoration(gradient: cardGradient),
+        decoration: BoxDecoration(gradient: context.rpg.cardGradient),
         padding: const EdgeInsets.all(16),
         child: Stack(
           children: [
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: crimsonBorder),
-                borderRadius: BorderRadius.circular(2),
+                border: Border.all(color: context.rpg.crimsonBorder),
+                borderRadius: BorderRadius.circular(context.rpg.innerRadius),
               ),
               padding: const EdgeInsets.all(12),
               width: double.infinity,
@@ -367,37 +367,37 @@ class _RequestCard extends StatelessWidget {
                 children: [
                   Text(
                     request.characterName,
-                    style: const TextStyle(
-                      fontFamily: fontDisplay,
+                    style: TextStyle(
+                      fontFamily: context.rpg.fontDisplay,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: inkHeading,
+                      color: context.rpg.inkHeading,
                     ),
                   ),
                   Text(
                     request.requesterEmail,
-                    style: const TextStyle(color: traitNameInk),
+                    style: TextStyle(color: context.rpg.traitNameInk),
                   ),
                   if (request.questTitle != null) ...[
                     const SizedBox(height: 4),
                     Text(
                       'Zadanie: ${request.questTitle}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontStyle: FontStyle.italic,
-                        color: traitNameInk,
+                        color: context.rpg.traitNameInk,
                       ),
                     ),
                   ],
                   const SizedBox(height: 8),
                   for (final line in deltaLines)
-                    Text(line, style: const TextStyle(color: inkHeading)),
+                    Text(line, style: TextStyle(color: context.rpg.inkHeading)),
                   if (request.reason != null) ...[
                     const SizedBox(height: 8),
                     Text(
                       request.reason!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontStyle: FontStyle.italic,
-                        color: traitNameInk,
+                        color: context.rpg.traitNameInk,
                       ),
                     ),
                   ],
@@ -405,7 +405,7 @@ class _RequestCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       formatTimestamp(request.createdAt!),
-                      style: const TextStyle(color: traitNameInk, fontSize: 12),
+                      style: TextStyle(color: context.rpg.traitNameInk, fontSize: 12),
                     ),
                   ],
                   if (request.isPending) ...[

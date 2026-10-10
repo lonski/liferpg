@@ -200,15 +200,15 @@ void main() {
       (tester) async {
     await pumpScreen(tester, await seed());
 
-    final darkInkColors = <Color>{crimson, inkDark, inkHeading, traitNameInk};
+    final darkInkColors = <Color>{RpgTheme.kronika.crimson, RpgTheme.kronika.inkDark, RpgTheme.kronika.inkHeading, RpgTheme.kronika.traitNameInk};
     final lightParchmentColors = <Color>{
-      parchmentLight,
-      parchmentMuted,
-      parchmentFaint,
-      parchmentSoft,
-      parchmentMedium,
-      parchmentGhost,
-      gold,
+      RpgTheme.kronika.parchmentLight,
+      RpgTheme.kronika.parchmentMuted,
+      RpgTheme.kronika.parchmentFaint,
+      RpgTheme.kronika.parchmentSoft,
+      RpgTheme.kronika.parchmentMedium,
+      RpgTheme.kronika.parchmentGhost,
+      RpgTheme.kronika.gold,
     };
 
     for (final label in ['ADMIN', 'TYLKO DO ODCZYTU']) {

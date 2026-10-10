@@ -116,7 +116,7 @@ class _ChangeRequestFormState extends ConsumerState<ChangeRequestForm> {
           TraitChangeField(initial: _trait, onChanged: _onTraitChanged),
           if (widget.showReason) ...[
             const SizedBox(height: 12),
-            Text('Powód'.toUpperCase(), style: fieldLabel),
+            Text('Powód'.toUpperCase(), style: fieldLabel(context)),
             const SizedBox(height: 6),
             boxedField(
               key: const Key('field-reason'),
@@ -143,7 +143,7 @@ class _Labelled extends StatelessWidget {
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label.toUpperCase(), style: fieldLabel),
+        Text(label.toUpperCase(), style: fieldLabel(context)),
         SizedBox(width: width, child: child),
       ],
     ),

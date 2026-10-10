@@ -4,25 +4,26 @@ import 'package:flutter/material.dart';
 
 import '../../models/electronics_days.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/decor.dart' show eggPath;
 import '../../theme/ornaments.dart';
 
-const TextStyle _headline = TextStyle(
-  fontFamily: fontBody,
+TextStyle _headline(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontBody,
   fontSize: 14,
   fontWeight: FontWeight.w700,
   fontStyle: FontStyle.italic,
-  color: inkHeading,
+  color: context.rpg.inkHeading,
 );
 
-const TextStyle _status = TextStyle(
-  fontFamily: fontBody,
+TextStyle _status(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontBody,
   fontSize: 10,
   fontStyle: FontStyle.italic,
-  color: crimson,
+  color: context.rpg.crimson,
 );
 
-const TextStyle _buttonText = TextStyle(
-  fontFamily: fontDisplay,
+TextStyle _buttonText(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontDisplay,
   fontSize: 11,
   fontWeight: FontWeight.w700,
   letterSpacing: 2,
@@ -71,16 +72,16 @@ class ElectronicsSection extends StatelessWidget {
           key: const Key('electronics-claim'),
           onPressed: onClaim,
           style: FilledButton.styleFrom(
-            backgroundColor: crimson,
-            foregroundColor: parchmentLight,
+            backgroundColor: context.rpg.actionFill,
+            foregroundColor: context.rpg.onActionFill,
             minimumSize: const Size(0, 36),
             padding: const EdgeInsets.symmetric(horizontal: 12),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(3),
-              side: const BorderSide(color: goldGlyph),
+              borderRadius: BorderRadius.circular(context.rpg.buttonRadius),
+              side: BorderSide(color: context.rpg.actionBorder),
             ),
           ),
-          child: Text('Odbierz'.toUpperCase(), style: _buttonText),
+          child: Text('Odbierz'.toUpperCase(), style: _buttonText(context)),
         ),
       // The full "Anuluj prośbę" would squeeze the status text on narrow
       // screens now that the button shares the ring's row; it lives on in
@@ -91,15 +92,15 @@ class ElectronicsSection extends StatelessWidget {
             key: const Key('electronics-cancel'),
             onPressed: onCancel,
             style: OutlinedButton.styleFrom(
-              foregroundColor: crimson,
+              foregroundColor: context.rpg.crimson,
               minimumSize: const Size(0, 36),
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              side: const BorderSide(color: crimson),
+              side: BorderSide(color: context.rpg.crimson),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: BorderRadius.circular(context.rpg.buttonRadius),
               ),
             ),
-            child: Text('Anuluj'.toUpperCase(), style: _buttonText),
+            child: Text('Anuluj'.toUpperCase(), style: _buttonText(context)),
           ),
         ),
       _ => null,
@@ -124,9 +125,9 @@ class ElectronicsSection extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(headline, style: _headline),
+                  Text(headline, style: _headline(context)),
                   const SizedBox(height: 2),
-                  Text(status, style: _status),
+                  Text(status, style: _status(context)),
                 ],
               ),
             ),
@@ -151,53 +152,82 @@ class _Medallion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.rpg;
     final badge = switch (state) {
       ElectronicsCardState.pending =>
-        (gold, inkHeading, Icons.hourglass_bottom),
-      ElectronicsCardState.claimed => (crimson, parchmentLight, Icons.close),
+        (t.gold, t.inkHeading, Icons.hourglass_bottom),
+      ElectronicsCardState.claimed => (t.crimson, t.parchmentLight, Icons.close),
       _ => null,
     };
+    final egg = t.decor.eggMedallion;
 
     return SizedBox(
       key: const Key('electronics-ring'),
-      width: 52,
-      height: 52,
+      width: egg ? 46 : 52,
+      height: egg ? 56 : 52,
       child: Stack(
         children: [
           Positioned.fill(
             child: CustomPaint(
-              painter: _RingPainter(fraction: dayFraction, state: state),
+              painter: egg
+                  ? _EggPainter(fraction: dayFraction, state: state, theme: t)
+                  : _RingPainter(fraction: dayFraction, state: state, theme: t),
             ),
           ),
-          Positioned(
-            left: 5,
-            top: 5,
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: crimsonFaint,
-                border: Border.all(color: crimson, width: 2),
-              ),
-              alignment: Alignment.center,
-              padding: const EdgeInsets.all(6),
+          if (egg)
+            // The thin Fredoka Light digit fills the egg yet lets the yolk
+            // level show through its strokes.
+            Positioned(
+              left: 4,
+              right: 4,
+              top: 10,
+              bottom: 2,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   '$available',
                   key: const Key('electronics-count'),
-                  style: const TextStyle(
-                    fontFamily: fontDisplay,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                  textScaler: TextScaler.noScaling,
+                  style: TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 46,
+                    fontWeight: FontWeight.w300,
                     height: 1,
-                    color: inkHeading,
+                    color: t.inkHeading,
+                  ),
+                ),
+              ),
+            )
+          else
+            Positioned(
+              left: 5,
+              top: 5,
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: t.crimsonFaint,
+                  border: Border.all(color: t.crimson, width: 2),
+                ),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(6),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '$available',
+                    key: const Key('electronics-count'),
+                    style: TextStyle(
+                      fontFamily: t.fontDisplay,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
+                      color: t.inkHeading,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           if (badge != null)
             Positioned(
               right: 0,
@@ -208,7 +238,7 @@ class _Medallion extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: badge.$1,
-                  border: Border.all(color: parchmentLight, width: 1.5),
+                  border: Border.all(color: t.parchmentLight, width: 1.5),
                 ),
                 child: Icon(badge.$3, size: 9, color: badge.$2),
               ),
@@ -222,10 +252,11 @@ class _Medallion extends StatelessWidget {
 /// The track plus today's arc: gold while charging, faded crimson while a
 /// claim is pending, and a dashed crimson circle once today is claimed.
 class _RingPainter extends CustomPainter {
-  _RingPainter({required this.fraction, required this.state});
+  _RingPainter({required this.fraction, required this.state, required this.theme});
 
   final double fraction;
   final ElectronicsCardState state;
+  final RpgTheme theme;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -235,7 +266,7 @@ class _RingPainter extends CustomPainter {
 
     if (state == ElectronicsCardState.claimed) {
       final dash = Paint()
-        ..color = crimsonBorder
+        ..color = theme.crimsonBorder
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2;
       const segments = 32;
@@ -250,7 +281,7 @@ class _RingPainter extends CustomPainter {
       center,
       radius,
       Paint()
-        ..color = crimsonBorderFaint
+        ..color = theme.crimsonBorderFaint
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3,
     );
@@ -260,7 +291,7 @@ class _RingPainter extends CustomPainter {
       2 * math.pi * fraction.clamp(0.0, 1.0),
       false,
       Paint()
-        ..color = state == ElectronicsCardState.pending ? ornamentInk : gold
+        ..color = state == ElectronicsCardState.pending ? theme.ornamentInk : theme.gold
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
         ..strokeWidth = 3,
@@ -269,5 +300,57 @@ class _RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RingPainter old) =>
-      old.fraction != fraction || old.state != state;
+      old.fraction != fraction || old.state != state || old.theme != theme;
+}
+
+/// Kurczaki's medallion: an eggshell that fills with yolk from the bottom
+/// over the day (paler while a claim is pending), drawn with a dashed shell
+/// and no yolk once today is claimed.
+class _EggPainter extends CustomPainter {
+  _EggPainter({required this.fraction, required this.state, required this.theme});
+
+  final double fraction;
+  final ElectronicsCardState state;
+  final RpgTheme theme;
+
+  static const _yolk = Color(0xFFFFD95A);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final egg = eggPath(size);
+    canvas.drawPath(egg, Paint()..color = theme.parchmentLight);
+
+    if (state != ElectronicsCardState.claimed) {
+      final bounds = egg.getBounds();
+      final level = bounds.bottom - bounds.height * fraction.clamp(0.0, 1.0);
+      canvas.save();
+      canvas.clipPath(egg);
+      canvas.drawRect(
+        Rect.fromLTRB(0, level, size.width, size.height),
+        Paint()
+          ..color = state == ElectronicsCardState.pending
+              ? _yolk.withValues(alpha: 0.45)
+              : _yolk,
+      );
+      canvas.restore();
+    }
+
+    final shell = Paint()
+      ..color = state == ElectronicsCardState.claimed ? theme.crimsonBorder : theme.crimson
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4;
+    if (state == ElectronicsCardState.claimed) {
+      for (final metric in egg.computeMetrics()) {
+        for (var d = 0.0; d < metric.length; d += 7) {
+          canvas.drawPath(metric.extractPath(d, d + 3.5), shell);
+        }
+      }
+    } else {
+      canvas.drawPath(egg, shell);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_EggPainter old) =>
+      old.fraction != fraction || old.state != state || old.theme != theme;
 }

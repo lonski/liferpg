@@ -9,6 +9,7 @@ import '../../providers/hidden_characters_providers.dart';
 import '../../providers/quest_providers.dart';
 import '../../providers/user_providers.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/ornaments.dart';
 
 class UserManagementScreen extends ConsumerStatefulWidget {
   const UserManagementScreen({super.key});
@@ -52,28 +53,28 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     final rosterIds = {for (final e in roster) e.characterId};
 
     return Scaffold(
-      backgroundColor: bgDark,
+      backgroundColor: context.rpg.bgDark,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: parchmentMuted),
+        iconTheme: IconThemeData(color: context.rpg.parchmentMuted),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: appBarGradient,
-            border: Border(bottom: BorderSide(color: goldBorderFaint)),
+          decoration: BoxDecoration(
+            gradient: context.rpg.appBarGradient,
+            border: Border(bottom: BorderSide(color: context.rpg.goldBorderFaint)),
           ),
         ),
-        title: const Text(
+        title: Text(
           'Użytkownicy',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 14,
             letterSpacing: 3,
-            color: parchmentLight,
+            color: context.rpg.parchmentLight,
           ),
         ),
       ),
-      body: Center(
+      body: ThemeBackdrop(child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 440),
           child: Column(
@@ -105,39 +106,39 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
               ),
               Expanded(
                 child: users.when(
-                  loading: () => const Center(
+                  loading: () => Center(
                       child:
-                          CircularProgressIndicator(color: crimsonBright)),
+                          CircularProgressIndicator(color: context.rpg.crimsonBright)),
                   error: (error, _) => Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
                         'Nie udało się wczytać użytkowników: $error',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: parchmentLight),
+                        style: TextStyle(color: context.rpg.onBg),
                       ),
                     ),
                   ),
                   data: (list) => list.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
                             'Brak użytkowników',
                             style: TextStyle(
-                              fontFamily: fontDisplay,
+                              fontFamily: context.rpg.fontDisplay,
                               fontSize: 12,
                               // Drawn directly on the dark scaffold (bgDark),
                               // not a parchment surface, so it needs a light
                               // ink -- see CLAUDE.md contrast notes. Matches
                               // the error-state text above.
-                              color: parchmentLight,
+                              color: context.rpg.onBg,
                             ),
                           ),
                         )
                       : ListView.separated(
                           padding: const EdgeInsets.all(16),
                           itemCount: list.length,
-                          separatorBuilder: (context, i) => const Divider(
-                              color: crimsonBorderFaint, height: 1),
+                          separatorBuilder: (context, i) => Divider(
+                              color: context.rpg.crimsonBorderFaint, height: 1),
                           itemBuilder: (context, i) {
                             final user = list[i];
                             return _UserRow(
@@ -153,7 +154,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
             ],
           ),
         ),
-      ),
+      )),
     );
   }
 }
@@ -183,32 +184,32 @@ class _UserRow extends StatelessWidget {
           children: [
             Text(
               user.name.isEmpty ? 'Bez nazwy' : user.name,
-              style: const TextStyle(
-                fontFamily: fontDisplay,
+              style: TextStyle(
+                fontFamily: context.rpg.fontDisplay,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1,
-                color: parchmentLight,
+                color: context.rpg.onBg,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               user.email,
-              style: const TextStyle(
-                fontFamily: fontBody,
+              style: TextStyle(
+                fontFamily: context.rpg.fontBody,
                 fontSize: 10,
-                color: parchmentFaint,
+                color: context.rpg.onBgFaint,
               ),
             ),
             const SizedBox(height: 4),
             if (busy)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: SizedBox(
                   width: 20,
                   height: 20,
                   child:
-                      CircularProgressIndicator(strokeWidth: 2, color: gold),
+                      CircularProgressIndicator(strokeWidth: 2, color: context.rpg.gold),
                 ),
               )
             else
@@ -273,13 +274,13 @@ class _HiddenCharactersSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Ukryte postacie',
             style: TextStyle(
-              fontFamily: fontDisplay,
+              fontFamily: context.rpg.fontDisplay,
               fontSize: 11,
               letterSpacing: 2,
-              color: parchmentMuted,
+              color: context.rpg.onBgMuted,
             ),
           ),
           const SizedBox(height: 6),
@@ -299,7 +300,7 @@ class _HiddenCharactersSection extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(c.name,
-                              style: const TextStyle(color: parchmentLight)),
+                              style: TextStyle(color: context.rpg.onBg)),
                           TextButton(
                             key: Key('unhide-${c.id}'),
                             onPressed: () => onUnhide(c.id),
@@ -312,7 +313,7 @@ class _HiddenCharactersSection extends StatelessWidget {
               ),
             ),
           ),
-          const Divider(color: crimsonBorderFaint, height: 16),
+          Divider(color: context.rpg.crimsonBorderFaint, height: 16),
         ],
       ),
     );
@@ -342,13 +343,13 @@ class _QuestRosterSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Uczestnicy zadań',
             style: TextStyle(
-              fontFamily: fontDisplay,
+              fontFamily: context.rpg.fontDisplay,
               fontSize: 11,
               letterSpacing: 2,
-              color: parchmentMuted,
+              color: context.rpg.onBgMuted,
             ),
           ),
           const SizedBox(height: 6),
@@ -361,7 +362,7 @@ class _QuestRosterSection extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(c.name, style: const TextStyle(color: parchmentLight)),
+                        Text(c.name, style: TextStyle(color: context.rpg.onBg)),
                         Switch(
                           key: Key('quest-roster-toggle-${c.id}'),
                           value: rosterIds.contains(c.id),
@@ -373,7 +374,7 @@ class _QuestRosterSection extends StatelessWidget {
               ),
             ),
           ),
-          const Divider(color: crimsonBorderFaint, height: 16),
+          Divider(color: context.rpg.crimsonBorderFaint, height: 16),
         ],
       ),
     );
@@ -413,17 +414,17 @@ class _LabelledSwitch extends StatelessWidget {
           Flexible(
             child: Text(
               label.toUpperCase(),
-              style: const TextStyle(
-                fontFamily: fontDisplay,
+              style: TextStyle(
+                fontFamily: context.rpg.fontDisplay,
                 fontSize: 9,
                 letterSpacing: 2,
                 // This row sits directly on the dark scaffold (bgDark), not
                 // the parchment surface `crimson` was designed for in the
                 // React dialog -- crimson-on-bgDark is ~1.6:1 contrast,
-                // effectively invisible. parchmentMuted matches the muted
+                // effectively invisible. onBgMuted matches the muted
                 // tone used for other controls/icons on this background
                 // (e.g. the AppBar iconTheme) and clears WCAG AA.
-                color: parchmentMuted,
+                color: context.rpg.onBgMuted,
               ),
             ),
           ),

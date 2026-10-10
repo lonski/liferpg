@@ -8,8 +8,8 @@ import '../../theme/ornaments.dart';
 import 'achievement_badge.dart';
 import 'achievement_widgets.dart';
 
-const TextStyle _button = TextStyle(
-  fontFamily: fontDisplay,
+TextStyle _button(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontDisplay,
   fontSize: 12,
   letterSpacing: 2,
 );
@@ -39,32 +39,32 @@ Future<void> showNewAchievementDialog(
               const SizedBox(height: 8),
               Text(
                 'Odznaka ${tierAdjective(a.tier)}'.toUpperCase(),
-                style: const TextStyle(
-                  fontFamily: fontDisplay,
+                style: TextStyle(
+                  fontFamily: context.rpg.fontDisplay,
                   fontSize: 10,
                   letterSpacing: 3,
-                  color: crimson,
+                  color: context.rpg.crimson,
                 ),
               ),
               Text(
                 a.title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: fontDisplay,
+                style: TextStyle(
+                  fontFamily: context.rpg.fontDisplay,
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: inkHeading,
+                  color: context.rpg.inkHeading,
                 ),
               ),
               if (a.event != null)
                 Text(
                   a.event!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: fontBody,
+                  style: TextStyle(
+                    fontFamily: context.rpg.fontBody,
                     fontSize: 14,
                     fontStyle: FontStyle.italic,
-                    color: crimson,
+                    color: context.rpg.crimson,
                   ),
                 ),
               if (rewardParts(a.reward).isNotEmpty) ...[
@@ -81,11 +81,11 @@ Future<void> showNewAchievementDialog(
                       key: const Key('new-achievement-share'),
                       onPressed: onShare,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: crimson,
-                        side: const BorderSide(color: crimson),
+                        foregroundColor: context.rpg.crimson,
+                        side: BorderSide(color: context.rpg.crimson),
                         minimumSize: const Size.fromHeight(44),
                       ),
-                      child: Text('Udostępnij'.toUpperCase(), style: _button),
+                      child: Text('Udostępnij'.toUpperCase(), style: _button(context)),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -94,11 +94,11 @@ Future<void> showNewAchievementDialog(
                       key: const Key('new-achievement-close'),
                       onPressed: () => Navigator.of(dialogContext).pop(),
                       style: FilledButton.styleFrom(
-                        backgroundColor: crimson,
-                        foregroundColor: parchmentLight,
+                        backgroundColor: context.rpg.crimson,
+                        foregroundColor: context.rpg.parchmentLight,
                         minimumSize: const Size.fromHeight(44),
                       ),
-                      child: Text('Wspaniale'.toUpperCase(), style: _button),
+                      child: Text('Wspaniale'.toUpperCase(), style: _button(context)),
                     ),
                   ),
                 ],

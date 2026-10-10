@@ -16,18 +16,18 @@ import 'achievement_share.dart';
 import 'achievement_widgets.dart';
 import 'award_achievement_screen.dart';
 
-const TextStyle _metaLabel = TextStyle(
-  fontFamily: fontDisplay,
+TextStyle _metaLabel(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontDisplay,
   fontSize: 10,
   letterSpacing: 2,
-  color: crimson,
+  color: context.rpg.crimson,
 );
 
-const TextStyle _metaValue = TextStyle(
-  fontFamily: fontBody,
+TextStyle _metaValue(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontBody,
   fontSize: 14,
   fontWeight: FontWeight.w600,
-  color: inkHeading,
+  color: context.rpg.inkHeading,
 );
 
 class AchievementDetailScreen extends ConsumerStatefulWidget {
@@ -100,8 +100,9 @@ class _AchievementDetailScreenState
     }
 
     return Scaffold(
-      backgroundColor: bgDark,
+      backgroundColor: context.rpg.bgDark,
       appBar: achievementAppBar(
+        context,
         'Odznaka',
         actions: [
           if (character != null && achievement != null)
@@ -137,21 +138,24 @@ class _AchievementDetailScreenState
           ],
         ],
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator(color: gold))
+      body: ThemeBackdrop(child: loading
+          ? Center(child: CircularProgressIndicator(color: context.rpg.gold))
           : achievement == null
-          ? const Center(
+          ? Center(
               child: Text(
                 'Ta odznaka już nie istnieje',
-                style: TextStyle(fontFamily: fontBody, color: parchmentLight),
+                style: TextStyle(fontFamily: context.rpg.fontBody, color: context.rpg.onBg),
               ),
             )
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 Center(
-                  child: BadgeGlow(
-                    child: AchievementBadge.of(achievement, size: 150),
+                  child: context.rpg.decor.badgeHero(
+                    context,
+                    BadgeGlow(
+                      child: AchievementBadge.of(achievement, size: 150),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -160,7 +164,7 @@ class _AchievementDetailScreenState
                   child: _Body(achievement: achievement),
                 ),
               ],
-            ),
+            )),
     );
   }
 }
@@ -179,41 +183,41 @@ class _Body extends StatelessWidget {
         Text(
           a.title,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontFamily: fontDisplay,
+          style: TextStyle(
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 22,
             fontWeight: FontWeight.w700,
             letterSpacing: 1,
-            color: inkHeading,
+            color: context.rpg.inkHeading,
           ),
         ),
         if (a.event != null)
           Text(
             a.event!,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontFamily: fontBody,
+            style: TextStyle(
+              fontFamily: context.rpg.fontBody,
               fontSize: 15,
               fontStyle: FontStyle.italic,
-              color: crimson,
+              color: context.rpg.crimson,
             ),
           ),
         if (a.reason != null) ...[
           const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
-              color: crimsonBgFaint,
-              border: Border.all(color: crimsonBorderFaint),
+              color: context.rpg.crimsonBgFaint,
+              border: Border.all(color: context.rpg.crimsonBorderFaint),
               borderRadius: BorderRadius.circular(3),
             ),
             padding: const EdgeInsets.all(10),
             child: Text(
               '„${a.reason}”',
-              style: const TextStyle(
-                fontFamily: fontBody,
+              style: TextStyle(
+                fontFamily: context.rpg.fontBody,
                 fontSize: 14,
                 height: 1.35,
-                color: inkHeading,
+                color: context.rpg.inkHeading,
               ),
             ),
           ),
@@ -225,8 +229,8 @@ class _Body extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Przyznano'.toUpperCase(), style: _metaLabel),
-                  Text(formatPolishDate(a.date), style: _metaValue),
+                  Text('Przyznano'.toUpperCase(), style: _metaLabel(context)),
+                  Text(formatPolishDate(a.date), style: _metaValue(context)),
                 ],
               ),
             ),
@@ -234,8 +238,8 @@ class _Body extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Przyznał'.toUpperCase(), style: _metaLabel),
-                  Text(a.awardedByName, style: _metaValue),
+                  Text('Przyznał'.toUpperCase(), style: _metaLabel(context)),
+                  Text(a.awardedByName, style: _metaValue(context)),
                 ],
               ),
             ),

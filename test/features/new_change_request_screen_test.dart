@@ -202,7 +202,7 @@ void main() {
       of: find.byKey(Key('my-request-${request.id}')),
       matching: find.text('Oczekuje'),
     ));
-    expect(statusText.style?.color, parchmentMuted);
+    expect(statusText.style?.color, RpgTheme.kronika.parchmentMuted);
   });
 
   testWidgets('tapping a request shows what was asked for', (tester) async {

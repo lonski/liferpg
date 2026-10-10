@@ -33,60 +33,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final version = ref.watch(appVersionProvider).value;
     return Scaffold(
-      backgroundColor: bgDark,
-      body: Center(
+      backgroundColor: context.rpg.bgDark,
+      body: ThemeBackdrop(
+        child: Stack(
+          children: [
+            if (context.rpg.decor.loginScene(context) case final scene?)
+              Positioned(left: 0, right: 0, bottom: 0, child: scene),
+            Positioned.fill(child: _content(context, version)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _content(BuildContext context, String? version) {
+    return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '⚔',
-                style: TextStyle(
-                  fontSize: 40,
-                  color: gold,
-                  shadows: [Shadow(color: goldBorder, blurRadius: 12)],
-                ),
-              ),
+              context.rpg.decor.loginEmblem(context),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'LifeRPG',
                 style: TextStyle(
-                  fontFamily: fontDisplay,
+                  fontFamily: context.rpg.fontDisplay,
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 4,
-                  color: parchmentLight,
-                  shadows: [Shadow(color: goldBorderFaint, blurRadius: 20)],
+                  color: context.rpg.onBg,
+                  shadows: [Shadow(color: context.rpg.goldBorderFaint, blurRadius: 20)],
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Kronika Bohaterów'.toUpperCase(),
-                style: const TextStyle(
-                  fontFamily: fontDisplay,
+                style: TextStyle(
+                  fontFamily: context.rpg.fontDisplay,
                   fontSize: 9,
                   letterSpacing: 5,
-                  color: goldSubtitle,
+                  color: context.rpg.goldSubtitle,
                 ),
               ),
               const SizedBox(height: 12),
-              const OrnamentDivider(
-                color: goldBorder,
-                glyphColor: goldGlyph,
+              OrnamentDivider(
+                color: context.rpg.goldBorder,
+                glyphColor: context.rpg.goldGlyph,
                 width: 160,
               ),
               const SizedBox(height: 32),
               _SignInButton(busy: _busy, onPressed: _busy ? null : _signIn),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 '„Twoja legenda czeka...”',
                 style: TextStyle(
-                  fontFamily: fontBody,
+                  fontFamily: context.rpg.fontBody,
                   fontSize: 9,
                   fontStyle: FontStyle.italic,
                   letterSpacing: 1,
-                  color: parchmentGhost,
+                  color: context.rpg.onBgGhost,
                 ),
               ),
               if (version != null) ...[
@@ -94,18 +100,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Text(
                   version,
                   key: const Key('app-version'),
-                  style: const TextStyle(
-                    fontFamily: fontBody,
+                  style: TextStyle(
+                    fontFamily: context.rpg.fontBody,
                     fontSize: 9,
-                    color: parchmentGhost,
+                    color: context.rpg.onBgGhost,
                   ),
                 ),
               ],
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -123,11 +128,11 @@ class _SignInButton extends StatelessWidget {
         onTap: onPressed,
         child: Container(
           decoration: BoxDecoration(
-            gradient: buttonGradient,
-            border: Border.all(color: goldGlyph),
-            borderRadius: BorderRadius.circular(3),
-            boxShadow: const [
-              BoxShadow(color: buttonShadowColor, blurRadius: 16, offset: Offset(0, 4)),
+            gradient: context.rpg.buttonGradient,
+            border: Border.all(color: context.rpg.goldGlyph),
+            borderRadius: BorderRadius.circular(context.rpg.buttonRadius),
+            boxShadow: [
+              BoxShadow(color: context.rpg.buttonShadowColor, blurRadius: 16, offset: Offset(0, 4)),
             ],
           ),
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
@@ -135,44 +140,48 @@ class _SignInButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (busy)
-                const SizedBox(
+                SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: gold),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: context.rpg.gold),
                 )
               else
-                const Text(
+                Text(
                   'G',
                   style: TextStyle(
-                    fontFamily: fontDisplay,
+                    fontFamily: context.rpg.fontDisplay,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: gold,
+                    color: context.rpg.gold,
                   ),
                 ),
               const SizedBox(width: 12),
-              Column(
+              // Flexible so a narrow phone or a large text scale wraps the
+              // label instead of overflowing the button.
+              Flexible(
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Zaloguj przez Google'.toUpperCase(),
-                    style: const TextStyle(
-                      fontFamily: fontDisplay,
+                    style: TextStyle(
+                      fontFamily: context.rpg.fontDisplay,
                       fontSize: 11,
                       letterSpacing: 3,
-                      color: parchmentLight,
+                      color: context.rpg.parchmentLight,
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Wejdź do Kroniki',
                     style: TextStyle(
-                      fontFamily: fontBody,
+                      fontFamily: context.rpg.fontBody,
                       fontSize: 9,
                       fontStyle: FontStyle.italic,
-                      color: parchmentFaint,
+                      color: context.rpg.parchmentFaint,
                     ),
                   ),
                 ],
+              ),
               ),
             ],
           ),

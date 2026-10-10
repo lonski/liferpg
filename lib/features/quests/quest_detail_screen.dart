@@ -8,6 +8,7 @@ import '../../providers/character_providers.dart';
 import '../../providers/quest_notification_providers.dart';
 import '../../providers/quest_providers.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/ornaments.dart';
 import '../../theme/dialogs.dart';
 import 'new_quest_screen.dart';
 import 'quest_card.dart';
@@ -42,7 +43,7 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
     return showDialog<Character>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
-        backgroundColor: parchment,
+        backgroundColor: context.rpg.parchment,
         title: const Text('Wybierz postać'),
         children: [
           for (final c in characters)
@@ -229,36 +230,36 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
   Widget? _statusBadge(Quest quest) {
     switch (quest.status) {
       case QuestStatus.pendingReview:
-        return const Text('OCZEKUJE NA AKCEPTACJĘ',
-            style: TextStyle(fontSize: 12, color: crimson));
+        return Text('OCZEKUJE NA AKCEPTACJĘ',
+            style: TextStyle(fontSize: 12, color: context.rpg.crimson));
       case QuestStatus.completed:
-        return const Text(
+        return Text(
           'ZAAKCEPTOWANE',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 12,
             letterSpacing: 1,
             color: Color(0xFF3C6E3C),
           ),
         );
       case QuestStatus.failed:
-        return const Text(
+        return Text(
           'ODRZUCONE',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 12,
             letterSpacing: 1,
             color: Color(0xFF8C3228),
           ),
         );
       case QuestStatus.cancelled:
-        return const Text(
+        return Text(
           'WYCOFANE',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 12,
             letterSpacing: 1,
-            color: parchmentMuted,
+            color: context.rpg.cardMuted,
           ),
         );
       case QuestStatus.assigned:
@@ -266,10 +267,10 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
         return Text(
           quest.isDueToday ? 'DO ZROBIENIA DZIŚ' : '✓ ZROBIONE DZIŚ — WRÓCI JUTRO',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 11.5,
             letterSpacing: 1,
-            color: quest.isDueToday ? crimson : const Color(0xFF3C6E3C),
+            color: quest.isDueToday ? context.rpg.crimson : const Color(0xFF3C6E3C),
           ),
         );
       case QuestStatus.open:
@@ -288,37 +289,37 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
     final ownCharacterIds = ref.watch(myOwnCharacterIdsProvider);
     final quest = ref.watch(questByIdProvider(widget.questId));
     return Scaffold(
-      backgroundColor: bgDark,
+      backgroundColor: context.rpg.bgDark,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: parchmentMuted),
+        iconTheme: IconThemeData(color: context.rpg.parchmentMuted),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: appBarGradient,
-            border: Border(bottom: BorderSide(color: goldBorderFaint)),
+          decoration: BoxDecoration(
+            gradient: context.rpg.appBarGradient,
+            border: Border(bottom: BorderSide(color: context.rpg.goldBorderFaint)),
           ),
         ),
-        title: const Text(
+        title: Text(
           'Zadanie',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 14,
             letterSpacing: 3,
-            color: parchmentLight,
+            color: context.rpg.parchmentLight,
           ),
         ),
       ),
-      body: quest.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: gold)),
+      body: ThemeBackdrop(child: quest.when(
+        loading: () => Center(child: CircularProgressIndicator(color: context.rpg.gold)),
         error: (e, _) => Center(
           child: Text('Nie udało się wczytać zadania: $e',
-              style: const TextStyle(color: parchmentMuted)),
+              style: TextStyle(color: context.rpg.onBgMuted)),
         ),
         data: (quest) => quest == null
-            ? const Center(
+            ? Center(
                 child: Text('Nie znaleziono zadania',
-                    style: TextStyle(color: parchmentMuted)),
+                    style: TextStyle(color: context.rpg.onBgMuted)),
               )
             : Padding(
                 padding: const EdgeInsets.all(16),
@@ -332,7 +333,7 @@ class _QuestDetailScreenState extends ConsumerState<QuestDetailScreen> {
                   actions: _actionsFor(quest, uid, ownCharacterIds),
                 ),
               ),
-      ),
+      )),
     );
   }
 }

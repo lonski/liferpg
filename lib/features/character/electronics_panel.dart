@@ -173,20 +173,20 @@ class _ElectronicsPanelState extends ConsumerState<ElectronicsPanel>
     final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: parchment,
+        backgroundColor: context.rpg.parchment,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(color: crimson, width: 2),
+          borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+          side: BorderSide(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
         ),
         title: Text(
           'Dzień z elektroniką?'.toUpperCase(),
-          style: const TextStyle(
-            fontFamily: fontDisplay,
+          style: TextStyle(
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 13,
             fontWeight: FontWeight.w700,
             letterSpacing: 2,
-            color: inkHeading,
+            color: context.rpg.inkHeading,
           ),
         ),
         content: Column(
@@ -195,22 +195,22 @@ class _ElectronicsPanelState extends ConsumerState<ElectronicsPanel>
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('$from', style: _countStyle(inkHeading)),
-                const Padding(
+                Text('$from', style: _countStyle(context, context.rpg.inkHeading)),
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 14),
-                  child: Icon(Icons.arrow_forward, color: crimson, size: 20),
+                  child: Icon(Icons.arrow_forward, color: context.rpg.crimson, size: 20),
                 ),
-                Text('${from - 1}', style: _countStyle(crimson)),
+                Text('${from - 1}', style: _countStyle(context, context.rpg.crimson)),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               body,
-              style: const TextStyle(
-                fontFamily: fontBody,
+              style: TextStyle(
+                fontFamily: context.rpg.fontBody,
                 fontSize: 12,
                 height: 1.6,
-                color: inkDark,
+                color: context.rpg.inkDark,
               ),
             ),
           ],
@@ -218,22 +218,22 @@ class _ElectronicsPanelState extends ConsumerState<ElectronicsPanel>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            style: TextButton.styleFrom(foregroundColor: crimson),
-            child: Text('Anuluj'.toUpperCase(), style: dialogActionStyle),
+            style: TextButton.styleFrom(foregroundColor: context.rpg.crimson),
+            child: Text('Anuluj'.toUpperCase(), style: dialogActionStyle(context)),
           ),
           TextButton(
             key: const Key('electronics-claim-confirm'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(
-              backgroundColor: crimson,
-              foregroundColor: parchmentLight,
+              backgroundColor: context.rpg.crimson,
+              foregroundColor: context.rpg.parchmentLight,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(3),
-                side: const BorderSide(color: goldGlyph),
+                side: BorderSide(color: context.rpg.goldGlyph),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-            child: Text(confirmLabel.toUpperCase(), style: dialogActionStyle),
+            child: Text(confirmLabel.toUpperCase(), style: dialogActionStyle(context)),
           ),
         ],
       ),
@@ -241,8 +241,8 @@ class _ElectronicsPanelState extends ConsumerState<ElectronicsPanel>
     return result ?? false;
   }
 
-  static TextStyle _countStyle(Color color) => TextStyle(
-        fontFamily: fontDisplay,
+  static TextStyle _countStyle(BuildContext context, Color color) => TextStyle(
+        fontFamily: context.rpg.fontDisplay,
         fontSize: 24,
         fontWeight: FontWeight.w700,
         color: color,

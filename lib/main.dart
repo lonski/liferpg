@@ -19,6 +19,7 @@ import 'features/requests/change_requests_screen.dart';
 import 'features/requests/new_change_request_screen.dart';
 import 'firebase_options.dart';
 import 'providers/achievement_notification_providers.dart';
+import 'providers/app_theme_providers.dart';
 import 'providers/auth_providers.dart';
 import 'providers/change_request_notification_providers.dart';
 import 'providers/quest_notification_providers.dart';
@@ -97,16 +98,16 @@ Future<void> main() async {
   ));
 }
 
-class LifeRpgApp extends StatelessWidget {
+class LifeRpgApp extends ConsumerWidget {
   const LifeRpgApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'LifeRPG',
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
-      theme: buildAppTheme(),
+      theme: buildAppTheme(ref.watch(appThemeProvider).theme),
       home: const AuthGate(),
     );
   }
@@ -131,16 +132,16 @@ class AuthGate extends ConsumerWidget {
               child: AchievementCelebrationHost(child: HomeScreen()),
             );
           },
-          loading: () => const Scaffold(
-            backgroundColor: bgDark,
-            body: Center(child: CircularProgressIndicator(color: gold)),
+          loading: () => Scaffold(
+            backgroundColor: context.rpg.bgDark,
+            body: Center(child: CircularProgressIndicator(color: context.rpg.gold)),
           ),
           error: (error, _) => Scaffold(
-            backgroundColor: bgDark,
+            backgroundColor: context.rpg.bgDark,
             body: Center(
               child: Text(
                 'Błąd logowania: $error',
-                style: const TextStyle(color: parchmentLight),
+                style: TextStyle(color: context.rpg.onBg),
               ),
             ),
           ),

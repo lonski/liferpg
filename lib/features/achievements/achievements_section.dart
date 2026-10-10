@@ -11,8 +11,8 @@ import 'achievement_detail_screen.dart';
 import 'achievements_screen.dart';
 import 'award_achievement_screen.dart';
 
-const TextStyle _link = TextStyle(
-  fontFamily: fontDisplay,
+TextStyle _link(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontDisplay,
   fontSize: 11,
   letterSpacing: 2,
 );
@@ -52,21 +52,21 @@ class AchievementsSection extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         if (all.isEmpty) ...[
-          const Text(
+          Text(
             'Brak odznak',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: fontBody,
+              fontFamily: context.rpg.fontBody,
               fontSize: 12,
               fontStyle: FontStyle.italic,
-              color: crimson,
+              color: context.rpg.crimson,
             ),
           ),
           TextButton(
             key: const Key('achievements-award'),
             onPressed: () => push(AwardAchievementScreen(character: character)),
-            style: TextButton.styleFrom(foregroundColor: crimson),
-            child: Text('Przyznaj odznakę'.toUpperCase(), style: _link),
+            style: TextButton.styleFrom(foregroundColor: context.rpg.crimson),
+            child: Text('Przyznaj odznakę'.toUpperCase(), style: _link(context)),
           ),
         ] else ...[
           Row(
@@ -90,8 +90,8 @@ class AchievementsSection extends ConsumerWidget {
           TextButton(
             key: const Key('achievements-all'),
             onPressed: () => push(AchievementsScreen(characterId: character.id)),
-            style: TextButton.styleFrom(foregroundColor: crimson),
-            child: Text('Wszystkie odznaki ›'.toUpperCase(), style: _link),
+            style: TextButton.styleFrom(foregroundColor: context.rpg.crimson),
+            child: Text('Wszystkie odznaki ›'.toUpperCase(), style: _link(context)),
           ),
         ],
       ],
@@ -122,13 +122,16 @@ class _Tile extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   AchievementBadge.of(achievement, size: 50),
+                  // Kurczaki: the egg sits in a little straw nest.
+                  if (context.rpg.decor.badgeNest(context, 56) case final nest?)
+                    Positioned(left: -3, right: -3, bottom: -9, child: nest),
                   if (isNew)
                     Positioned(
                       top: -4,
                       right: -10,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: gold,
+                          color: context.rpg.gold,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         padding: const EdgeInsets.symmetric(
@@ -136,29 +139,29 @@ class _Tile extends StatelessWidget {
                         child: Text(
                           'Nowa'.toUpperCase(),
                           textScaler: TextScaler.noScaling,
-                          style: const TextStyle(
-                            fontFamily: fontDisplay,
+                          style: TextStyle(
+                            fontFamily: context.rpg.fontDisplay,
                             fontSize: 8,
                             letterSpacing: 1,
-                            color: inkHeading,
+                            color: context.rpg.inkHeading,
                           ),
                         ),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(height: 2),
+              SizedBox(height: context.rpg.decor.eggBadges ? 10 : 2),
               Text(
                 achievement.title,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: fontBody,
+                style: TextStyle(
+                  fontFamily: context.rpg.fontBody,
                   fontSize: 10,
                   fontStyle: FontStyle.italic,
                   height: 1.15,
-                  color: crimson,
+                  color: context.rpg.crimson,
                 ),
               ),
             ],

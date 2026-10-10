@@ -10,11 +10,11 @@ import '../../providers/hidden_characters_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
 
-const TextStyle _fieldLabel = TextStyle(
-  fontFamily: fontDisplay,
+TextStyle _fieldLabel(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontDisplay,
   fontSize: 12,
   letterSpacing: 2,
-  color: crimson,
+  color: context.rpg.crimson,
 );
 
 // `level`, `current_xp` and `next_level_xp` are ints in Firestore; `gold` is
@@ -197,24 +197,24 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
     final traitNames = ref.watch(traitNamesProvider);
 
     return Scaffold(
-      backgroundColor: bgDark,
+      backgroundColor: context.rpg.bgDark,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: parchmentMuted),
+        iconTheme: IconThemeData(color: context.rpg.parchmentMuted),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: appBarGradient,
-            border: Border(bottom: BorderSide(color: goldBorderFaint)),
+          decoration: BoxDecoration(
+            gradient: context.rpg.appBarGradient,
+            border: Border(bottom: BorderSide(color: context.rpg.goldBorderFaint)),
           ),
         ),
-        title: const Text(
+        title: Text(
           'Edycja Postaci',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 14,
             letterSpacing: 3,
-            color: parchmentLight,
+            color: context.rpg.parchmentLight,
           ),
         ),
         actions: [
@@ -223,11 +223,11 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
             onPressed: _hide,
             child: Text(
               'Ukryj'.toUpperCase(),
-              style: const TextStyle(
-                fontFamily: fontDisplay,
+              style: TextStyle(
+                fontFamily: context.rpg.fontDisplay,
                 fontSize: 9,
                 letterSpacing: 2,
-                color: parchmentLight,
+                color: context.rpg.parchmentLight,
               ),
             ),
           ),
@@ -236,17 +236,17 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
             onPressed: _saving ? null : _save,
             child: Text(
               _saving ? '...' : 'Zapisz'.toUpperCase(),
-              style: const TextStyle(
-                fontFamily: fontDisplay,
+              style: TextStyle(
+                fontFamily: context.rpg.fontDisplay,
                 fontSize: 9,
                 letterSpacing: 2,
-                color: parchmentLight,
+                color: context.rpg.parchmentLight,
               ),
             ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: ThemeBackdrop(child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Center(
           child: ConstrainedBox(
@@ -255,11 +255,11 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
               key: _formKey,
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: crimson, width: 2),
-                  borderRadius: BorderRadius.circular(4),
-                  boxShadow: const [
+                  border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
+                  borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+                  boxShadow: [
                     BoxShadow(
-                      color: dialogShadowColor,
+                      color: context.rpg.dialogShadowColor,
                       blurRadius: 32,
                       offset: Offset(0, 8),
                     ),
@@ -269,7 +269,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                 child: Column(
                   children: [
                     Container(
-                      decoration: const BoxDecoration(gradient: cardGradient),
+                      decoration: BoxDecoration(gradient: context.rpg.cardGradient),
                       // The TopBand that used to open this card was dropped
                       // to avoid duplicating the AppBar's "Edycja Postaci"
                       // title; this extra top padding (the band's old
@@ -281,20 +281,20 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                              border: Border.all(color: crimsonBorder),
-                              borderRadius: BorderRadius.circular(2),
+                              border: Border.all(color: context.rpg.crimsonBorder),
+                              borderRadius: BorderRadius.circular(context.rpg.innerRadius),
                             ),
                             padding: const EdgeInsets.all(12),
                             child: Column(
                               children: [
                                 Text(
                                   widget.character.name,
-                                  style: const TextStyle(
-                                    fontFamily: fontDisplay,
+                                  style: TextStyle(
+                                    fontFamily: context.rpg.fontDisplay,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 2,
-                                    color: inkHeading,
+                                    color: context.rpg.inkHeading,
                                   ),
                                 ),
                                 const SizedBox(height: 12),
@@ -313,7 +313,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('XP', style: _fieldLabel),
+                                    Text('XP', style: _fieldLabel(context)),
                                     Row(
                                       children: [
                                         SizedBox(
@@ -321,8 +321,8 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                           child: _numberField('current_xp',
                                               _controllers['current_xp']!),
                                         ),
-                                        const Text(' / ',
-                                            style: TextStyle(color: crimson)),
+                                        Text(' / ',
+                                            style: TextStyle(color: context.rpg.crimson)),
                                         SizedBox(
                                           width: 64,
                                           child: _numberField('next_level_xp',
@@ -338,7 +338,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                   children: [
                                     Flexible(
                                       child: Text('Dni elektroniki'.toUpperCase(),
-                                          style: _fieldLabel),
+                                          style: _fieldLabel(context)),
                                     ),
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -346,7 +346,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                         IconButton(
                                           key: const Key('electronics-minus'),
                                           visualDensity: VisualDensity.compact,
-                                          color: crimson,
+                                          color: context.rpg.crimson,
                                           icon: const Icon(Icons.remove),
                                           onPressed: () => _stepElectronics(-1),
                                         ),
@@ -358,7 +358,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                         IconButton(
                                           key: const Key('electronics-plus'),
                                           visualDensity: VisualDensity.compact,
-                                          color: crimson,
+                                          color: context.rpg.crimson,
                                           icon: const Icon(Icons.add),
                                           onPressed: () => _stepElectronics(1),
                                         ),
@@ -391,14 +391,14 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
             ),
           ),
         ),
-      ),
+      )),
     );
   }
 
   Widget _favourRow() => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Przychylność'.toUpperCase(), style: _fieldLabel),
+          Text('Przychylność'.toUpperCase(), style: _fieldLabel(context)),
           Row(
             children: [
               IconButton(
@@ -408,9 +408,9 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
               ),
               Text(
                 '$_favour',
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: inkHeading,
+                  color: context.rpg.inkHeading,
                 ),
               ),
               IconButton(
@@ -428,7 +428,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
         children: [
           Text(
             'Cechy'.toUpperCase(),
-            style: traitsDividerLabel,
+            style: context.rpg.traitsDividerLabel,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
@@ -439,11 +439,11 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                 Expanded(
                   child: Text(
                     _traits[i].name,
-                    style: const TextStyle(
-                      fontFamily: fontBody,
+                    style: TextStyle(
+                      fontFamily: context.rpg.fontBody,
                       fontSize: 11,
                       fontStyle: FontStyle.italic,
-                      color: traitNameInk,
+                      color: context.rpg.traitNameInk,
                     ),
                   ),
                 ),
@@ -461,7 +461,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                 IconButton(
                   key: Key('remove-trait-$i'),
                   iconSize: 18,
-                  color: crimson,
+                  color: context.rpg.crimson,
                   icon: const Icon(Icons.delete),
                   onPressed: () => setState(() {
                     _traits = [..._traits]..removeAt(i);
@@ -503,7 +503,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
               ),
               IconButton(
                 key: const Key('add-trait'),
-                color: crimson,
+                color: context.rpg.crimson,
                 icon: const Icon(Icons.add),
                 onPressed: _addTrait,
               ),
@@ -553,8 +553,8 @@ class _TraitValueFieldState extends State<_TraitValueField> {
   Widget build(BuildContext context) => TextField(
         key: widget.fieldKey,
         controller: _controller,
-        style: const TextStyle(
-          fontFamily: fontBody,
+        style: TextStyle(
+          fontFamily: context.rpg.fontBody,
           fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
@@ -572,7 +572,7 @@ class _LabelledField extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label.toUpperCase(), style: _fieldLabel),
+          Text(label.toUpperCase(), style: _fieldLabel(context)),
           SizedBox(width: 64, child: child),
         ],
       );

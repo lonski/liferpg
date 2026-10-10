@@ -33,11 +33,11 @@ class AchievementShareCard extends StatelessWidget {
         children: [
           Text(
             who.toUpperCase(),
-            style: const TextStyle(
-              fontFamily: fontDisplay,
+            style: TextStyle(
+              fontFamily: context.rpg.fontDisplay,
               fontSize: 11,
               letterSpacing: 3,
-              color: crimson,
+              color: context.rpg.crimson,
             ),
           ),
           const SizedBox(height: 8),
@@ -46,22 +46,22 @@ class AchievementShareCard extends StatelessWidget {
           Text(
             a.title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontFamily: fontDisplay,
+            style: TextStyle(
+              fontFamily: context.rpg.fontDisplay,
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: inkHeading,
+              color: context.rpg.inkHeading,
             ),
           ),
           if (a.event != null)
             Text(
               a.event!,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: fontBody,
+              style: TextStyle(
+                fontFamily: context.rpg.fontBody,
                 fontSize: 15,
                 fontStyle: FontStyle.italic,
-                color: crimson,
+                color: context.rpg.crimson,
               ),
             ),
           if (a.reason != null) ...[
@@ -69,11 +69,11 @@ class AchievementShareCard extends StatelessWidget {
             Text(
               '„${a.reason}”',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: fontBody,
+              style: TextStyle(
+                fontFamily: context.rpg.fontBody,
                 fontSize: 14,
                 height: 1.35,
-                color: inkHeading,
+                color: context.rpg.inkHeading,
               ),
             ),
           ],
@@ -84,11 +84,11 @@ class AchievementShareCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             formatPolishDate(a.date),
-            style: const TextStyle(
-              fontFamily: fontBody,
+            style: TextStyle(
+              fontFamily: context.rpg.fontBody,
               fontSize: 12,
               fontStyle: FontStyle.italic,
-              color: crimson,
+              color: context.rpg.crimson,
             ),
           ),
         ],

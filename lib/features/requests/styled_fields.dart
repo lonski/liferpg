@@ -7,25 +7,26 @@ import '../../theme/app_theme.dart';
 /// trait_change_field.dart) -- the two places that render the crimson-boxed
 /// stepper/text fields used for XP, gold and trait deltas.
 
-const TextStyle fieldLabel = TextStyle(
-  fontFamily: fontDisplay,
+TextStyle fieldLabel(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontDisplay,
   fontSize: 12,
   letterSpacing: 2,
-  color: crimson,
+  color: context.rpg.crimson,
 );
 
 // The small, always-visible caption under a trait box (name/value). Distinct
 // from fieldLabel (smaller, wider tracked) so it reads as a caption, not
 // another field label -- and distinct in both font and colour from the boxed
 // value text it sits under, so it can never be mistaken for a typed value.
-const TextStyle captionLabel = TextStyle(
-  fontFamily: fontDisplay,
+TextStyle captionLabel(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontDisplay,
   fontSize: 9,
   letterSpacing: 1.5,
-  color: crimson,
+  color: context.rpg.crimson,
 );
 
-const TextStyle errorStyle = TextStyle(fontSize: 10, color: crimsonBright);
+TextStyle errorStyle(BuildContext context) =>
+    TextStyle(fontSize: 10, color: context.rpg.crimsonBright);
 
 // XP/gold/trait stepper nudge size. Typing an exact value still works (the
 // field stays freely editable) -- this is just the tap-to-adjust increment.
@@ -40,10 +41,13 @@ const double stepperWidth = 140;
 // through regardless. Routing the border through OutlineInputBorder (rather
 // than a wrapping Container) also means Flutter lays the error caption out
 // *below* the box, not enclosed inside it.
-OutlineInputBorder fieldBorder({Color color = crimsonBorderStrong}) =>
+OutlineInputBorder fieldBorder(BuildContext context, {Color? color}) =>
     OutlineInputBorder(
       borderRadius: BorderRadius.circular(6),
-      borderSide: BorderSide(color: color, width: 1.5),
+      borderSide: BorderSide(
+        color: color ?? context.rpg.crimsonBorderStrong,
+        width: 1.5,
+      ),
     );
 
 /// Deltas may be negative, so unlike the character editor these accept a
@@ -61,8 +65,12 @@ void stepValue(TextEditingController controller, num delta) {
   controller.text = next % 1 == 0 ? next.toInt().toString() : '$next';
 }
 
-Widget stepButton(IconData icon, VoidCallback onPressed) => IconButton(
-  icon: Icon(icon, size: 16, color: crimson),
+Widget stepButton(
+  BuildContext context,
+  IconData icon,
+  VoidCallback onPressed,
+) => IconButton(
+  icon: Icon(icon, size: 16, color: context.rpg.crimson),
   onPressed: onPressed,
   visualDensity: VisualDensity.compact,
   padding: EdgeInsets.zero,
@@ -87,10 +95,10 @@ Widget stepperField({
     builder: (context, _) {
       final parsed = num.tryParse(controller.text.trim());
       final valueColor = parsed == null || parsed == 0
-          ? inkHeading
+          ? context.rpg.inkHeading
           : parsed > 0
-          ? gold
-          : crimsonBright;
+          ? context.rpg.gold
+          : context.rpg.crimsonBright;
       return TextFormField(
         key: fieldKey,
         controller: controller,
@@ -104,14 +112,18 @@ Widget stepperField({
         decoration: InputDecoration(
           isDense: true,
           filled: true,
-          fillColor: parchmentLight,
+          fillColor: context.rpg.parchmentLight,
           contentPadding: const EdgeInsets.symmetric(vertical: 10),
-          enabledBorder: fieldBorder(),
-          focusedBorder: fieldBorder(color: crimsonBright),
-          errorBorder: fieldBorder(),
-          focusedErrorBorder: fieldBorder(color: crimsonBright),
-          errorStyle: errorStyle,
+          enabledBorder: fieldBorder(context),
+          focusedBorder: fieldBorder(context, color: context.rpg.crimsonBright),
+          errorBorder: fieldBorder(context),
+          focusedErrorBorder: fieldBorder(
+            context,
+            color: context.rpg.crimsonBright,
+          ),
+          errorStyle: errorStyle(context),
           prefixIcon: stepButton(
+            context,
             Icons.remove,
             () => stepValue(controller, -stepSize),
           ),
@@ -120,6 +132,7 @@ Widget stepperField({
             minHeight: iconSize,
           ),
           suffixIcon: stepButton(
+            context,
             Icons.add,
             () => stepValue(controller, stepSize),
           ),
@@ -140,26 +153,31 @@ Widget boxedField({
   int maxLines = 1,
   Widget? suffixIcon,
   String? Function(String?)? validator,
-}) => TextFormField(
-  key: key,
-  controller: controller,
-  focusNode: focusNode,
-  maxLines: maxLines,
-  validator: validator,
-  style: const TextStyle(color: inkHeading, fontSize: 14),
-  decoration: InputDecoration(
-    isDense: true,
-    filled: true,
-    fillColor: parchmentLight,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-    enabledBorder: fieldBorder(),
-    focusedBorder: fieldBorder(color: crimsonBright),
-    errorBorder: fieldBorder(),
-    focusedErrorBorder: fieldBorder(color: crimsonBright),
-    errorStyle: errorStyle,
-    suffixIcon: suffixIcon,
-    suffixIconConstraints: suffixIcon == null
-        ? null
-        : const BoxConstraints(minWidth: 28, minHeight: 28),
+}) => Builder(
+  builder: (context) => TextFormField(
+    key: key,
+    controller: controller,
+    focusNode: focusNode,
+    maxLines: maxLines,
+    validator: validator,
+    style: TextStyle(color: context.rpg.inkHeading, fontSize: 14),
+    decoration: InputDecoration(
+      isDense: true,
+      filled: true,
+      fillColor: context.rpg.parchmentLight,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      enabledBorder: fieldBorder(context),
+      focusedBorder: fieldBorder(context, color: context.rpg.crimsonBright),
+      errorBorder: fieldBorder(context),
+      focusedErrorBorder: fieldBorder(
+        context,
+        color: context.rpg.crimsonBright,
+      ),
+      errorStyle: errorStyle(context),
+      suffixIcon: suffixIcon,
+      suffixIconConstraints: suffixIcon == null
+          ? null
+          : const BoxConstraints(minWidth: 28, minHeight: 28),
+    ),
   ),
 );

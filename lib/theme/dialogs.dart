@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
 
-const TextStyle dialogActionStyle = TextStyle(
-  fontFamily: fontDisplay,
+TextStyle dialogActionStyle(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontDisplay,
   fontSize: 10,
   fontWeight: FontWeight.w700,
   letterSpacing: 2,
@@ -26,52 +26,52 @@ Future<bool> showConfirmDialog(
   final result = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      backgroundColor: parchment,
+      backgroundColor: context.rpg.parchment,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(4),
-        side: const BorderSide(color: crimson, width: 2),
+        borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+        side: BorderSide(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
       ),
       title: Text(
         title.toUpperCase(),
-        style: const TextStyle(
-          fontFamily: fontDisplay,
+        style: TextStyle(
+          fontFamily: context.rpg.fontDisplay,
           fontSize: 13,
           fontWeight: FontWeight.w700,
           letterSpacing: 2,
-          color: inkHeading,
+          color: context.rpg.inkHeading,
         ),
       ),
       content: message == null
           ? null
           : Text(
               message,
-              style: const TextStyle(
-                fontFamily: fontBody,
+              style: TextStyle(
+                fontFamily: context.rpg.fontBody,
                 fontSize: 13,
                 height: 1.5,
-                color: inkDark,
+                color: context.rpg.inkDark,
               ),
             ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          style: TextButton.styleFrom(foregroundColor: crimson),
-          child: Text(cancelLabel.toUpperCase(), style: dialogActionStyle),
+          style: TextButton.styleFrom(foregroundColor: context.rpg.crimson),
+          child: Text(cancelLabel.toUpperCase(), style: dialogActionStyle(context)),
         ),
         TextButton(
           key: confirmKey,
           onPressed: () => Navigator.of(dialogContext).pop(true),
           style: TextButton.styleFrom(
-            backgroundColor: crimson,
-            foregroundColor: parchmentLight,
+            backgroundColor: context.rpg.crimson,
+            foregroundColor: context.rpg.parchmentLight,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(3),
-              side: const BorderSide(color: goldGlyph),
+              borderRadius: BorderRadius.circular(context.rpg.buttonRadius),
+              side: BorderSide(color: context.rpg.goldGlyph),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           ),
-          child: Text(confirmLabel.toUpperCase(), style: dialogActionStyle),
+          child: Text(confirmLabel.toUpperCase(), style: dialogActionStyle(context)),
         ),
       ],
     ),

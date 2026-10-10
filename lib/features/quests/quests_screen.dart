@@ -8,6 +8,7 @@ import '../../providers/character_providers.dart';
 import '../../providers/quest_notification_providers.dart';
 import '../../providers/quest_providers.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/ornaments.dart';
 import '../../theme/dialogs.dart';
 import 'new_quest_screen.dart';
 import 'quest_card.dart';
@@ -41,7 +42,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
     return showDialog<Character>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
-        backgroundColor: parchment,
+        backgroundColor: context.rpg.parchment,
         title: const Text('Wybierz postać'),
         children: [
           for (final c in characters)
@@ -198,32 +199,41 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
     // .value would stay permanently null (see CLAUDE.md's Riverpod 3 gotcha).
     ref.watch(charactersProvider);
     return Scaffold(
-      backgroundColor: bgDark,
+      backgroundColor: context.rpg.bgDark,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: parchmentMuted),
+        iconTheme: IconThemeData(color: context.rpg.parchmentMuted),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: appBarGradient,
-            border: Border(bottom: BorderSide(color: goldBorderFaint)),
+          decoration: BoxDecoration(
+            gradient: context.rpg.appBarGradient,
+            border: Border(bottom: BorderSide(color: context.rpg.goldBorderFaint)),
           ),
         ),
-        title: const Text(
-          'Zadania',
-          style: TextStyle(
-            fontFamily: fontDisplay,
-            fontSize: 14,
-            letterSpacing: 3,
-            color: parchmentLight,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Zadania',
+              style: TextStyle(
+                fontFamily: context.rpg.fontDisplay,
+                fontSize: 14,
+                letterSpacing: 3,
+                color: context.rpg.parchmentLight,
+              ),
+            ),
+            if (context.rpg.decor.questsTitleMascot(context) case final mascot?) ...[
+              const SizedBox(width: 8),
+              mascot,
+            ],
+          ],
         ),
         actions: [
           IconButton(
             key: const Key('open-new-quest'),
             tooltip: 'Nowy quest',
             icon: const Icon(Icons.add),
-            color: parchmentMuted,
+            color: context.rpg.parchmentMuted,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const NewQuestScreen()),
             ),
@@ -238,9 +248,9 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
           isScrollable: true,
           tabAlignment: TabAlignment.start,
           labelPadding: const EdgeInsets.symmetric(horizontal: 14),
-          labelColor: parchmentLight,
-          unselectedLabelColor: parchmentMuted,
-          indicatorColor: gold,
+          labelColor: context.rpg.parchmentLight,
+          unselectedLabelColor: context.rpg.parchmentMuted,
+          indicatorColor: context.rpg.gold,
           tabs: const [
             Tab(key: Key('quests-tab-board'), text: 'TABLICA'),
             Tab(key: Key('quests-tab-mine'), text: 'MOJE'),
@@ -249,7 +259,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
           ],
         ),
       ),
-      body: TabBarView(
+      body: ThemeBackdrop(child: TabBarView(
         controller: _tabController,
         children: [
           _BoardTab(onTake: _take),
@@ -267,7 +277,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
           ),
           const _LogTab(),
         ],
-      ),
+      )),
     );
   }
 }
@@ -281,15 +291,15 @@ class _BoardTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final open = ref.watch(openQuestsProvider);
     return open.when(
-      loading: () => const Center(child: CircularProgressIndicator(color: gold)),
+      loading: () => Center(child: CircularProgressIndicator(color: context.rpg.gold)),
       error: (e, _) => Center(
         child: Text('Nie udało się wczytać zadań: $e',
-            style: const TextStyle(color: parchmentMuted)),
+            style: TextStyle(color: context.rpg.onBgMuted)),
       ),
       data: (quests) => quests.isEmpty
-          ? const Center(
+          ? Center(
               child: Text('Brak otwartych zadań',
-                  style: TextStyle(color: parchmentMuted)),
+                  style: TextStyle(color: context.rpg.onBgMuted)),
             )
           : ListView(
               padding: const EdgeInsets.all(16),
@@ -309,6 +319,7 @@ class _BoardTab extends ConsumerWidget {
                     ],
                     onShare: () => shareQuest(context, ref, quest),
                   ),
+                const FooterSceneView(FooterScene.quests),
               ],
             ),
     );
@@ -342,8 +353,8 @@ class _MineTab extends ConsumerWidget {
     final myOpen = posted.where((q) => q.status == QuestStatus.open).toList();
 
     if (active.isEmpty && myOpen.isEmpty) {
-      return const Center(
-        child: Text('Brak własnych zadań', style: TextStyle(color: parchmentMuted)),
+      return Center(
+        child: Text('Brak własnych zadań', style: TextStyle(color: context.rpg.onBgMuted)),
       );
     }
 
@@ -351,15 +362,15 @@ class _MineTab extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       children: [
         if (active.isNotEmpty) ...[
-          const _SectionLabel('✦ PRZYPISANE DO MNIE ✦'),
+          const _SectionLabel('PRZYPISANE DO MNIE'),
           for (final quest in active)
             QuestCard(
               key: Key('quest-${quest.id}'),
               quest: quest,
               posterOrHolderLine: 'Wystawione przez: ${quest.posterName}',
               statusBadge: quest.status == QuestStatus.pendingReview
-                  ? const Text('OCZEKUJE NA AKCEPTACJĘ',
-                      style: TextStyle(fontSize: 12, color: crimson))
+                  ? Text('OCZEKUJE NA AKCEPTACJĘ',
+                      style: TextStyle(fontSize: 12, color: context.rpg.crimson))
                   : null,
               actions: quest.status == QuestStatus.assigned
                   ? [
@@ -381,7 +392,7 @@ class _MineTab extends ConsumerWidget {
             ),
         ],
         if (myOpen.isNotEmpty) ...[
-          const _SectionLabel('✦ WYSTAWIONE PRZEZE MNIE ✦'),
+          const _SectionLabel('WYSTAWIONE PRZEZE MNIE'),
           for (final quest in myOpen)
             QuestCard(
               key: Key('quest-${quest.id}'),
@@ -404,15 +415,15 @@ class _MineTab extends ConsumerWidget {
               onShare: () => shareQuest(context, ref, quest),
             ),
         ],
+        const FooterSceneView(FooterScene.quests),
       ],
     );
   }
 }
 
-// Outcome-style status colours, shared with _LogTab's badges below -- a
+// Outcome-style status colour, shared with _LogTab's badges below -- a
 // deliberate departure from pure crimson/gold so "due" vs "done" reads at a
-// glance, per the design spec.
-const Color _dueColor = crimson;
+// glance, per the design spec. "Due" is the theme's crimson.
 const Color _doneColor = Color(0xFF3C6E3C);
 
 class _DailyTab extends ConsumerWidget {
@@ -428,18 +439,18 @@ class _DailyTab extends ConsumerWidget {
   final Future<void> Function(Quest quest) onEdit;
   final Future<void> Function(Quest quest) onDeactivate;
 
-  Widget? _dueBadge(Quest quest) {
+  Widget? _dueBadge(BuildContext context, Quest quest) {
     if (quest.status == QuestStatus.pendingReview) {
-      return const Text('OCZEKUJE NA AKCEPTACJĘ',
-          style: TextStyle(fontSize: 12, color: crimson));
+      return Text('OCZEKUJE NA AKCEPTACJĘ',
+          style: TextStyle(fontSize: 12, color: context.rpg.crimson));
     }
     return Text(
       quest.isDueToday ? 'DO ZROBIENIA DZIŚ' : '✓ ZROBIONE DZIŚ — WRÓCI JUTRO',
       style: TextStyle(
-        fontFamily: fontDisplay,
+        fontFamily: context.rpg.fontDisplay,
         fontSize: 11.5,
         letterSpacing: 1,
-        color: quest.isDueToday ? _dueColor : _doneColor,
+        color: quest.isDueToday ? context.rpg.crimson : _doneColor,
       ),
     );
   }
@@ -460,8 +471,8 @@ class _DailyTab extends ConsumerWidget {
         : const <Quest>[];
 
     if (mine.isEmpty && managed.isEmpty) {
-      return const Center(
-        child: Text('Brak zadań codziennych', style: TextStyle(color: parchmentMuted)),
+      return Center(
+        child: Text('Brak zadań codziennych', style: TextStyle(color: context.rpg.onBgMuted)),
       );
     }
 
@@ -469,13 +480,13 @@ class _DailyTab extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       children: [
         if (mine.isNotEmpty) ...[
-          const _SectionLabel('✦ TWOJE ZADANIA CODZIENNE ✦'),
+          const _SectionLabel('TWOJE ZADANIA CODZIENNE'),
           for (final quest in mine)
             QuestCard(
               key: Key('quest-${quest.id}'),
               quest: quest,
               posterOrHolderLine: 'Przypisane przez: ${quest.posterName}',
-              statusBadge: _dueBadge(quest),
+              statusBadge: _dueBadge(context, quest),
               actions: [
                 if (quest.status == QuestStatus.assigned && quest.isDueToday)
                   QuestActionButton(
@@ -498,14 +509,14 @@ class _DailyTab extends ConsumerWidget {
               onShare: () => shareQuest(context, ref, quest),
             ),
         ] else if (admin)
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(bottom: 10),
             child: Text('Nie masz własnych zadań codziennych.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: parchmentMuted, fontStyle: FontStyle.italic)),
+                style: TextStyle(color: context.rpg.onBgMuted, fontStyle: FontStyle.italic)),
           ),
         if (admin && managed.isNotEmpty) ...[
-          const _SectionLabel('✦ ZARZĄDZANIE (ADMIN) ✦'),
+          const _SectionLabel('ZARZĄDZANIE (ADMIN)'),
           for (final quest in managed)
             _DailyManageRow(
               key: Key('quest-manage-${quest.id}'),
@@ -514,14 +525,15 @@ class _DailyTab extends ConsumerWidget {
               onDeactivate: () => onDeactivate(quest),
             ),
         ],
+        const FooterSceneView(FooterScene.quests),
       ],
     );
   }
 }
 
-// Chip/row tokens for _DailyManageRow only -- narrow enough in scope that
-// they don't belong in app_theme.dart alongside the broadly-reused palette.
-const Color _rowBg = Color(0x0DF5E8D0); // ~5% parchment tint on bgDark
+// Chip tokens for _DailyManageRow only -- narrow enough in scope that
+// they don't belong in RpgTheme alongside the broadly-reused palette (the
+// row itself is tinted with the theme's bgTint).
 const Color _goldChipBg = Color(0x2EC8860A); // ~18% gold
 const Color _doneChipBg = Color(0x333C6E3C); // ~20% of _doneColor
 
@@ -557,8 +569,8 @@ class _DailyManageRow extends StatelessWidget {
     final due = quest.isDueToday;
     final chipLabel =
         unclaimed ? 'NA TABLICY' : (pending ? 'OCZEKUJE' : (due ? 'CZEKA' : 'ZROBIONE'));
-    final chipColor = unclaimed ? gold : (pending ? crimson : (due ? gold : _doneColor));
-    final chipBg = unclaimed ? _goldChipBg : (pending ? crimsonFaint : (due ? _goldChipBg : _doneChipBg));
+    final chipColor = unclaimed ? context.rpg.gold : (pending ? context.rpg.crimson : (due ? context.rpg.gold : _doneColor));
+    final chipBg = unclaimed ? _goldChipBg : (pending ? context.rpg.crimsonFaint : (due ? _goldChipBg : _doneChipBg));
     final name = quest.assignedToCharacterName;
     final initial = name != null && name.isNotEmpty ? name[0].toUpperCase() : null;
 
@@ -566,8 +578,8 @@ class _DailyManageRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 9),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: _rowBg,
-        border: Border.all(color: goldBorderFaint),
+        color: context.rpg.bgTint,
+        border: Border.all(color: context.rpg.goldBorderFaint),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
@@ -576,16 +588,16 @@ class _DailyManageRow extends StatelessWidget {
             width: 34,
             height: 34,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: crimsonDeep,
-              border: Border.fromBorderSide(BorderSide(color: gold)),
+              color: context.rpg.crimsonDeep,
+              border: Border.fromBorderSide(BorderSide(color: context.rpg.gold)),
             ),
             child: initial == null
-                ? const Icon(Icons.people_outline, size: 16, color: parchmentLight)
+                ? Icon(Icons.people_outline, size: 16, color: context.rpg.parchmentLight)
                 : Text(
                     initial,
-                    style: const TextStyle(fontFamily: fontDisplay, fontSize: 14, color: parchmentLight),
+                    style: TextStyle(fontFamily: context.rpg.fontDisplay, fontSize: 14, color: context.rpg.parchmentLight),
                   ),
           ),
           const SizedBox(width: 10),
@@ -597,13 +609,13 @@ class _DailyManageRow extends StatelessWidget {
                 Text(
                   quest.title,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontFamily: fontDisplay, fontSize: 14, color: parchmentLight),
+                  style: TextStyle(fontFamily: context.rpg.fontDisplay, fontSize: 14, color: context.rpg.onBg),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '${name ?? "Dowolna osoba"} · $_rewardSummary',
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11.5, color: parchmentMuted),
+                  style: TextStyle(fontSize: 11.5, color: context.rpg.onBgMuted),
                 ),
               ],
             ),
@@ -615,7 +627,7 @@ class _DailyManageRow extends StatelessWidget {
             child: Text(
               chipLabel,
               style: TextStyle(
-                fontFamily: fontDisplay,
+                fontFamily: context.rpg.fontDisplay,
                 fontSize: 9.5,
                 letterSpacing: 1,
                 color: chipColor,
@@ -629,7 +641,7 @@ class _DailyManageRow extends StatelessWidget {
             key: Key('edit-daily-${quest.id}'),
             tooltip: 'Edytuj',
             icon: const Icon(Icons.edit, size: 18),
-            color: parchmentMuted,
+            color: context.rpg.onBgMuted,
             visualDensity: VisualDensity.compact,
             onPressed: onEdit,
           ),
@@ -637,7 +649,7 @@ class _DailyManageRow extends StatelessWidget {
             key: Key('deactivate-daily-${quest.id}'),
             tooltip: 'Zakończ',
             icon: const Icon(Icons.remove_circle_outline, size: 18),
-            color: parchmentMuted,
+            color: context.rpg.onBgMuted,
             visualDensity: VisualDensity.compact,
             onPressed: onDeactivate,
           ),
@@ -655,14 +667,15 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontFamily: fontDisplay,
-            fontSize: 12,
-            letterSpacing: 2,
-            color: parchmentMuted,
+        child: Center(
+          child: OrnamentedLabel(
+            text,
+            style: TextStyle(
+              fontFamily: context.rpg.fontDisplay,
+              fontSize: 12,
+              letterSpacing: 2,
+              color: context.rpg.onBgMuted,
+            ),
           ),
         ),
       );
@@ -675,14 +688,14 @@ class _LogTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final log = ref.watch(questLogProvider);
     return log.when(
-      loading: () => const Center(child: CircularProgressIndicator(color: gold)),
+      loading: () => Center(child: CircularProgressIndicator(color: context.rpg.gold)),
       error: (e, _) => Center(
         child: Text('Nie udało się wczytać dziennika: $e',
-            style: const TextStyle(color: parchmentMuted)),
+            style: TextStyle(color: context.rpg.onBgMuted)),
       ),
       data: (quests) => quests.isEmpty
-          ? const Center(
-              child: Text('Dziennik jest pusty', style: TextStyle(color: parchmentMuted)))
+          ? Center(
+              child: Text('Dziennik jest pusty', style: TextStyle(color: context.rpg.onBgMuted)))
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -692,44 +705,45 @@ class _LogTab extends ConsumerWidget {
                     quest: quest,
                     posterOrHolderLine:
                         '${quest.posterName} · ${quest.assignedToCharacterName ?? "—"}',
-                    statusBadge: _outcomeBadge(quest.status),
+                    statusBadge: _outcomeBadge(context, quest.status),
                     onShare: () => shareQuest(context, ref, quest),
                   ),
+                const FooterSceneView(FooterScene.quests),
               ],
             ),
     );
   }
 
-  Widget? _outcomeBadge(QuestStatus status) {
+  Widget? _outcomeBadge(BuildContext context, QuestStatus status) {
     // The one place this app's palette departs from pure crimson/gold —
     // muted moss-green / muted brick-red so a scan of the log reads status
     // at a glance, per the design spec.
     return switch (status) {
-      QuestStatus.completed => const Text(
+      QuestStatus.completed => Text(
           'ZAAKCEPTOWANE',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 12,
             letterSpacing: 1,
-            color: Color(0xFF3C6E3C),
+            color: const Color(0xFF3C6E3C),
           ),
         ),
-      QuestStatus.failed => const Text(
+      QuestStatus.failed => Text(
           'ODRZUCONE',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 12,
             letterSpacing: 1,
-            color: Color(0xFF8C3228),
+            color: const Color(0xFF8C3228),
           ),
         ),
-      QuestStatus.cancelled => const Text(
+      QuestStatus.cancelled => Text(
           'WYCOFANE',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 12,
             letterSpacing: 1,
-            color: parchmentMuted,
+            color: context.rpg.cardMuted,
           ),
         ),
       _ => null,

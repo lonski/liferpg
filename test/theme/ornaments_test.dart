@@ -25,7 +25,8 @@ void main() {
 
   testWidgets('TopBand shows its label and trailing widget', (tester) async {
     await tester.pumpWidget(wrap(const TopBand(
-      label: '✦ Karta Postaci ✦',
+      label: 'Karta Postaci',
+      ornament: BandOrnament.star,
       trailing: Icon(Icons.edit),
     )));
     expect(find.text('✦ KARTA POSTACI ✦'), findsOneWidget);
@@ -35,5 +36,30 @@ void main() {
   testWidgets('BottomBand renders its rule', (tester) async {
     await tester.pumpWidget(wrap(const BottomBand()));
     expect(find.text('— ✦ —'), findsOneWidget);
+  });
+
+  testWidgets('BottomBand writes its label into the rule', (tester) async {
+    await tester.pumpWidget(wrap(const BottomBand(label: 'LifeRPG')));
+    expect(find.text('— ✦ LIFERPG ✦ —'), findsOneWidget);
+  });
+
+  testWidgets('a daily band flanks its label with the cycle glyph', (tester) async {
+    await tester.pumpWidget(wrap(const TopBand(
+      label: 'codzienne',
+      ornament: BandOrnament.cycle,
+    )));
+    expect(find.text('⟳ CODZIENNE ⟳'), findsOneWidget);
+  });
+
+  testWidgets('Perched and FooterSceneView add nothing in Kronika', (tester) async {
+    await tester.pumpWidget(wrap(const Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Perched(spot: PerchSpot.characterCard, child: Text('karta')),
+        FooterSceneView(FooterScene.home),
+      ],
+    )));
+    expect(find.text('karta'), findsOneWidget);
+    expect(find.byType(Stack), findsNothing);
   });
 }

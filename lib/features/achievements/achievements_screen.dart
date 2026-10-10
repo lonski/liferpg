@@ -8,6 +8,7 @@ import '../../providers/achievement_providers.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/character_providers.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/ornaments.dart';
 import 'achievement_badge.dart';
 import 'achievement_detail_screen.dart';
 import 'achievement_widgets.dart';
@@ -26,8 +27,9 @@ class AchievementsScreen extends ConsumerWidget {
     final isAdmin = ref.watch(appUserProvider).value?.admin ?? false;
 
     return Scaffold(
-      backgroundColor: bgDark,
+      backgroundColor: context.rpg.bgDark,
       appBar: achievementAppBar(
+        context,
         character == null ? 'Odznaki' : 'Odznaki · ${character.name}',
         actions: [
           if (isAdmin && character != null)
@@ -43,16 +45,16 @@ class AchievementsScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator(color: gold))
+      body: ThemeBackdrop(child: loading
+          ? Center(child: CircularProgressIndicator(color: context.rpg.gold))
           : character == null
-              ? const Center(
+              ? Center(
                   child: Text(
                     'Postać już nie istnieje',
-                    style: TextStyle(fontFamily: fontBody, color: parchmentLight),
+                    style: TextStyle(fontFamily: context.rpg.fontBody, color: context.rpg.onBg),
                   ),
                 )
-              : _Gallery(character: character),
+              : _Gallery(character: character)),
     );
   }
 }
@@ -72,19 +74,21 @@ class _Gallery extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Container(
+        Perched(
+          spot: PerchSpot.achievementsSummary,
+          child: Container(
           decoration: BoxDecoration(
-            color: crimsonDeep,
-            border: Border.all(color: goldBorder),
-            borderRadius: BorderRadius.circular(4),
+            color: context.rpg.crimsonDeep,
+            border: Border.all(color: context.rpg.goldBorder, width: context.rpg.cardBorderWidth - 1),
+            borderRadius: BorderRadius.circular(context.rpg.cardRadius),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(
             children: [
               Text(
                 '${all.length}',
-                style: const TextStyle(
-                  fontFamily: fontDisplay,
+                style: TextStyle(
+                  fontFamily: context.rpg.fontDisplay,
                   fontSize: 26,
                   color: badgeGoldLight,
                 ),
@@ -93,10 +97,10 @@ class _Gallery extends StatelessWidget {
               Expanded(
                 child: Text(
                   badgeCountLabel(all.length),
-                  style: const TextStyle(
-                    fontFamily: fontBody,
+                  style: TextStyle(
+                    fontFamily: context.rpg.fontBody,
                     fontStyle: FontStyle.italic,
-                    color: parchmentMuted,
+                    color: context.rpg.parchmentMuted,
                   ),
                 ),
               ),
@@ -117,10 +121,10 @@ class _Gallery extends StatelessWidget {
                           const SizedBox(width: 3),
                           Text(
                             '${counts[t]}',
-                            style: const TextStyle(
-                              fontFamily: fontBody,
+                            style: TextStyle(
+                              fontFamily: context.rpg.fontBody,
                               fontWeight: FontWeight.w700,
-                              color: parchmentLight,
+                              color: context.rpg.parchmentLight,
                             ),
                           ),
                         ],
@@ -130,15 +134,16 @@ class _Gallery extends StatelessWidget {
             ],
           ),
         ),
+        ),
         const SizedBox(height: 14),
         if (all.isEmpty)
-          const Center(
+          Center(
             child: Text(
               'Brak odznak',
               style: TextStyle(
-                fontFamily: fontBody,
+                fontFamily: context.rpg.fontBody,
                 fontStyle: FontStyle.italic,
-                color: parchmentMuted,
+                color: context.rpg.onBgMuted,
               ),
             ),
           ),
@@ -161,6 +166,8 @@ class _Gallery extends StatelessWidget {
             );
           },
         ),
+        const SizedBox(height: 16),
+        const FooterSceneView(FooterScene.achievements),
       ],
     );
   }
@@ -176,12 +183,12 @@ class _Tile extends StatelessWidget {
   Widget build(BuildContext context) => Material(
         key: Key('gallery-tile-${achievement.id}'),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(color: crimsonBorderStrong),
+          borderRadius: BorderRadius.circular(context.rpg.tileRadius),
+          side: BorderSide(color: context.rpg.crimsonBorderStrong, width: context.rpg.cardBorderWidth - 1),
         ),
         clipBehavior: Clip.antiAlias,
         child: Ink(
-          decoration: const BoxDecoration(gradient: cardGradient),
+          decoration: BoxDecoration(gradient: context.rpg.cardGradient),
           child: InkWell(
             onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => AchievementDetailScreen(
@@ -193,25 +200,32 @@ class _Tile extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(6, 10, 6, 10),
               child: Column(
                 children: [
-                  AchievementBadge.of(achievement, size: 64),
-                  const SizedBox(height: 4),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AchievementBadge.of(achievement, size: 64),
+                      if (context.rpg.decor.badgeNest(context, 70) case final nest?)
+                        Positioned(left: -3, right: -3, bottom: -11, child: nest),
+                    ],
+                  ),
+                  SizedBox(height: context.rpg.decor.eggBadges ? 14 : 4),
                   Text(
                     achievement.title,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontFamily: fontDisplay,
+                    style: TextStyle(
+                      fontFamily: context.rpg.fontDisplay,
                       fontSize: 12,
                       height: 1.15,
-                      color: inkHeading,
+                      color: context.rpg.inkHeading,
                     ),
                   ),
                   Text(
                     formatShortPolishDate(achievement.date),
-                    style: const TextStyle(
-                      fontFamily: fontBody,
+                    style: TextStyle(
+                      fontFamily: context.rpg.fontBody,
                       fontSize: 11,
                       fontStyle: FontStyle.italic,
-                      color: crimson,
+                      color: context.rpg.crimson,
                     ),
                   ),
                 ],

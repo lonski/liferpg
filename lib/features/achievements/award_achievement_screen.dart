@@ -161,7 +161,7 @@ class _AwardAchievementScreenState
 
   Widget _label(String text) => Padding(
     padding: const EdgeInsets.only(top: 14, bottom: 6),
-    child: Text(text.toUpperCase(), style: fieldLabel),
+    child: Text(text.toUpperCase(), style: fieldLabel(context)),
   );
 
   @override
@@ -174,11 +174,10 @@ class _AwardAchievementScreenState
     final parts = rewardParts(_reward);
 
     return Scaffold(
-      backgroundColor: bgDark,
-      appBar: achievementAppBar(
-        _isEdit ? 'Edytuj odznakę' : 'Przyznaj odznakę · $name',
+      backgroundColor: context.rpg.bgDark,
+      appBar: achievementAppBar(context, _isEdit ? 'Edytuj odznakę' : 'Przyznaj odznakę · $name',
       ),
-      body: Form(
+      body: ThemeBackdrop(child: Form(
         key: _formKey,
         child: Column(
           children: [
@@ -198,10 +197,10 @@ class _AwardAchievementScreenState
                   Expanded(
                     child: Text(
                       title,
-                      style: const TextStyle(
-                        fontFamily: fontDisplay,
+                      style: TextStyle(
+                        fontFamily: context.rpg.fontDisplay,
                         fontSize: 20,
-                        color: parchmentLight,
+                        color: context.rpg.parchmentLight,
                       ),
                     ),
                   ),
@@ -214,9 +213,9 @@ class _AwardAchievementScreenState
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      gradient: cardGradient,
-                      border: Border.all(color: crimson, width: 2),
-                      borderRadius: BorderRadius.circular(4),
+                      gradient: context.rpg.cardGradient,
+                      border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
+                      borderRadius: BorderRadius.circular(context.rpg.cardRadius),
                     ),
                     padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
                     child: Column(
@@ -321,14 +320,14 @@ class _AwardAchievementScreenState
                         if (_isEdit) ...[
                           RewardChips(reward: widget.editing!.reward),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             'Aby zmienić nagrodę, usuń odznakę i przyznaj ją ponownie.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontFamily: fontBody,
+                              fontFamily: context.rpg.fontBody,
                               fontSize: 12,
                               fontStyle: FontStyle.italic,
-                              color: crimson,
+                              color: context.rpg.crimson,
                             ),
                           ),
                         ] else ...[
@@ -342,7 +341,7 @@ class _AwardAchievementScreenState
                             children: [
                               Text(
                                 'Dni elektroniki'.toUpperCase(),
-                                style: fieldLabel,
+                                style: fieldLabel(context),
                               ),
                               SizedBox(
                                 width: stepperWidth,
@@ -361,10 +360,10 @@ class _AwardAchievementScreenState
                           Text(
                             '$name otrzyma odznakę „$title”'
                             '${parts.isEmpty ? '.' : ': ${parts.join(', ')}.'}',
-                            style: const TextStyle(
-                              fontFamily: fontBody,
+                            style: TextStyle(
+                              fontFamily: context.rpg.fontBody,
                               fontSize: 13,
-                              color: inkHeading,
+                              color: context.rpg.inkHeading,
                             ),
                           ),
                         ],
@@ -373,18 +372,18 @@ class _AwardAchievementScreenState
                           key: const Key('achievement-submit'),
                           onPressed: _saving ? null : _submit,
                           style: FilledButton.styleFrom(
-                            backgroundColor: crimson,
-                            foregroundColor: parchmentLight,
+                            backgroundColor: context.rpg.crimson,
+                            foregroundColor: context.rpg.parchmentLight,
                             minimumSize: const Size.fromHeight(48),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(3),
-                              side: const BorderSide(color: goldGlyph),
+                              side: BorderSide(color: context.rpg.goldGlyph),
                             ),
                           ),
                           child: Text(
                             (_isEdit ? 'Zapisz' : 'Przyznaj').toUpperCase(),
-                            style: const TextStyle(
-                              fontFamily: fontDisplay,
+                            style: TextStyle(
+                              fontFamily: context.rpg.fontDisplay,
                               fontSize: 13,
                               letterSpacing: 3,
                             ),
@@ -398,7 +397,7 @@ class _AwardAchievementScreenState
             ),
           ],
         ),
-      ),
+      )),
     );
   }
 }
@@ -420,19 +419,19 @@ class _Choice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final side = BorderSide(color: selected ? gold : crimsonBorder);
+    final side = BorderSide(color: selected ? context.rpg.gold : context.rpg.crimsonBorder);
     final ShapeBorder shape = circle
         ? CircleBorder(side: side)
         : RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(3),
             side: side,
           );
-    final fg = selected ? parchmentLight : crimson;
+    final fg = selected ? context.rpg.parchmentLight : context.rpg.crimson;
     return Semantics(
       button: true,
       selected: selected,
       child: Material(
-        color: selected ? crimsonDeep : crimsonBgFaint,
+        color: selected ? context.rpg.crimsonDeep : context.rpg.crimsonBgFaint,
         shape: shape,
         child: InkWell(
           customBorder: shape,
@@ -445,7 +444,7 @@ class _Choice extends StatelessWidget {
                 data: IconThemeData(color: fg),
                 child: DefaultTextStyle.merge(
                   style: TextStyle(
-                    fontFamily: fontDisplay,
+                    fontFamily: context.rpg.fontDisplay,
                     fontSize: 13,
                     letterSpacing: 1,
                     color: fg,

@@ -236,7 +236,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final dialog = tester.widget<AlertDialog>(find.byType(AlertDialog));
-    expect(dialog.backgroundColor, parchment);
+    expect(dialog.backgroundColor, RpgTheme.kronika.parchment);
     expect(find.byType(ChangeRequestForm), findsOneWidget);
   });
 
@@ -365,7 +365,7 @@ void main() {
     )).firstWhere((c) {
       final decoration = c.decoration;
       return decoration is BoxDecoration &&
-          decoration.border == Border.all(color: crimsonBorder);
+          decoration.border == Border.all(color: RpgTheme.kronika.crimsonBorder);
     });
     final innerWidth =
         tester.renderObject<RenderBox>(find.byWidget(innerBox)).size.width;

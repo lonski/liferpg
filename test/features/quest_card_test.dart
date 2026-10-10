@@ -88,7 +88,7 @@ void main() {
     expect(find.textContaining('CODZIENNE'), findsOneWidget);
     final container = tester.widget<Container>(find.byType(Container).first);
     final decoration = container.decoration as BoxDecoration;
-    expect((decoration.border as Border).top.color, gold);
+    expect((decoration.border as Border).top.color, RpgTheme.kronika.gold);
   });
 
   testWidgets('a cancelled (deactivated) daily quest reverts to the ordinary crimson band',
@@ -111,6 +111,6 @@ void main() {
     expect(find.textContaining('WYCOFANE'), findsOneWidget);
     final container = tester.widget<Container>(find.byType(Container).first);
     final decoration = container.decoration as BoxDecoration;
-    expect((decoration.border as Border).top.color, crimson);
+    expect((decoration.border as Border).top.color, RpgTheme.kronika.crimson);
   });
 }

@@ -13,11 +13,11 @@ import '../../theme/ornaments.dart';
 import 'change_request_form.dart';
 import 'change_request_formatting.dart';
 
-const TextStyle _detailSectionLabel = TextStyle(
-  fontFamily: fontDisplay,
+TextStyle _detailSectionLabel(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontDisplay,
   fontSize: 10,
   letterSpacing: 2,
-  color: crimson,
+  color: context.rpg.crimson,
 );
 
 class NewChangeRequestScreen extends ConsumerStatefulWidget {
@@ -58,18 +58,18 @@ class _NewChangeRequestScreenState
       // the stock Material surface reads as a foreign widget on the
       // parchment card.
       style: ElevatedButton.styleFrom(
-        backgroundColor: crimson,
-        foregroundColor: parchmentLight,
-        disabledBackgroundColor: crimsonFaint,
-        disabledForegroundColor: crimson,
+        backgroundColor: context.rpg.crimson,
+        foregroundColor: context.rpg.parchmentLight,
+        disabledBackgroundColor: context.rpg.crimsonFaint,
+        disabledForegroundColor: context.rpg.crimson,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(3),
-          side: const BorderSide(color: goldGlyph),
+          side: BorderSide(color: context.rpg.goldGlyph),
         ),
         padding: const EdgeInsets.symmetric(vertical: 12),
-        textStyle: const TextStyle(
-          fontFamily: fontDisplay,
+        textStyle: TextStyle(
+          fontFamily: context.rpg.fontDisplay,
           fontSize: 10,
           letterSpacing: 2,
           fontWeight: FontWeight.w700,
@@ -135,20 +135,20 @@ class _NewChangeRequestScreenState
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: parchment,
+        backgroundColor: context.rpg.parchment,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(color: crimson, width: 2),
+          borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+          side: BorderSide(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
         ),
         title: Text(
           request.characterName.toUpperCase(),
-          style: const TextStyle(
-            fontFamily: fontDisplay,
+          style: TextStyle(
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 13,
             fontWeight: FontWeight.w700,
             letterSpacing: 2,
-            color: inkHeading,
+            color: context.rpg.inkHeading,
           ),
         ),
         content: SingleChildScrollView(
@@ -158,32 +158,32 @@ class _NewChangeRequestScreenState
             children: [
               Text(
                 changeRequestStatusLabel(request.status),
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: inkHeading,
+                  color: context.rpg.inkHeading,
                 ),
               ),
               if (request.questTitle != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   'Zadanie: ${request.questTitle}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontStyle: FontStyle.italic,
-                    color: traitNameInk,
+                    color: context.rpg.traitNameInk,
                   ),
                 ),
               ],
               const SizedBox(height: 8),
-              Text('Poproszono o'.toUpperCase(), style: _detailSectionLabel),
+              Text('Poproszono o'.toUpperCase(), style: _detailSectionLabel(context)),
               for (final line in askedLines)
-                Text(line, style: const TextStyle(color: inkHeading)),
+                Text(line, style: TextStyle(color: context.rpg.inkHeading)),
               if (request.reason != null) ...[
                 const SizedBox(height: 8),
                 Text(
                   request.reason!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontStyle: FontStyle.italic,
-                    color: traitNameInk,
+                    color: context.rpg.traitNameInk,
                   ),
                 ),
               ],
@@ -191,39 +191,39 @@ class _NewChangeRequestScreenState
                 const SizedBox(height: 8),
                 Text(
                   'Wysłano: ${formatTimestamp(request.createdAt!)}',
-                  style: const TextStyle(color: traitNameInk, fontSize: 12),
+                  style: TextStyle(color: context.rpg.traitNameInk, fontSize: 12),
                 ),
               ],
               if (applied != null) ...[
                 const SizedBox(height: 12),
-                const Divider(color: crimsonBorderFaint, height: 1),
+                Divider(color: context.rpg.crimsonBorderFaint, height: 1),
                 const SizedBox(height: 12),
-                Text('Zastosowano'.toUpperCase(), style: _detailSectionLabel),
+                Text('Zastosowano'.toUpperCase(), style: _detailSectionLabel(context)),
                 for (final line in changeSetLines(applied))
-                  Text(line, style: const TextStyle(color: inkHeading)),
+                  Text(line, style: TextStyle(color: context.rpg.inkHeading)),
                 if (request.decidedAt != null) ...[
                   const SizedBox(height: 8),
                   Text(
                     'Rozpatrzono: ${formatTimestamp(request.decidedAt!)}',
-                    style: const TextStyle(color: traitNameInk, fontSize: 12),
+                    style: TextStyle(color: context.rpg.traitNameInk, fontSize: 12),
                   ),
                 ],
               ],
               if (request.status == ChangeRequestStatus.rejected) ...[
                 const SizedBox(height: 12),
-                const Divider(color: crimsonBorderFaint, height: 1),
+                Divider(color: context.rpg.crimsonBorderFaint, height: 1),
                 const SizedBox(height: 12),
                 Text('Powód odrzucenia'.toUpperCase(),
-                    style: _detailSectionLabel),
+                    style: _detailSectionLabel(context)),
                 Text(
                   request.rejectionReason ?? 'Nie podano',
-                  style: const TextStyle(color: inkHeading),
+                  style: TextStyle(color: context.rpg.inkHeading),
                 ),
                 if (request.decidedAt != null) ...[
                   const SizedBox(height: 8),
                   Text(
                     'Rozpatrzono: ${formatTimestamp(request.decidedAt!)}',
-                    style: const TextStyle(color: traitNameInk, fontSize: 12),
+                    style: TextStyle(color: context.rpg.traitNameInk, fontSize: 12),
                   ),
                 ],
               ],
@@ -233,8 +233,8 @@ class _NewChangeRequestScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            style: TextButton.styleFrom(foregroundColor: crimson),
-            child: Text('Zamknij'.toUpperCase(), style: dialogActionStyle),
+            style: TextButton.styleFrom(foregroundColor: context.rpg.crimson),
+            child: Text('Zamknij'.toUpperCase(), style: dialogActionStyle(context)),
           ),
         ],
       ),
@@ -283,28 +283,28 @@ class _NewChangeRequestScreenState
     final myRequests = ref.watch(myChangeRequestsProvider).value ?? const [];
 
     return Scaffold(
-      backgroundColor: bgDark,
+      backgroundColor: context.rpg.bgDark,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: parchmentMuted),
+        iconTheme: IconThemeData(color: context.rpg.parchmentMuted),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: appBarGradient,
-            border: Border(bottom: BorderSide(color: goldBorderFaint)),
+          decoration: BoxDecoration(
+            gradient: context.rpg.appBarGradient,
+            border: Border(bottom: BorderSide(color: context.rpg.goldBorderFaint)),
           ),
         ),
-        title: const Text(
+        title: Text(
           'Prośba o zmianę',
           style: TextStyle(
-            fontFamily: fontDisplay,
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 14,
             letterSpacing: 3,
-            color: parchmentLight,
+            color: context.rpg.parchmentLight,
           ),
         ),
       ),
-      body: SingleChildScrollView(
+      body: ThemeBackdrop(child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Center(
           child: ConstrainedBox(
@@ -313,11 +313,11 @@ class _NewChangeRequestScreenState
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: crimson, width: 2),
-                    borderRadius: BorderRadius.circular(4),
-                    boxShadow: const [
+                    border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
+                    borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+                    boxShadow: [
                       BoxShadow(
-                        color: dialogShadowColor,
+                        color: context.rpg.dialogShadowColor,
                         blurRadius: 32,
                         offset: Offset(0, 8),
                       ),
@@ -327,12 +327,12 @@ class _NewChangeRequestScreenState
                   child: Column(
                     children: [
                       Container(
-                        decoration: const BoxDecoration(gradient: cardGradient),
+                        decoration: BoxDecoration(gradient: context.rpg.cardGradient),
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                         child: Container(
                           decoration: BoxDecoration(
-                            border: Border.all(color: crimsonBorder),
-                            borderRadius: BorderRadius.circular(2),
+                            border: Border.all(color: context.rpg.crimsonBorder),
+                            borderRadius: BorderRadius.circular(context.rpg.innerRadius),
                           ),
                           padding: const EdgeInsets.all(12),
                           child: Column(
@@ -399,22 +399,22 @@ class _NewChangeRequestScreenState
                                 Expanded(
                                   child: Text(
                                     r.characterName,
-                                    style: const TextStyle(
-                                      color: parchmentMuted,
+                                    style: TextStyle(
+                                      color: context.rpg.onBgMuted,
                                     ),
                                   ),
                                 ),
                                 Text(
                                   changeRequestStatusLabel(r.status),
-                                  style: const TextStyle(
-                                    fontFamily: fontDisplay,
+                                  style: TextStyle(
+                                    fontFamily: context.rpg.fontDisplay,
                                     fontSize: 9,
                                     letterSpacing: 2,
                                     // Was parchmentFaint (~3.95:1 against
                                     // bgDark at this size -- fails WCAG AA's
-                                    // 4.5:1 floor). parchmentMuted matches
+                                    // 4.5:1 floor). onBgMuted matches
                                     // the name colour and clears 6:1.
-                                    color: parchmentMuted,
+                                    color: context.rpg.onBgMuted,
                                   ),
                                 ),
                               ],
@@ -425,10 +425,10 @@ class _NewChangeRequestScreenState
                           IconButton(
                             key: Key('cancel-request-${r.id}'),
                             tooltip: 'Anuluj',
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.close,
                               size: 16,
-                              color: crimson,
+                              color: context.rpg.crimson,
                             ),
                             onPressed: () => _cancel(r),
                           ),
@@ -439,7 +439,7 @@ class _NewChangeRequestScreenState
             ),
           ),
         ),
-      ),
+      )),
     );
   }
 }

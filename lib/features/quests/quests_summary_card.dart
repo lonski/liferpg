@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/quest.dart';
 import '../../providers/quest_providers.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/ornaments.dart';
 import 'quests_screen.dart';
 
 /// The always-visible entry point into Zadania from the home screen: a
@@ -27,7 +28,11 @@ class QuestsSummaryCard extends ConsumerWidget {
     final openCount = open.length;
     final hasAssigned = assignedCount > 0;
 
-    return InkWell(
+    final countEgg =
+        hasAssigned ? context.rpg.decor.countEgg(context, assignedCount) : null;
+    return Perched(
+      spot: PerchSpot.questsSummary,
+      child: InkWell(
       key: const Key('quests-summary-card'),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => const QuestsScreen()),
@@ -36,49 +41,50 @@ class QuestsSummaryCard extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           border: Border.all(
-            color: hasAssigned ? crimson : goldBorderFaint,
+            color: hasAssigned ? context.rpg.crimson : context.rpg.goldBorderFaint,
             width: hasAssigned ? 2 : 1,
           ),
-          borderRadius: BorderRadius.circular(4),
-          boxShadow: const [
-            BoxShadow(color: cardShadowColor, blurRadius: 18, offset: Offset(0, 4)),
-          ],
+          borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+          boxShadow: context.rpg.cardShadows(blur: 18, offset: const Offset(0, 4)),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              decoration: const BoxDecoration(gradient: bandGradient),
+              decoration: BoxDecoration(gradient: context.rpg.bandGradient),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Row(
                 children: [
+                  if (countEgg != null)
+                    countEgg
+                  else
                   Container(
                     width: 34,
                     height: 34,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: hasAssigned ? crimsonBright : crimsonBorderStrong,
+                      color: hasAssigned ? context.rpg.crimsonBright : context.rpg.crimsonBorderStrong,
                       border: Border.all(
-                        color: hasAssigned ? gold : goldBorderFaint,
+                        color: hasAssigned ? context.rpg.gold : context.rpg.goldBorderFaint,
                         width: hasAssigned ? 2 : 1.5,
                       ),
                       boxShadow: hasAssigned
-                          ? const [BoxShadow(color: goldGlyph, blurRadius: 8)]
+                          ? [BoxShadow(color: context.rpg.goldGlyph, blurRadius: 8)]
                           : null,
                     ),
                     child: hasAssigned
                         ? Text(
                             '$assignedCount',
-                            style: const TextStyle(
-                              fontFamily: fontDisplay,
+                            style: TextStyle(
+                              fontFamily: context.rpg.fontDisplay,
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
-                              color: parchmentLight,
+                              color: context.rpg.parchmentLight,
                             ),
                           )
-                        : const Icon(Icons.check, size: 16, color: parchmentSoft),
+                        : Icon(Icons.check, size: 16, color: context.rpg.parchmentSoft),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -91,11 +97,11 @@ class QuestsSummaryCard extends ConsumerWidget {
                               ? 'ZADANIA DO WYKONANIA'
                               : 'BRAK PRZYPISANYCH ZADAŃ',
                           style: TextStyle(
-                            fontFamily: fontDisplay,
+                            fontFamily: context.rpg.fontDisplay,
                             fontWeight: FontWeight.w700,
                             fontSize: hasAssigned ? 12.5 : 12,
                             letterSpacing: 1,
-                            color: hasAssigned ? parchmentLight : bandLabelColor,
+                            color: hasAssigned ? context.rpg.parchmentLight : context.rpg.bandLabelColor,
                           ),
                         ),
                         Text(
@@ -103,7 +109,7 @@ class QuestsSummaryCard extends ConsumerWidget {
                           style: TextStyle(
                             fontStyle: FontStyle.italic,
                             fontSize: 9,
-                            color: hasAssigned ? parchmentSoft : parchmentFaint,
+                            color: hasAssigned ? context.rpg.parchmentSoft : context.rpg.parchmentFaint,
                           ),
                         ),
                       ],
@@ -111,14 +117,14 @@ class QuestsSummaryCard extends ConsumerWidget {
                   ),
                   Icon(
                     Icons.chevron_right,
-                    color: hasAssigned ? gold : goldGlyph,
+                    color: hasAssigned ? context.rpg.gold : context.rpg.goldGlyph,
                     size: 18,
                   ),
                 ],
               ),
             ),
             Container(
-              decoration: const BoxDecoration(gradient: cardGradient),
+              decoration: BoxDecoration(gradient: context.rpg.cardGradient),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               child: Row(
                 children: [
@@ -129,7 +135,7 @@ class QuestsSummaryCard extends ConsumerWidget {
                       label: 'na tablicy',
                     ),
                   ),
-                  Container(width: 1, height: 22, color: crimsonBorderFaint),
+                  Container(width: 1, height: 22, color: context.rpg.crimsonBorderFaint),
                   Expanded(
                     child: _Stat(
                       icon: Icons.hourglass_bottom,
@@ -143,6 +149,7 @@ class QuestsSummaryCard extends ConsumerWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -159,24 +166,24 @@ class _Stat extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, size: 13, color: crimson),
+        Icon(icon, size: 13, color: context.rpg.crimson),
         const SizedBox(width: 6),
         Text(
           '$value',
-          style: const TextStyle(
-            fontFamily: fontDisplay,
+          style: TextStyle(
+            fontFamily: context.rpg.fontDisplay,
             fontWeight: FontWeight.w700,
             fontSize: 14,
-            color: inkHeading,
+            color: context.rpg.inkHeading,
           ),
         ),
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontStyle: FontStyle.italic,
             fontSize: 9.5,
-            color: traitNameInk,
+            color: context.rpg.traitNameInk,
           ),
         ),
       ],

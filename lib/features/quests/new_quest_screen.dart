@@ -85,7 +85,7 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
     final picked = await showDialog<QuestRosterEntry?>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
-        backgroundColor: parchment,
+        backgroundColor: context.rpg.parchment,
         title: const Text('Wybierz postać'),
         children: [
           SimpleDialogOption(
@@ -230,18 +230,18 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
       // Same restyle as NewChangeRequestScreen's submit button -- the stock
       // Material surface reads as a foreign widget on the parchment card.
       style: ElevatedButton.styleFrom(
-        backgroundColor: crimson,
-        foregroundColor: parchmentLight,
-        disabledBackgroundColor: crimsonFaint,
-        disabledForegroundColor: crimson,
+        backgroundColor: context.rpg.crimson,
+        foregroundColor: context.rpg.parchmentLight,
+        disabledBackgroundColor: context.rpg.crimsonFaint,
+        disabledForegroundColor: context.rpg.crimson,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(3),
-          side: const BorderSide(color: goldGlyph),
+          side: BorderSide(color: context.rpg.goldGlyph),
         ),
         padding: const EdgeInsets.symmetric(vertical: 12),
-        textStyle: const TextStyle(
-          fontFamily: fontDisplay,
+        textStyle: TextStyle(
+          fontFamily: context.rpg.fontDisplay,
           fontSize: 10,
           letterSpacing: 2,
           fontWeight: FontWeight.w700,
@@ -300,42 +300,42 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
           );
 
     return Scaffold(
-      backgroundColor: bgDark,
+      backgroundColor: context.rpg.bgDark,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: parchmentMuted),
+        iconTheme: IconThemeData(color: context.rpg.parchmentMuted),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: appBarGradient,
-            border: Border(bottom: BorderSide(color: goldBorderFaint)),
+          decoration: BoxDecoration(
+            gradient: context.rpg.appBarGradient,
+            border: Border(bottom: BorderSide(color: context.rpg.goldBorderFaint)),
           ),
         ),
         title: Text(
           editing != null
               ? 'Edytuj zadanie'
               : (_isDaily ? 'Nowe zadanie codzienne' : 'Nowy quest'),
-          style: const TextStyle(
-            fontFamily: fontDisplay,
+          style: TextStyle(
+            fontFamily: context.rpg.fontDisplay,
             fontSize: 14,
             letterSpacing: 3,
-            color: parchmentLight,
+            color: context.rpg.parchmentLight,
           ),
         ),
       ),
-      body: SingleChildScrollView(
+      body: ThemeBackdrop(child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(color: crimson, width: 2),
-                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
+                borderRadius: BorderRadius.circular(context.rpg.cardRadius),
               ),
               clipBehavior: Clip.antiAlias,
               child: Container(
-                decoration: const BoxDecoration(gradient: cardGradient),
+                decoration: BoxDecoration(gradient: context.rpg.cardGradient),
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
@@ -346,7 +346,7 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Zadanie codzienne', style: TextStyle(color: inkHeading)),
+                          Text('Zadanie codzienne', style: TextStyle(color: context.rpg.inkHeading)),
                           Switch(
                             key: const Key('quest-daily-toggle'),
                             value: _isDaily,
@@ -355,7 +355,7 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
                         ],
                       ),
                       if (_isDaily)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(bottom: 8),
                           child: Text(
                             'Zadanie codzienne odnawia się co dzień. Wybierz osobę, aby przypisać je na stałe, '
@@ -363,7 +363,7 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontStyle: FontStyle.italic,
-                              color: traitNameInk,
+                              color: context.rpg.traitNameInk,
                             ),
                           ),
                         ),
@@ -414,9 +414,9 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
                         onTap: () => _pickTarget(roster),
                         title: Text(
                           _target?.characterName ?? 'Tablica (dowolna osoba)',
-                          style: const TextStyle(color: inkHeading),
+                          style: TextStyle(color: context.rpg.inkHeading),
                         ),
-                        trailing: const Icon(Icons.expand_more, color: crimson),
+                        trailing: Icon(Icons.expand_more, color: context.rpg.crimson),
                       ),
                     ],
                     const SizedBox(height: 12),
@@ -431,7 +431,7 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
             ),
           ),
         ),
-      ),
+      )),
     );
   }
 }

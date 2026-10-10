@@ -7,26 +7,27 @@ import '../../theme/ornaments.dart';
 
 /// The dark gradient AppBar shared by the achievement screens.
 PreferredSizeWidget achievementAppBar(
+  BuildContext context,
   String title, {
   List<Widget> actions = const [],
 }) =>
     AppBar(
       elevation: 0,
       backgroundColor: Colors.transparent,
-      foregroundColor: parchmentLight,
+      foregroundColor: context.rpg.parchmentLight,
       flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: appBarGradient,
-          border: Border(bottom: BorderSide(color: goldBorderFaint)),
+        decoration: BoxDecoration(
+          gradient: context.rpg.appBarGradient,
+          border: Border(bottom: BorderSide(color: context.rpg.goldBorderFaint)),
         ),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          fontFamily: fontDisplay,
+        style: TextStyle(
+          fontFamily: context.rpg.fontDisplay,
           fontSize: 18,
           letterSpacing: 2,
-          color: parchmentLight,
+          color: context.rpg.parchmentLight,
         ),
       ),
       actions: actions,
@@ -55,23 +56,22 @@ class ParchmentFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         decoration: BoxDecoration(
-          border: Border.all(color: gilded ? gold : crimson, width: 2),
-          borderRadius: BorderRadius.circular(4),
-          boxShadow: const [
-            BoxShadow(color: cardShadowColor, blurRadius: 24, offset: Offset(0, 6)),
-          ],
+          border: Border.all(color: gilded ? context.rpg.gold : context.rpg.crimson, width: context.rpg.cardBorderWidth),
+          borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+          boxShadow: context.rpg.cardShadows(blur: 24, offset: const Offset(0, 6)),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TopBand(
-              label: '✦ $band ✦',
-              gradient: gilded ? goldBandGradient : bandGradient,
-              labelColor: gilded ? inkHeading : bandLabelColor,
+              label: band,
+              ornament: BandOrnament.star,
+              gradient: gilded ? context.rpg.goldBandGradient : context.rpg.bandGradient,
+              labelColor: gilded ? context.rpg.inkHeading : context.rpg.bandLabelColor,
             ),
             Container(
-              decoration: const BoxDecoration(gradient: cardGradient),
+              decoration: BoxDecoration(gradient: context.rpg.cardGradient),
               padding: const EdgeInsets.all(14),
               width: double.infinity,
               // passthrough: the bordered body takes the card's full width,
@@ -82,8 +82,8 @@ class ParchmentFrame extends StatelessWidget {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      border: Border.all(color: crimsonBorder),
-                      borderRadius: BorderRadius.circular(2),
+                      border: Border.all(color: context.rpg.crimsonBorder),
+                      borderRadius: BorderRadius.circular(context.rpg.innerRadius),
                     ),
                     padding: const EdgeInsets.all(12),
                     child: child,
@@ -97,24 +97,7 @@ class ParchmentFrame extends StatelessWidget {
                 ],
               ),
             ),
-            if (footerLabel == null)
-              const BottomBand()
-            else
-              Container(
-                decoration: const BoxDecoration(gradient: bandGradient),
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                alignment: Alignment.center,
-                child: Text(
-                  '— ✦ ${footerLabel!.toUpperCase()} ✦ —',
-                  style: const TextStyle(
-                    fontFamily: fontDisplay,
-                    fontSize: 10,
-                    letterSpacing: 3,
-                    height: 1,
-                    color: parchmentMedium,
-                  ),
-                ),
-              ),
+            BottomBand(label: footerLabel),
           ],
         ),
       );
@@ -135,18 +118,18 @@ class RewardChips extends StatelessWidget {
           for (final part in rewardParts(reward))
             Container(
               decoration: BoxDecoration(
-                color: crimsonFaint,
-                border: Border.all(color: goldBorder),
+                color: context.rpg.crimsonFaint,
+                border: Border.all(color: context.rpg.goldBorder),
                 borderRadius: BorderRadius.circular(10),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               child: Text(
                 part,
-                style: const TextStyle(
-                  fontFamily: fontBody,
+                style: TextStyle(
+                  fontFamily: context.rpg.fontBody,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: inkHeading,
+                  color: context.rpg.inkHeading,
                 ),
               ),
             ),

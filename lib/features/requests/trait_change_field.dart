@@ -83,8 +83,8 @@ class _TraitChangeFieldState extends ConsumerState<TraitChangeField> {
         child: TextButton.icon(
           key: const Key('add-trait-button'),
           onPressed: _expand,
-          icon: const Icon(Icons.add, color: crimson, size: 16),
-          label: Text('Dodaj zmianę cechy'.toUpperCase(), style: fieldLabel),
+          icon: Icon(Icons.add, color: context.rpg.crimson, size: 16),
+          label: Text('Dodaj zmianę cechy'.toUpperCase(), style: fieldLabel(context)),
         ),
       );
     }
@@ -132,9 +132,9 @@ class _TraitChangeFieldState extends ConsumerState<TraitChangeField> {
                                 ),
                                 child: Text(
                                   option,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: inkHeading,
+                                    color: context.rpg.inkHeading,
                                   ),
                                 ),
                               ),
@@ -155,17 +155,17 @@ class _TraitChangeFieldState extends ConsumerState<TraitChangeField> {
                         key: const Key('trait-name'),
                         controller: controller,
                         focusNode: focusNode,
-                        suffixIcon: const Icon(
+                        suffixIcon: Icon(
                           Icons.expand_more,
                           size: 16,
-                          color: crimson,
+                          color: context.rpg.crimson,
                         ),
                       );
                     },
               ),
               const SizedBox(height: 4),
               Center(
-                child: Text('Nazwa cechy'.toUpperCase(), style: captionLabel),
+                child: Text('Nazwa cechy'.toUpperCase(), style: captionLabel(context)),
               ),
             ],
           ),
@@ -183,7 +183,7 @@ class _TraitChangeFieldState extends ConsumerState<TraitChangeField> {
               ),
               const SizedBox(height: 4),
               Center(
-                child: Text('Wartość'.toUpperCase(), style: captionLabel),
+                child: Text('Wartość'.toUpperCase(), style: captionLabel(context)),
               ),
             ],
           ),
@@ -193,7 +193,7 @@ class _TraitChangeFieldState extends ConsumerState<TraitChangeField> {
           child: IconButton(
             key: const Key('remove-trait'),
             tooltip: 'Usuń',
-            icon: const Icon(Icons.close, color: crimson),
+            icon: Icon(Icons.close, color: context.rpg.crimson),
             onPressed: _collapse,
           ),
         ),

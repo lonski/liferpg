@@ -58,20 +58,20 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog>
 
     return AlertDialog(
       scrollable: true,
-      backgroundColor: parchment,
+      backgroundColor: context.rpg.parchment,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(4),
-        side: const BorderSide(color: crimson, width: 2),
+        borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+        side: BorderSide(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
       ),
       title: Text(
         'Nowa wersja dostępna'.toUpperCase(),
-        style: const TextStyle(
-          fontFamily: fontDisplay,
+        style: TextStyle(
+          fontFamily: context.rpg.fontDisplay,
           fontSize: 13,
           fontWeight: FontWeight.w700,
           letterSpacing: 2,
-          color: inkHeading,
+          color: context.rpg.inkHeading,
         ),
       ),
       content: _content(state),
@@ -83,37 +83,37 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog>
     return switch (state) {
       UpdateDownloadIdle() => Text(
           'Wersja ${widget.info.version}\n\n${widget.info.releaseNotes}',
-          style: const TextStyle(color: inkHeading),
+          style: TextStyle(color: context.rpg.inkHeading),
         ),
-      UpdateDownloadNeedsPermission() => const Text(
+      UpdateDownloadNeedsPermission() => Text(
           'Aby zainstalować aktualizację, zezwól na instalowanie z tego '
           'źródła.',
-          style: TextStyle(color: inkHeading),
+          style: TextStyle(color: context.rpg.inkHeading),
         ),
       UpdateDownloadInProgress(:final received, :final total) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             LinearProgressIndicator(
               value: (total != null && total > 0) ? received / total : null,
-              color: crimson,
+              color: context.rpg.crimson,
             ),
             const SizedBox(height: 8),
             Text(
               'Pobieranie aktualizacji...',
-              style: const TextStyle(color: inkHeading),
+              style: TextStyle(color: context.rpg.inkHeading),
             ),
           ],
         ),
-      UpdateDownloadInstalling() => const Text(
+      UpdateDownloadInstalling() => Text(
           'Otwieranie instalatora...',
-          style: TextStyle(color: inkHeading),
+          style: TextStyle(color: context.rpg.inkHeading),
         ),
-      UpdateDownloadInstallerLaunched() => const Text(
+      UpdateDownloadInstallerLaunched() => Text(
           'Otwieranie instalatora...',
-          style: TextStyle(color: inkHeading),
+          style: TextStyle(color: context.rpg.inkHeading),
         ),
       UpdateDownloadFailed(:final message) =>
-        Text(message, style: const TextStyle(color: inkHeading)),
+        Text(message, style: TextStyle(color: context.rpg.inkHeading)),
     };
   }
 
@@ -121,21 +121,21 @@ class _UpdateDialogState extends ConsumerState<UpdateDialog>
     final controller = ref.read(updateDownloadControllerProvider.notifier);
     final later = TextButton(
       onPressed: () => Navigator.of(context).pop(),
-      style: TextButton.styleFrom(foregroundColor: crimson),
-      child: Text('Później'.toUpperCase(), style: dialogActionStyle),
+      style: TextButton.styleFrom(foregroundColor: context.rpg.crimson),
+      child: Text('Później'.toUpperCase(), style: dialogActionStyle(context)),
     );
     Widget primary(String label, VoidCallback onPressed) => TextButton(
           onPressed: onPressed,
           style: TextButton.styleFrom(
-            backgroundColor: crimson,
-            foregroundColor: parchmentLight,
+            backgroundColor: context.rpg.crimson,
+            foregroundColor: context.rpg.parchmentLight,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(3),
-              side: const BorderSide(color: goldGlyph),
+              side: BorderSide(color: context.rpg.goldGlyph),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           ),
-          child: Text(label.toUpperCase(), style: dialogActionStyle),
+          child: Text(label.toUpperCase(), style: dialogActionStyle(context)),
         );
 
     return switch (state) {

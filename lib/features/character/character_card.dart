@@ -6,20 +6,20 @@ import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
 import 'edit_character_screen.dart';
 
-const TextStyle _statLabel = TextStyle(
-  fontFamily: fontDisplay,
+TextStyle _statLabel(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontDisplay,
   fontSize: 10,
   letterSpacing: 2,
-  color: crimson,
+  color: context.rpg.crimson,
 );
 
 // .xpMeta -- the "Doświadczenie" label and the "n / n XP" counter share this
 // style; neither is uppercase and neither uses the display font.
-const TextStyle _xpMetaText = TextStyle(
-  fontFamily: fontBody,
+TextStyle _xpMetaText(BuildContext context) => TextStyle(
+  fontFamily: context.rpg.fontBody,
   fontSize: 10,
   fontStyle: FontStyle.italic,
-  color: crimson,
+  color: context.rpg.crimson,
 );
 
 class CharacterCard extends StatefulWidget {
@@ -53,21 +53,22 @@ class _CharacterCardState extends State<CharacterCard> {
   Widget build(BuildContext context) {
     final c = widget.character;
 
-    return Container(
+    return Perched(
+      spot: PerchSpot.characterCard,
+      child: Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        border: Border.all(color: crimson, width: 2),
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: const [
-          BoxShadow(color: cardShadowColor, blurRadius: 24, offset: Offset(0, 6)),
-        ],
+        border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
+        borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+        boxShadow: context.rpg.cardShadows(blur: 24, offset: const Offset(0, 6)),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TopBand(
-            label: '✦ Karta Postaci ✦',
+            label: 'Karta Postaci',
+            ornament: BandOrnament.star,
             trailing: widget.canEdit
                 ? IconButton(
                     key: const Key('edit-character'),
@@ -75,7 +76,7 @@ class _CharacterCardState extends State<CharacterCard> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     iconSize: 16,
-                    color: parchmentSoft,
+                    color: context.rpg.parchmentSoft,
                     icon: const Icon(Icons.edit),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -86,15 +87,15 @@ class _CharacterCardState extends State<CharacterCard> {
                 : null,
           ),
           Container(
-            decoration: const BoxDecoration(gradient: cardGradient),
+            decoration: BoxDecoration(gradient: context.rpg.cardGradient),
             padding: const EdgeInsets.all(16),
             width: double.infinity,
             child: Stack(
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: crimsonBorder),
-                    borderRadius: BorderRadius.circular(2),
+                    border: Border.all(color: context.rpg.crimsonBorder),
+                    borderRadius: BorderRadius.circular(context.rpg.innerRadius),
                   ),
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -152,6 +153,7 @@ class _CharacterCardState extends State<CharacterCard> {
           const BottomBand(),
         ],
       ),
+      ),
     );
   }
 }
@@ -179,22 +181,22 @@ class _NameBlock extends StatelessWidget {
           Text(
             character.name,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontFamily: fontDisplay,
+            style: TextStyle(
+              fontFamily: context.rpg.fontDisplay,
               fontSize: 22,
               fontWeight: FontWeight.w700,
               letterSpacing: 2,
-              color: inkHeading,
+              color: context.rpg.inkHeading,
             ),
           ),
           if (character.clazz != null)
             Text(
               character.clazz!.toUpperCase(),
-              style: const TextStyle(
-                fontFamily: fontDisplay,
+              style: TextStyle(
+                fontFamily: context.rpg.fontDisplay,
                 fontSize: 9,
                 letterSpacing: 4,
-                color: crimson,
+                color: context.rpg.crimson,
               ),
             ),
         ],
@@ -210,21 +212,21 @@ class _LevelRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Poziom'.toUpperCase(), style: _statLabel),
+          Text('Poziom'.toUpperCase(), style: _statLabel(context)),
           Container(
             decoration: BoxDecoration(
-              color: crimsonFaint,
-              border: Border.all(color: crimsonBorderStrong),
-              borderRadius: BorderRadius.circular(3),
+              color: context.rpg.crimsonFaint,
+              border: Border.all(color: context.rpg.crimsonBorderStrong),
+              borderRadius: BorderRadius.circular(context.rpg.buttonRadius),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
             child: Text(
               '$level',
-              style: const TextStyle(
-                fontFamily: fontDisplay,
+              style: TextStyle(
+                fontFamily: context.rpg.fontDisplay,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: inkHeading,
+                color: context.rpg.inkHeading,
               ),
             ),
           ),
@@ -249,10 +251,10 @@ class _XpSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Doświadczenie', style: _xpMetaText),
+              Text('Doświadczenie', style: _xpMetaText(context)),
               Text(
                 '${character.currentXp} / ${character.nextLevelXp} XP',
-                style: _xpMetaText,
+                style: _xpMetaText(context),
               ),
             ],
           ),
@@ -261,24 +263,38 @@ class _XpSection extends StatelessWidget {
             key: const Key('xp-bar'),
             behavior: HitTestBehavior.opaque,
             onTap: onToggle,
-            child: Container(
-              width: double.infinity,
-              height: 8,
-              decoration: BoxDecoration(
-                color: crimsonFaint,
-                border: Border.all(color: crimsonBorder),
-                borderRadius: BorderRadius.circular(2),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: character.xpFraction,
-                child: const DecoratedBox(
-                  key: Key('xp-fill'),
-                  decoration: BoxDecoration(gradient: xpGradient),
+            child: LayoutBuilder(builder: (context, box) {
+              // Kurczaki: a chick runs along a thicker, rounder yolk bar.
+              final runner = context.rpg.decor.xpRunner(context);
+              final bar = Container(
+                width: double.infinity,
+                height: runner == null ? 8 : 12,
+                decoration: BoxDecoration(
+                  color: context.rpg.crimsonFaint,
+                  border: Border.all(color: context.rpg.crimsonBorder),
+                  borderRadius: BorderRadius.circular(runner == null ? 2 : 6),
                 ),
-              ),
-            ),
+                clipBehavior: Clip.antiAlias,
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: character.xpFraction,
+                  child: DecoratedBox(
+                    key: const Key('xp-fill'),
+                    decoration: BoxDecoration(gradient: context.rpg.xpGradient),
+                  ),
+                ),
+              );
+              if (runner == null) return bar;
+              final left = (box.maxWidth * character.xpFraction - 16)
+                  .clamp(-6.0, box.maxWidth - 24);
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  bar,
+                  Positioned(left: left, top: -19, child: IgnorePointer(child: runner)),
+                ],
+              );
+            }),
           ),
           // React shows/hides this hint with no transition; no AnimatedSize.
           if (hintVisible)
@@ -286,18 +302,18 @@ class _XpSection extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Container(
                 decoration: BoxDecoration(
-                  color: crimsonBgFaint,
-                  border: Border.all(color: crimsonBorderFaint),
+                  color: context.rpg.crimsonBgFaint,
+                  border: Border.all(color: context.rpg.crimsonBorderFaint),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                 child: Text(
                   'Do następnego poziomu: ${character.xpRemaining} XP',
-                  style: const TextStyle(
-                    fontFamily: fontBody,
+                  style: TextStyle(
+                    fontFamily: context.rpg.fontBody,
                     fontSize: 10,
                     fontStyle: FontStyle.italic,
-                    color: crimson,
+                    color: context.rpg.crimson,
                   ),
                 ),
               ),
@@ -309,11 +325,11 @@ class _XpSection extends StatelessWidget {
 class _GoldRow extends StatelessWidget {
   const _GoldRow({required this.character});
 
-  static const TextStyle _goldValue = TextStyle(
-    fontFamily: fontBody,
+  static TextStyle _goldValue(BuildContext context) => TextStyle(
+    fontFamily: context.rpg.fontBody,
     fontSize: 13,
     fontWeight: FontWeight.w700,
-    color: inkHeading,
+    color: context.rpg.inkHeading,
   );
 
   final Character character;
@@ -322,8 +338,17 @@ class _GoldRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Złoto'.toUpperCase(), style: _statLabel),
-          Text('${character.gold} zł', style: _goldValue),
+          Text('Złoto'.toUpperCase(), style: _statLabel(context)),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (context.rpg.decor.goldIcon(context) case final icon?) ...[
+                icon,
+                const SizedBox(width: 6),
+              ],
+              Text('${character.gold} zł', style: _goldValue(context)),
+            ],
+          ),
         ],
       );
 }
@@ -339,39 +364,56 @@ class _TraitPills extends StatelessWidget {
         runSpacing: 6,
         alignment: WrapAlignment.center,
         children: [
-          for (final t in traits)
-            Container(
-              decoration: BoxDecoration(
-                color: crimsonFaint,
-                border: Border.all(color: crimsonBorderStrong),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    t.name,
-                    style: const TextStyle(
-                      fontFamily: fontBody,
-                      fontSize: 10,
-                      fontStyle: FontStyle.italic,
-                      color: crimson,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    t.value,
-                    style: const TextStyle(
-                      fontFamily: fontBody,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: inkHeading,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          for (final t in traits) _TraitPill(trait: t),
         ],
       );
+}
+
+/// One trait. Kurczaki adds a feather before the name and lays the value
+/// in a yolk-yellow egg.
+class _TraitPill extends StatelessWidget {
+  const _TraitPill({required this.trait});
+
+  final Trait trait;
+
+  @override
+  Widget build(BuildContext context) {
+    final rpg = context.rpg;
+    final leading = rpg.decor.traitLeading(context);
+    final egg = rpg.decor.traitValue(context, trait.value);
+    return Container(
+      decoration: BoxDecoration(
+        color: egg == null ? rpg.crimsonFaint : rpg.parchmentLight,
+        border: Border.all(color: rpg.crimsonBorderStrong, width: egg == null ? 1 : 1.5),
+        borderRadius: BorderRadius.circular(egg == null ? 10 : 999),
+      ),
+      padding: EdgeInsets.fromLTRB(egg == null ? 10 : 8, 2, egg == null ? 10 : 3, 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (leading != null) ...[leading, const SizedBox(width: 4)],
+          Text(
+            trait.name,
+            style: TextStyle(
+              fontFamily: rpg.fontBody,
+              fontSize: egg == null ? 10 : 11,
+              fontStyle: FontStyle.italic,
+              color: rpg.crimson,
+            ),
+          ),
+          const SizedBox(width: 4),
+          egg ??
+              Text(
+                trait.value,
+                style: TextStyle(
+                  fontFamily: rpg.fontBody,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: rpg.inkHeading,
+                ),
+              ),
+        ],
+      ),
+    );
+  }
 }

@@ -34,7 +34,7 @@ class QuestActionButton extends StatelessWidget {
   Widget build(BuildContext context) => IconButton(
         tooltip: tooltip,
         icon: Icon(icon, size: 20),
-        color: crimson,
+        color: context.rpg.crimson,
         visualDensity: VisualDensity.compact,
         onPressed: onPressed,
       );
@@ -71,36 +71,42 @@ class QuestCard extends StatelessWidget {
     // (assigned/pendingReview, cycling between the two); once deactivated
     // (cancelled) it reads like an ordinary retired quest in the log.
     final showDailyBand = quest.isDaily && quest.status != QuestStatus.cancelled;
-    return Container(
+    // A theme may seat a hen on a live daily quest and a curious chick on a
+    // quest still up for grabs; settled quests stay plain.
+    final spot = showDailyBand
+        ? PerchSpot.dailyQuest
+        : quest.status == QuestStatus.open
+            ? PerchSpot.questCard
+            : null;
+    final card = Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        border: Border.all(color: showDailyBand ? gold : crimson, width: 2),
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: const [
-          BoxShadow(color: cardShadowColor, blurRadius: 16, offset: Offset(0, 4)),
-        ],
+        border: Border.all(color: showDailyBand ? context.rpg.gold : context.rpg.crimson, width: context.rpg.cardBorderWidth),
+        borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+        boxShadow: context.rpg.cardShadows(blur: 16, offset: const Offset(0, 4)),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           showDailyBand
-              ? const TopBand(
-                  label: '⟳ codzienne ⟳',
-                  gradient: goldBandGradient,
-                  labelColor: crimsonDeep,
+              ? TopBand(
+                  label: 'codzienne',
+                  ornament: BandOrnament.cycle,
+                  gradient: context.rpg.goldBandGradient,
+                  labelColor: context.rpg.crimsonDeep,
                 )
-              : TopBand(label: '✦ ${_bandLabel(quest.status)} ✦'),
+              : TopBand(label: _bandLabel(quest.status), ornament: BandOrnament.star),
           Container(
-            decoration: const BoxDecoration(gradient: cardGradient),
+            decoration: BoxDecoration(gradient: context.rpg.cardGradient),
             padding: const EdgeInsets.all(14),
             width: double.infinity,
             child: Stack(
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: crimsonBorder),
-                    borderRadius: BorderRadius.circular(2),
+                    border: Border.all(color: context.rpg.crimsonBorder),
+                    borderRadius: BorderRadius.circular(context.rpg.innerRadius),
                   ),
                   padding: const EdgeInsets.all(10),
                   width: double.infinity,
@@ -110,11 +116,11 @@ class QuestCard extends StatelessWidget {
                       Text(
                         quest.title,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontFamily: fontDisplay,
+                        style: TextStyle(
+                          fontFamily: context.rpg.fontDisplay,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: inkHeading,
+                          color: context.rpg.inkHeading,
                         ),
                       ),
                       if (posterOrHolderLine != null) ...[
@@ -122,10 +128,10 @@ class QuestCard extends StatelessWidget {
                         Text(
                           posterOrHolderLine!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontStyle: FontStyle.italic,
                             fontSize: 13,
-                            color: traitNameInk,
+                            color: context.rpg.traitNameInk,
                           ),
                         ),
                       ],
@@ -133,7 +139,7 @@ class QuestCard extends StatelessWidget {
                       Text(
                         _rewardLine(quest.reward),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 13, color: inkHeading),
+                        style: TextStyle(fontSize: 13, color: context.rpg.inkHeading),
                       ),
                       if (statusBadge != null) ...[
                         const SizedBox(height: 8),
@@ -169,6 +175,7 @@ class QuestCard extends StatelessWidget {
         ],
       ),
     );
+    return spot == null ? card : Perched(spot: spot, child: card);
   }
 
   String _bandLabel(QuestStatus status) => switch (status) {
