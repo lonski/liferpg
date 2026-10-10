@@ -19,6 +19,7 @@ void main() {
         tester, db, const AchievementsScreen(characterId: 'c1'), uid: 'zosia');
     expect(find.text('Odznaki · Zosia'), findsOneWidget);
     expect(find.text('4 paź 2026'), findsOneWidget);
+    expect(find.text('zdobyte odznaki'), findsOneWidget);
     final first = tester.getTopLeft(find.byKey(const Key('gallery-tile-a2')));
     final second = tester.getTopLeft(find.byKey(const Key('gallery-tile-a1')));
     expect(first.dx, lessThan(second.dx));

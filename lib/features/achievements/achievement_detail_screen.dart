@@ -29,7 +29,7 @@ const TextStyle _metaValue = TextStyle(
   color: inkHeading,
 );
 
-class AchievementDetailScreen extends ConsumerWidget {
+class AchievementDetailScreen extends ConsumerStatefulWidget {
   const AchievementDetailScreen({
     super.key,
     required this.characterId,
@@ -39,12 +39,18 @@ class AchievementDetailScreen extends ConsumerWidget {
   final String characterId;
   final String achievementId;
 
-  Future<void> _revoke(
-    BuildContext context,
-    WidgetRef ref,
-    Character character,
-    Achievement achievement,
-  ) async {
+  @override
+  ConsumerState<AchievementDetailScreen> createState() =>
+      _AchievementDetailScreenState();
+}
+
+class _AchievementDetailScreenState
+    extends ConsumerState<AchievementDetailScreen> {
+  /// Set while a revoke is in flight: the action is disabled so a second
+  /// confirm can't pop the screen underneath this one as well.
+  bool _revoking = false;
+
+  Future<void> _revoke(Character character, Achievement achievement) async {
     final parts = rewardParts(achievement.reward.negated());
     final ok = await showConfirmDialog(
       context,
@@ -56,7 +62,8 @@ class AchievementDetailScreen extends ConsumerWidget {
       confirmLabel: 'Usuń',
       confirmKey: const Key('achievement-revoke-confirm'),
     );
-    if (!ok || !context.mounted) return;
+    if (!ok || !mounted || _revoking) return;
+    setState(() => _revoking = true);
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -66,16 +73,17 @@ class AchievementDetailScreen extends ConsumerWidget {
       navigator.pop();
       messenger.showSnackBar(const SnackBar(content: Text('Odznaka usunięta')));
     } catch (error) {
+      if (mounted) setState(() => _revoking = false);
       messenger.showSnackBar(SnackBar(content: Text('Nie udało się: $error')));
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final loading = ref.watch(charactersProvider).value == null;
-    final character = ref.watch(characterByIdProvider(characterId));
+    final character = ref.watch(characterByIdProvider(widget.characterId));
     final achievement = character?.achievements
-        .where((a) => a.id == achievementId)
+        .where((a) => a.id == widget.achievementId)
         .firstOrNull;
     final isAdmin = ref.watch(appUserProvider).value?.admin ?? false;
 
@@ -106,7 +114,8 @@ class AchievementDetailScreen extends ConsumerWidget {
             key: const Key('achievement-revoke'),
             tooltip: 'Usuń',
             icon: const Icon(Icons.delete_outline),
-            onPressed: () => _revoke(context, ref, character, achievement),
+            onPressed:
+                _revoking ? null : () => _revoke(character, achievement),
           ),
         ],
       ]),

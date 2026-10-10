@@ -32,4 +32,14 @@ void main() {
     );
     expect(rewardParts(const AchievementReward(currentXp: 0)), isEmpty);
   });
+
+  test('badgeCountLabel agrees with the count', () {
+    expect(badgeCountLabel(0), 'zdobytych odznak');
+    expect(badgeCountLabel(1), 'zdobyta odznaka');
+    expect(badgeCountLabel(2), 'zdobyte odznaki');
+    expect(badgeCountLabel(4), 'zdobyte odznaki');
+    expect(badgeCountLabel(5), 'zdobytych odznak');
+    expect(badgeCountLabel(12), 'zdobytych odznak');
+    expect(badgeCountLabel(22), 'zdobyte odznaki');
+  });
 }

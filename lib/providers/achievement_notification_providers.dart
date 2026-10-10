@@ -36,6 +36,10 @@ List<OwnedAchievement> ownAchievements(CharacterFeed feed, AppUser user) {
 /// Rides the roster stream the home screen already holds -- no new listener.
 final achievementNotificationsProvider = Provider<void>((ref) {
   ref.listen(charactersProvider, (previous, next) {
+    // While the roster reloads (right after a sign-in, say) `.value` is still
+    // the previous feed -- possibly the empty signed-out one -- not a
+    // snapshot of this user's characters.
+    if (next.isLoading) return;
     final feed = next.value;
     final user = ref.read(appUserProvider).value;
     if (feed == null || user == null) return;
@@ -75,8 +79,12 @@ final achievementNotificationsProvider = Provider<void>((ref) {
 class CelebrationQueue extends Notifier<List<OwnedAchievement>> {
   @override
   List<OwnedAchievement> build() {
-    final feed = ref.watch(charactersProvider).value;
+    final characters = ref.watch(charactersProvider);
     final user = ref.watch(appUserProvider).value;
+    // Same reloading guard as the notifications listener: a stale feed
+    // must never seed or prune this user's baseline.
+    if (characters.isLoading) return const [];
+    final feed = characters.value;
     if (feed == null || user == null) return const [];
     final repo = ref.watch(achievementNotificationRepositoryProvider);
     final own = ownAchievements(feed, user);

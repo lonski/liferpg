@@ -87,3 +87,15 @@ List<String> rewardParts(AchievementReward r) {
       '${_signed(days)} ${days.abs() == 1 ? 'dzień' : 'dni'} elektroniki',
   ];
 }
+
+/// The gallery header's noun phrase, agreeing with [count]:
+/// `1 zdobyta odznaka`, `2 zdobyte odznaki`, `5 zdobytych odznak`.
+String badgeCountLabel(int count) {
+  if (count == 1) return 'zdobyta odznaka';
+  final lastDigit = count % 10;
+  final lastTwo = count % 100;
+  if (lastDigit >= 2 && lastDigit <= 4 && (lastTwo < 12 || lastTwo > 14)) {
+    return 'zdobyte odznaki';
+  }
+  return 'zdobytych odznak';
+}

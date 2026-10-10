@@ -66,6 +66,17 @@ Future<void> addBadge(FakeFirebaseFirestore db, Map<String, dynamic> badge) asyn
   await Future<void>.delayed(Duration.zero);
 }
 
+/// Delays every roster query, like a real network round-trip after sign-in.
+class _SlowCharacterRepository extends CharacterRepository {
+  _SlowCharacterRepository(super.db);
+
+  @override
+  Stream<CharacterFeed> watchCharacters(AppUser user) async* {
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    yield* super.watchCharacters(user);
+  }
+}
+
 void main() {
   test('existing badges seed silently; a new one notifies the owner', () async {
     final db = await seedWorld(achievements: [achievementMap(id: 'old')]);
@@ -150,5 +161,41 @@ void main() {
     await settle(restarted);
     expect(restarted.read(celebrationQueueProvider).map((o) => o.achievement.id),
         ['b2']);
+  });
+
+  test('signing out and back in does not re-announce existing badges', () async {
+    final db = await seedWorld(achievements: [achievementMap(id: 'old')]);
+    SharedPreferences.setMockInitialValues({});
+    final auth = MockFirebaseAuth(
+      signedIn: true,
+      mockUser: MockUser(uid: 'zosia', email: 'zosia@example.com'),
+    );
+    final service = FakeNotificationService();
+    final container = ProviderContainer(overrides: [
+      firestoreProvider.overrideWithValue(db),
+      firebaseAuthProvider.overrideWithValue(auth),
+      sharedPreferencesProvider
+          .overrideWithValue(await SharedPreferences.getInstance()),
+      changeRequestNotificationServiceProvider.overrideWithValue(service),
+      characterRepositoryProvider
+          .overrideWithValue(_SlowCharacterRepository(db)),
+    ]);
+    addTearDown(container.dispose);
+    container.listen(achievementNotificationsProvider, (_, _) {});
+    container.listen(celebrationQueueProvider, (_, _) {});
+    Future<void> wait() => Future<void>.delayed(const Duration(milliseconds: 200));
+    await wait();
+    final repo = container.read(achievementNotificationRepositoryProvider);
+    expect(repo.loadCelebratedIds('zosia'), {'old'});
+
+    await auth.signOut();
+    await wait();
+    await auth.signInWithEmailAndPassword(
+        email: 'zosia@example.com', password: 'x');
+    await wait();
+
+    expect(repo.loadCelebratedIds('zosia'), {'old'});
+    expect(container.read(celebrationQueueProvider), isEmpty);
+    expect(service.shown, isEmpty);
   });
 }

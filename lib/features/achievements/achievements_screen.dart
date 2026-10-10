@@ -90,10 +90,10 @@ class _Gallery extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'zdobytych odznak',
-                  style: TextStyle(
+                  badgeCountLabel(all.length),
+                  style: const TextStyle(
                     fontFamily: fontBody,
                     fontStyle: FontStyle.italic,
                     color: parchmentMuted,
