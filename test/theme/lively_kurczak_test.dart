@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/theme/app_theme.dart';
@@ -27,6 +29,8 @@ Future<void> _tap(WidgetTester tester) async {
 }
 
 void main() {
+  setUp(() => LivelyKurczak.random = math.Random(7));
+
   testWidgets('a tapped hen hops and clucks, then falls quiet', (tester) async {
     await tester.pumpWidget(_yard(_hen));
     expect(_anyLine(KurczakVoice.hen), findsNothing);
@@ -98,5 +102,50 @@ void main() {
     }
     expect(find.byKey(const Key('kurczak-egg')), findsNothing);
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('a long press sends a bird to sleep', (tester) async {
+    await tester.pumpWidget(_yard(_hen));
+    await tester.longPress(find.byKey(const Key('hen')));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Text && LivelyKurczak.sleepLines.contains(w.data),
+      ),
+      findsOneWidget,
+    );
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a grown bird now and then sheds feathers, a chick never',
+      (tester) async {
+    await tester.pumpWidget(_yard(const LivelyKurczak(
+      Kurczak.rooster,
+      key: Key('hen'),
+      voice: KurczakVoice.rooster,
+      width: 90,
+      height: 80,
+    )));
+    var shed = false;
+    for (var i = 0; i < 20 && !shed; i++) {
+      await _tap(tester);
+      shed = find.byKey(const Key('kurczak-feather')).evaluate().isNotEmpty;
+      await tester.pumpAndSettle();
+    }
+    expect(shed, isTrue);
+
+    await tester.pumpWidget(_yard(const LivelyKurczak(
+      Kurczak.chick,
+      key: Key('hen'),
+      voice: KurczakVoice.chick,
+      width: 40,
+      height: 38,
+    )));
+    for (var i = 0; i < 20; i++) {
+      await _tap(tester);
+      expect(find.byKey(const Key('kurczak-feather')), findsNothing);
+      await tester.pumpAndSettle();
+    }
   });
 }

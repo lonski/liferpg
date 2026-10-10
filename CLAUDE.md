@@ -463,11 +463,16 @@ characterName, email
   nests (`BadgeShape.egg`), the electronics count in a yolk-filling egg with a
   thin Fredoka Light digit (`MedallionShape.egg`), and scenes closing lists
   (`FooterSceneView`) and the login screen. Those hens, roosters and chicks
-  are `LivelyKurczak`s: a tap makes them hop and say something in a bubble
-  (Ko-ko! / Kukuryku! / Pi-pi!) with a light haptic, chicks on the grass
-  scurry off and back, and a hen tapped five times within 0.7 s of each
-  other lays a golden egg that rolls away (a hidden surprise; the quick-tap
-  run is a `Timer`, not wall-clock reads). Art that already sits inside a
+  are `LivelyKurczak`s: a tap makes them hop, spin, shake or stretch at
+  random and say a random line in a speech bubble (Ko-ko! / Kukuryku! /
+  Pi-pi! and more) with a light haptic; hens and roosters sometimes shed a
+  few feathers; chicks on the grass scurry off and back; a long press sends
+  a bird to sleep ("Zzz…"); and a hen tapped five times within 0.7 s of
+  each other lays a golden egg that rolls away (a hidden surprise; the
+  quick-tap run is a `Timer`, not wall-clock reads). The bubble is an
+  `OverlayEntry` placed over the bird (below it when there is no room
+  under the status bar), so a list viewport or the AppBar never clips it.
+  Randomness goes through `LivelyKurczak.random`, which tests seed. Art that already sits inside a
   tap target — the AppBar logo (update check), the XP-bar chick (XP hint),
   the FAB — stays inert. Kurczaki's display font is
   **Baloo 2** — Fredoka has no Polish diacritics (ą ę ś ż…), so it ships
