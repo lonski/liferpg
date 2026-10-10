@@ -1,3 +1,4 @@
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/features/achievements/achievement_badge.dart';
@@ -7,7 +8,7 @@ import 'package:liferpg/models/character.dart';
 
 import 'achievements_test_support.dart';
 
-Future<Character> zosia(db) async =>
+Future<Character> zosia(FakeFirebaseFirestore db) async =>
     Character.fromMap('c1', await characterData(db));
 
 String fieldText(WidgetTester tester, String key) =>

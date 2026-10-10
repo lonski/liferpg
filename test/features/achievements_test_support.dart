@@ -37,7 +37,7 @@ Map<String, dynamic> achievementMap({
       'reason': 'Bez kartki, bez zająknięcia.',
       'date': date,
       'emblem': emblem,
-      if (place != null) 'place': place,
+      'place': ?place,
       'tier': tier,
       'reward': reward,
       'awardedBy': 'admin',
