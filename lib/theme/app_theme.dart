@@ -56,6 +56,26 @@ const LinearGradient goldBandGradient = LinearGradient(
   colors: [goldBandDeep, gold, goldBandDeep],
 );
 
+// Achievement badge metals (AchievementBadge): each tier's ring runs
+// light -> mid -> dark, and its emblem is inked on the crimson disk. Gold
+// reuses `gold` / `goldBandDeep` as mid / dark, ruby `crimsonBright` /
+// `crimsonDeep` with a gold rim so it reads against the disk.
+const Color badgeGoldLight = Color(0xFFF6DC8E);
+const Color badgeGoldEmblem = Color(0xFFF3D27A);
+const Color badgeSilverLight = Color(0xFFF4F2EC);
+const Color badgeSilverMid = Color(0xFFA8A398);
+const Color badgeSilverDark = Color(0xFF4F4B44);
+const Color badgeSilverEmblem = Color(0xFFE9E6DE);
+const Color badgeBronzeLight = Color(0xFFEDB98A);
+const Color badgeBronzeMid = Color(0xFFA3612B);
+const Color badgeBronzeDark = Color(0xFF4A260C);
+const Color badgeBronzeEmblem = Color(0xFFE8B07A);
+const Color badgeRubyLight = Color(0xFFD45A48);
+const Color badgeRubyEmblem = Color(0xFFF0C060);
+const Color badgeDiskEdge = Color(0xFF2A0606);
+const Color badgeGlow = Color(0x8CF6DC8E); // 55%
+const Color badgeGlowFade = Color(0x00F6DC8E); // 0%
+
 const LinearGradient appBarGradient = LinearGradient(
   colors: [Color(0xFF280606), Color(0xFF4A0E0E), Color(0xFF280606)],
 );
