@@ -52,6 +52,7 @@ uid, name, email, authProvider, admin (bool), readOnlyOthers (bool)
 name, clazz, email, level, current_xp, next_level_xp, gold, favour
 traits: [{ name: string, value: string }]  (optional)
 electronics: { days: int, as_of: 'YYYY-MM-DD', claimed: ['YYYY-MM-DD'] }  (optional)
+achievements: [{ id, title, event?, reason?, date: 'YYYY-MM-DD', emblem, place?, tier, reward: { current_xp?, gold?, traits?: [{name, value}], electronics_days? }, awardedBy, awardedByName, awardedAt }]  (optional)
 ```
 
 - Characters are linked to users via `email`.
@@ -78,6 +79,22 @@ electronics: { days: int, as_of: 'YYYY-MM-DD', claimed: ['YYYY-MM-DD'] }  (optio
   claim accepted while it was open; the map is written only by
   `CharacterRepository.claimElectronicsDay` / `setElectronicsDays` (both
   `runTransaction`) and the `ChangeRequestRepository.accept` transaction.
+- **Achievements live inside the character document** (not a collection), so
+  their visibility and write rules are the character's — `firestore.rules`
+  has no achievement-specific rule. Entries are written only by
+  `AchievementRepository` (`award` / `edit` / `revoke`, each a
+  `runTransaction` on the admin's client that changes the list and applies
+  the reward in one update); **`Character.toMap()` omits `achievements`**
+  exactly like `electronics`. `awardedAt` is a client `Timestamp` because
+  Firestore rejects `serverTimestamp()` inside arrays. `award` is a no-op for
+  an id already present (the form generates its id once), `revoke` for an id
+  already gone. Reward deltas reuse `applyCharacterDeltas`
+  (`lib/models/character_deltas.dart`, shared with change-request accept);
+  revoke applies the negated reward, so XP / gold / trait may go negative,
+  while electronics days go through `ElectronicsDays.addDays` and clamp at
+  0. A badge's reward cannot be edited — `edit` changes presentation only.
+  `AchievementReward` is deliberately not part of `ChangeSet`, so an
+  `electronics_days` key can never ride in an ordinary change request.
 
 **`change_requests/{id}`**
 ```
@@ -235,6 +252,30 @@ characterName, email
   — if the day moved it just refreshes the card instead of writing. Day boundaries are the
   device's local time (all players share one time zone). See
   `docs/superpowers/specs/2026-10-09-electronics-days-design.md`.
+- **Achievements** ("Odznaki", `lib/features/achievements/`): admin-only
+  awards with an individually chosen reward (XP / gold / one trait /
+  electronics days). Each badge is a medal (`AchievementBadge`): the tier
+  (złoto / srebro / brąz / rubin) is the ring's metal, the emblem (place
+  I–III, puchar, nuta, szczyt, księga, gwiazda) sits on the disk. The card's
+  **Odznaki** section (`AchievementsSection`, below Cechy) shows the four
+  newest with a `NOWA` chip for badges under 7 days old; players and
+  `readOnlyOthers` see it only when the character has a badge, admins always
+  (with **PRZYZNAJ ODZNAKĘ** when empty). Gallery (`AchievementsScreen`,
+  admin `+`), detail (`AchievementDetailScreen`: share for everyone who can
+  see it; admin **Edytuj** and **Usuń**, the latter confirming exactly what
+  will be taken back), and the award / edit form
+  (`AwardAchievementScreen`; picking a place pre-sets emblem, tier and title;
+  the date is a `RRRR-MM-DD` field because the app ships no Polish Material
+  localizations). There are no categories and no player requests for badges.
+- **Achievement notifications**: the owner (by email) gets a tray
+  notification and an in-app **Nowa odznaka** dialog
+  (`AchievementCelebrationHost` around `HomeScreen`) for each new badge,
+  from `lib/providers/achievement_notification_providers.dart` riding the
+  existing character stream. `AchievementNotificationRepository` keeps two
+  per-uid sets — notified, and celebrated (added only when the dialog
+  closes, so a dialog survives the app being killed). A first snapshot with
+  no baseline seeds silently, and a **cache-only** first snapshot neither
+  seeds nor announces. Revoking sends nothing.
 - **Quests**: the home screen's FAB is a speed-dial (`_QuestFab`) — it
   replaces the old single-button FAB, rotating into a close icon and
   revealing two labeled mini-FABs: "Zadania" (the tabbed `QuestsScreen`
@@ -370,10 +411,10 @@ characterName, email
   off to `shareQuest` (`lib/features/quests/quest_share.dart`), which renders
   an action-free copy of the card offscreen via an `Overlay` + `RepaintBoundary`,
   rasterises it to a PNG, and opens Android's native share sheet (`share_plus`,
-  behind the `QuestShareService` seam so tests can fake it) with that image
+  behind the generic `ShareService` seam (`shareServiceProvider`), with the offscreen capture in `lib/features/share/widget_capture.dart` shared with achievement sharing) with that image
   plus a caption carrying the quest's title and a `https://liferpg.lonski.pl/quest/<id>`
   deep link (`lib/data/quest_deep_link.dart`). A failed capture (rare) falls
-  back to a text-only share rather than failing the action.
+  back to a text-only share rather than failing the action. Achievements share the same way (`shareAchievement`, `AchievementShareCard`) but with **no link** — a badge is only readable by people who can see the character — and a caption that keeps the name in the nominative (`Zosia — odznaka „II miejsce” (…)`).
 - **Quest deep links**: shared quest links are `https://liferpg.lonski.pl/quest/<id>`
   — a verified Android App Link (`android:autoVerify="true"` intent-filter in
   `MainActivity`, `.well-known/assetlinks.json` hosted on the `gh-pages`
