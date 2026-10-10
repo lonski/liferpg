@@ -177,8 +177,10 @@ see it. Admins also get **Edytuj** (form in edit mode) and **Usuń**, gated on
   remain overridable. Picking `brak` while the emblem is `place` switches it
   to `trophy`.
 - Emblem picker (6), tier picker (4), live badge preview.
-- `Tytuł` (required), `Wydarzenie`, `Powód` (optional), `Data` (date picker,
-  default today via `clockProvider`).
+- `Tytuł` (required), `Wydarzenie`, `Powód` (optional), `Data` — a
+  `RRRR-MM-DD` text field validated by `parseDay`, default today via
+  `clockProvider`. Not `showDatePicker`: the app ships no Polish Material
+  localizations, so the picker would render in English.
 - Reward: XP / gold / one trait via the existing `ChangeRequestForm` with
   `showReason: false`; electronics days via a −/+ field like the edit
   screen's. A summary line `<name> otrzyma …` above **PRZYZNAJ**.
@@ -221,9 +223,10 @@ actions anywhere.
   `captureWidgetImage(context, widget, {width})`. Rename `QuestShareService`
   → `ShareService` (it has nothing quest-specific; same for the share_plus
   implementation and the provider). Quest sharing behaviour is unchanged.
-- Caption: `Odznaka dla <name>: <title>` plus ` — <event>` when present
-  (gender-neutral on purpose — characters carry no grammatical gender).
-  **No link.** A failed capture falls back to text-only, as quests
+- Caption: `<name> — odznaka „<title>”` plus ` (<event>)` when present.
+  Worded so the name stays in the nominative: characters carry no
+  grammatical gender and names cannot be declined automatically
+  (`Odznaka dla Zosia` would be wrong). **No link.** A failed capture falls back to text-only, as quests
   do.
 - Entry points: detail screen icon and the dialog's **UDOSTĘPNIJ**.
 
