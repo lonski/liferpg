@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/dialogs.dart';
 import '../../theme/ornaments.dart';
 import 'achievement_badge.dart';
+import 'achievement_share.dart';
 import 'achievement_widgets.dart';
 import 'award_achievement_screen.dart';
 
@@ -81,6 +82,14 @@ class AchievementDetailScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: bgDark,
       appBar: achievementAppBar('Odznaka', actions: [
+        if (character != null && achievement != null)
+          IconButton(
+            key: const Key('achievement-share'),
+            tooltip: 'Udostępnij',
+            icon: const Icon(Icons.share),
+            onPressed: () =>
+                shareAchievement(context, ref, character, achievement),
+          ),
         if (isAdmin && character != null && achievement != null) ...[
           IconButton(
             key: const Key('achievement-edit'),

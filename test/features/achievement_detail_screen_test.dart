@@ -59,4 +59,8 @@ void main() {
     await pumpAchievementsApp(tester, db, screen);
     expect(find.text('Ta odznaka już nie istnieje'), findsOneWidget);
   });
-}
+  testWidgets('everyone who sees the badge gets a share action', (tester) async {
+    final db = await seedWorld(achievements: [achievementMap()]);
+    await pumpAchievementsApp(tester, db, screen, uid: 'zosia');
+    expect(find.byKey(const Key('achievement-share')), findsOneWidget);
+  });}
