@@ -170,4 +170,25 @@ void main() {
           ElectronicsCardState.charging);
     });
   });
-}
+  group('addDays', () {
+    final today = parseDay('2026-10-20')!;
+
+    test('settles accrual before adding', () {
+      final e = ElectronicsDays(days: 1, asOf: parseDay('2026-10-17')!);
+      final next = e.addDays(2, today);
+      expect(next.days, 1 + 3 + 2);
+      expect(next.asOf, today);
+    });
+
+    test('clamps at zero and keeps claimed', () {
+      final e = ElectronicsDays(days: 1, asOf: today, claimed: [today - 1]);
+      final next = e.addDays(-5, today);
+      expect(next.days, 0);
+      expect(next.claimed, [today - 1]);
+    });
+
+    test('a future as_of stays put', () {
+      final e = ElectronicsDays(days: 2, asOf: today + 1);
+      expect(e.addDays(1, today).asOf, today + 1);
+    });
+  });}

@@ -117,6 +117,17 @@ class ElectronicsDays {
         claimed: claimed,
       );
 
+  /// A badge's reward, or its revoke: settles first like every write, then
+  /// shifts the banked count by [delta], never below zero.
+  ElectronicsDays addDays(int delta, int today) {
+    final settled = settle(today);
+    return ElectronicsDays(
+      days: math.max(0, settled.days + delta),
+      asOf: settled.asOf,
+      claimed: claimed,
+    );
+  }
+
   /// Spends [day]: costs one, and [day] itself never adds one. A [day] that
   /// already passed (late approval) has accrued, so it is taken back too --
   /// except days before [kElectronicsDaysEpoch], which never accrued, so they
