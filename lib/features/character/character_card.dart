@@ -58,9 +58,12 @@ class _CharacterCardState extends State<CharacterCard> {
       child: Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
         borderRadius: BorderRadius.circular(context.rpg.cardRadius),
         boxShadow: context.rpg.cardShadows(blur: 24, offset: const Offset(0, 6)),
+      ),
+      foregroundDecoration: BoxDecoration(
+        border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
+        borderRadius: BorderRadius.circular(context.rpg.cardRadius),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(

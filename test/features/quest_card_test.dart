@@ -87,7 +87,9 @@ void main() {
 
     expect(find.textContaining('CODZIENNE'), findsOneWidget);
     final container = tester.widget<Container>(find.byType(Container).first);
-    final decoration = container.decoration as BoxDecoration;
+    // The frame is painted over the content (foregroundDecoration) so the
+    // band can't bleed past the rounded corners.
+    final decoration = container.foregroundDecoration as BoxDecoration;
     expect((decoration.border as Border).top.color, RpgTheme.kronika.gold);
   });
 
@@ -110,7 +112,9 @@ void main() {
     expect(find.textContaining('CODZIENNE'), findsNothing);
     expect(find.textContaining('WYCOFANE'), findsOneWidget);
     final container = tester.widget<Container>(find.byType(Container).first);
-    final decoration = container.decoration as BoxDecoration;
+    // The frame is painted over the content (foregroundDecoration) so the
+    // band can't bleed past the rounded corners.
+    final decoration = container.foregroundDecoration as BoxDecoration;
     expect((decoration.border as Border).top.color, RpgTheme.kronika.crimson);
   });
 }

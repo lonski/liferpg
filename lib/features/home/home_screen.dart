@@ -335,7 +335,13 @@ class _LogoTitleState extends ConsumerState<_LogoTitle> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _logo(context),
+          // Shrinks rather than clips when an admin's four AppBar actions
+          // leave a narrow phone little room for the title.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: _logo(context),
+          ),
           if (_checking)
             SizedBox(
               width: 10,

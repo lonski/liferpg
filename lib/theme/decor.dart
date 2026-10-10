@@ -13,7 +13,10 @@ enum PerchSpot { characterCard, questsSummary, questCard, dailyQuest, achievemen
 enum FooterScene { home, quests, achievements }
 
 /// An illustration seated on a card's top edge: [art] rises [rise] px above
-/// the card and sits [inset] px in from the [left] or right side.
+/// the card and sits [inset] px in from the [left] or right side. Keep
+/// [rise] within a few px of the art's height, so it rests on the frame
+/// rather than over the band -- on a narrow phone the band's label spans
+/// most of the width and anything lower hides it.
 class Perch {
   const Perch({required this.art, required this.rise, this.inset = 16, this.left = false});
 
@@ -285,28 +288,28 @@ class KurczakiDecor extends RpgDecor {
   Perch? perch(BuildContext context, PerchSpot spot) => switch (spot) {
         PerchSpot.characterCard => const Perch(
             art: _CardRoost(),
-            rise: 62,
+            rise: 92,
             inset: 0,
           ),
         PerchSpot.questsSummary => const Perch(
             art: KurczakArt(Kurczak.chick, width: 36, height: 34),
-            rise: 22,
+            rise: 31,
             inset: 56,
           ),
         PerchSpot.questCard => const Perch(
             art: KurczakArt(Kurczak.chick, width: 44, height: 42, flip: true),
-            rise: 30,
+            rise: 39,
             inset: 26,
           ),
         PerchSpot.dailyQuest => const Perch(
             art: KurczakArt(Kurczak.henPerched, width: 74, height: 68),
-            rise: 52,
+            rise: 64,
             inset: 12,
             left: true,
           ),
         PerchSpot.achievementsSummary => const Perch(
             art: KurczakArt(Kurczak.hen, width: 70, height: 64),
-            rise: 50,
+            rise: 60,
             inset: 14,
           ),
       };
@@ -505,9 +508,8 @@ class _CardRoost extends StatelessWidget {
               bottom: 0,
               child: KurczakArt(Kurczak.chick, width: 44, height: 42, label: 'Pisklak'),
             ),
-            // Clear of the band's edit button at the right end.
             Positioned(
-              right: 44,
+              right: 14,
               top: 0,
               child: KurczakArt(Kurczak.henNest, width: 104, height: 96, label: 'Kura wysiadująca jajka'),
             ),

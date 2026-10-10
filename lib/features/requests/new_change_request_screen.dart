@@ -313,7 +313,6 @@ class _NewChangeRequestScreenState
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
                     borderRadius: BorderRadius.circular(context.rpg.cardRadius),
                     boxShadow: [
                       BoxShadow(
@@ -322,6 +321,10 @@ class _NewChangeRequestScreenState
                         offset: Offset(0, 8),
                       ),
                     ],
+                  ),
+                  foregroundDecoration: BoxDecoration(
+                    border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
+                    borderRadius: BorderRadius.circular(context.rpg.cardRadius),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: Column(

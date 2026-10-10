@@ -40,12 +40,15 @@ class QuestsSummaryCard extends ConsumerWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+          boxShadow: context.rpg.cardShadows(blur: 18, offset: const Offset(0, 4)),
+        ),
+        foregroundDecoration: BoxDecoration(
           border: Border.all(
             color: hasAssigned ? context.rpg.crimson : context.rpg.goldBorderFaint,
             width: hasAssigned ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(context.rpg.cardRadius),
-          boxShadow: context.rpg.cardShadows(blur: 18, offset: const Offset(0, 4)),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(

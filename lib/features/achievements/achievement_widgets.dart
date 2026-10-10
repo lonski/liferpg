@@ -56,9 +56,12 @@ class ParchmentFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         decoration: BoxDecoration(
-          border: Border.all(color: gilded ? context.rpg.gold : context.rpg.crimson, width: context.rpg.cardBorderWidth),
           borderRadius: BorderRadius.circular(context.rpg.cardRadius),
           boxShadow: context.rpg.cardShadows(blur: 24, offset: const Offset(0, 6)),
+        ),
+        foregroundDecoration: BoxDecoration(
+          border: Border.all(color: gilded ? context.rpg.gold : context.rpg.crimson, width: context.rpg.cardBorderWidth),
+          borderRadius: BorderRadius.circular(context.rpg.cardRadius),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(

@@ -330,6 +330,9 @@ class _NewQuestScreenState extends ConsumerState<NewQuestScreen> {
             constraints: const BoxConstraints(maxWidth: 440),
             child: Container(
               decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(context.rpg.cardRadius),
+              ),
+              foregroundDecoration: BoxDecoration(
                 border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
                 borderRadius: BorderRadius.circular(context.rpg.cardRadius),
               ),

@@ -81,9 +81,12 @@ class QuestCard extends StatelessWidget {
     final card = Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        border: Border.all(color: showDailyBand ? context.rpg.gold : context.rpg.crimson, width: context.rpg.cardBorderWidth),
         borderRadius: BorderRadius.circular(context.rpg.cardRadius),
         boxShadow: context.rpg.cardShadows(blur: 16, offset: const Offset(0, 4)),
+      ),
+      foregroundDecoration: BoxDecoration(
+        border: Border.all(color: showDailyBand ? context.rpg.gold : context.rpg.crimson, width: context.rpg.cardBorderWidth),
+        borderRadius: BorderRadius.circular(context.rpg.cardRadius),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(

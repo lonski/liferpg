@@ -255,7 +255,6 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
               key: _formKey,
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
                   borderRadius: BorderRadius.circular(context.rpg.cardRadius),
                   boxShadow: [
                     BoxShadow(
@@ -264,6 +263,10 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                       offset: Offset(0, 8),
                     ),
                   ],
+                ),
+                foregroundDecoration: BoxDecoration(
+                  border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
+                  borderRadius: BorderRadius.circular(context.rpg.cardRadius),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Column(

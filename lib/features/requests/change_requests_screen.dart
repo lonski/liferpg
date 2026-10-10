@@ -339,7 +339,6 @@ class _RequestCard extends StatelessWidget {
     return Container(
       key: Key('request-${request.id}'),
       decoration: BoxDecoration(
-        border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
         borderRadius: BorderRadius.circular(context.rpg.cardRadius),
         boxShadow: [
           BoxShadow(
@@ -348,6 +347,10 @@ class _RequestCard extends StatelessWidget {
             offset: Offset(0, 4),
           ),
         ],
+      ),
+      foregroundDecoration: BoxDecoration(
+        border: Border.all(color: context.rpg.crimson, width: context.rpg.cardBorderWidth),
+        borderRadius: BorderRadius.circular(context.rpg.cardRadius),
       ),
       clipBehavior: Clip.antiAlias,
       child: Container(
