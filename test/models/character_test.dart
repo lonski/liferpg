@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/models/character.dart';
 import 'package:liferpg/models/electronics_days.dart';
@@ -161,4 +162,18 @@ void main() {
     expect(c.toMap().containsKey('electronics'), isFalse);
     expect(c.copyWith(level: 2).electronics.days, 4);
   });
-}
+  test('achievements are parsed newest first, bad entries dropped, never in toMap', () {
+    final c = Character.fromMap('c1', {
+      'name': 'Zosia',
+      'email': 'zosia@example.com',
+      'achievements': [
+        {'id': 'old', 'title': 'Stara', 'date': '2026-01-01', 'awardedAt': Timestamp.fromDate(DateTime(2026, 1, 1))},
+        {'title': 'Bez id'},
+        'garbage',
+        {'id': 'new', 'title': 'Nowa', 'date': '2026-09-01', 'awardedAt': Timestamp.fromDate(DateTime(2026, 9, 1))},
+      ],
+    });
+    expect(c.achievements.map((a) => a.id), ['new', 'old']);
+    expect(c.toMap().containsKey('achievements'), isFalse);
+    expect(c.copyWith(name: 'Z').achievements, hasLength(2));
+  });}

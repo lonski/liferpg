@@ -1,3 +1,4 @@
+import 'achievement.dart';
 import 'electronics_days.dart';
 
 /// The live Firestore database was populated by a React web app that wrote
@@ -41,6 +42,7 @@ class Character {
     required this.favour,
     required this.traits,
     this.electronics = const ElectronicsDays(),
+    this.achievements = const [],
   });
 
   final String id;
@@ -57,6 +59,10 @@ class Character {
   /// See ElectronicsDays. Written only by CharacterRepository's transactional electronics methods and the change-request accept transaction -- never by toMap().
   final ElectronicsDays electronics;
 
+  /// Newest first. Written only by AchievementRepository's transactions --
+  /// never by toMap(), for the same reason as [electronics].
+  final List<Achievement> achievements;
+
   factory Character.fromMap(String id, Map<String, dynamic> data) {
     final rawTraits = data['traits'];
     final traits = rawTraits is List
@@ -66,6 +72,14 @@ class Character {
             .toList()
         : const <Trait>[];
 
+    final rawAchievements = data['achievements'];
+    final achievements = rawAchievements is List
+        ? (rawAchievements
+              .map(Achievement.tryParse)
+              .whereType<Achievement>()
+              .toList()
+          ..sort(Achievement.newestFirst))
+        : const <Achievement>[];
     return Character(
       id: id,
       name: _asString(data['name']) ?? '',
@@ -78,10 +92,11 @@ class Character {
       favour: _asInt(data['favour']) ?? 0,
       traits: traits,
       electronics: ElectronicsDays.fromMap(data['electronics']),
+      achievements: achievements,
     );
   }
 
-  // Deliberately omits `electronics`: the edit screen saves via update(toMap()), and including a snapshot of the counter here would overwrite a claim accepted while the screen was open.
+  // Deliberately omits `electronics` and `achievements`: the edit screen saves via update(toMap()), and including a snapshot of either here would overwrite a claim accepted, or a badge awarded, while the screen was open.
   Map<String, dynamic> toMap() => {
         'name': name,
         'clazz': clazz,
@@ -116,6 +131,7 @@ class Character {
         favour: favour ?? this.favour,
         traits: traits ?? this.traits,
         electronics: electronics,
+        achievements: achievements,
       );
 
   /// Progress towards the next level, 0.0–1.0, for the XP bar.
