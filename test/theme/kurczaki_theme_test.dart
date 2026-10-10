@@ -17,6 +17,7 @@ import 'package:liferpg/providers/clock_provider.dart';
 import 'package:liferpg/providers/update_providers.dart';
 import 'package:liferpg/theme/app_theme.dart';
 import 'package:liferpg/theme/decor.dart';
+import 'package:liferpg/theme/lively_kurczak.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/achievements_test_support.dart';
@@ -63,6 +64,23 @@ void main() {
       expect(find.byKey(const Key('electronics-count')), findsOneWidget);
       // A trait value sits in an egg but is still its text.
       expect(find.text('3'), findsWidgets);
+    });
+
+    testWidgets('the hen on the character card answers a tap', (tester) async {
+      await _pump(tester, const HomeScreen(), RpgTheme.kurczaki);
+      final hen = find.byWidgetPredicate(
+        (w) => w is LivelyKurczak && w.art == Kurczak.henNest,
+      );
+      expect(hen, findsOneWidget);
+
+      await tester.tap(hen);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(
+        find.byWidgetPredicate((w) =>
+            w is Text && LivelyKurczak.linesOf(KurczakVoice.hen).contains(w.data)),
+        findsOneWidget,
+      );
+      await tester.pumpAndSettle();
     });
 
     testWidgets('the quests, login and badge screens render', (tester) async {

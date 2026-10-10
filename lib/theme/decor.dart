@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'lively_kurczak.dart';
 import 'rpg_theme.dart';
 
 /// Which glyphs flank an ornamented label: `✦ X ✦`, `⟳ X ⟳`, or none.
 enum BandOrnament { none, star, cycle }
 
 /// Where a theme may seat an illustration on top of a card.
-enum PerchSpot { characterCard, questsSummary, questCard, dailyQuest, achievementsSummary }
+enum PerchSpot {
+  characterCard,
+  questsSummary,
+  questCard,
+  dailyQuest,
+  achievementsSummary,
+}
 
 /// Where a theme may stage a scene below the last item of a list.
 enum FooterScene { home, quests, achievements }
@@ -18,7 +25,12 @@ enum FooterScene { home, quests, achievements }
 /// rather than over the band -- on a narrow phone the band's label spans
 /// most of the width and anything lower hides it.
 class Perch {
-  const Perch({required this.art, required this.rise, this.inset = 16, this.left = false});
+  const Perch({
+    required this.art,
+    required this.rise,
+    this.inset = 16,
+    this.left = false,
+  });
 
   final Widget art;
   final double rise;
@@ -38,9 +50,9 @@ class RpgDecor {
 
   /// The ❧ in a framed card's top corners (left-hand orientation).
   Widget cornerOrnament(BuildContext context) => Text(
-        '❧',
-        style: TextStyle(fontSize: 12, color: context.rpg.ornamentInk, height: 1),
-      );
+    '❧',
+    style: TextStyle(fontSize: 12, color: context.rpg.ornamentInk, height: 1),
+  );
 
   /// [text] (already upper-cased by the caller) between two glyphs. One
   /// Text, so `find.text('✦ KARTA POSTACI ✦')` keeps matching.
@@ -56,30 +68,34 @@ class RpgDecor {
       BandOrnament.star => '✦',
       BandOrnament.cycle => '⟳',
     };
-    return Text(glyph == null ? text : '$glyph $text $glyph', style: style, textAlign: textAlign);
+    return Text(
+      glyph == null ? text : '$glyph $text $glyph',
+      style: style,
+      textAlign: textAlign,
+    );
   }
 
   /// The content of the closing band at a card's foot.
   Widget bottomBandContent(BuildContext context, String? label) => Text(
-        label == null ? '— ✦ —' : '— ✦ ${label.toUpperCase()} ✦ —',
-        style: TextStyle(
-          fontFamily: label == null ? null : context.rpg.fontDisplay,
-          fontSize: 10,
-          letterSpacing: 3,
-          color: context.rpg.parchmentMedium,
-          height: 1,
-        ),
-      );
+    label == null ? '— ✦ —' : '— ✦ ${label.toUpperCase()} ✦ —',
+    style: TextStyle(
+      fontFamily: label == null ? null : context.rpg.fontDisplay,
+      fontSize: 10,
+      letterSpacing: 3,
+      color: context.rpg.parchmentMedium,
+      height: 1,
+    ),
+  );
 
   /// The emblem above "LifeRPG" on the login screen.
   Widget loginEmblem(BuildContext context) => Text(
-        '⚔',
-        style: TextStyle(
-          fontSize: 40,
-          color: context.rpg.gold,
-          shadows: [Shadow(color: context.rpg.goldBorder, blurRadius: 12)],
-        ),
-      );
+    '⚔',
+    style: TextStyle(
+      fontSize: 40,
+      color: context.rpg.gold,
+      shadows: [Shadow(color: context.rpg.goldBorder, blurRadius: 12)],
+    ),
+  );
 
   /// A mark beside "LifeRPG" in the home AppBar; null keeps the `⚔` text.
   Widget? logoMark(BuildContext context) => null;
@@ -198,7 +214,12 @@ class KurczakArt extends StatelessWidget {
       excludeFromSemantics: label == null,
       semanticsLabel: label,
     );
-    if (turns != 0) picture = RotationTransition(turns: AlwaysStoppedAnimation(turns), child: picture);
+    if (turns != 0) {
+      picture = RotationTransition(
+        turns: AlwaysStoppedAnimation(turns),
+        child: picture,
+      );
+    }
     if (flip) picture = Transform.flip(flipX: true, child: picture);
     return picture;
   }
@@ -226,15 +247,31 @@ class KurczakiDecor extends RpgDecor {
     final size = (style.fontSize ?? 12) + 4;
     final Widget? glyph = switch (ornament) {
       BandOrnament.none => null,
-      BandOrnament.star => KurczakArt(Kurczak.chickHead, width: size, height: size),
-      BandOrnament.cycle => Icon(Icons.autorenew, size: size, color: style.color),
+      BandOrnament.star => KurczakArt(
+        Kurczak.chickHead,
+        width: size,
+        height: size,
+      ),
+      BandOrnament.cycle => Icon(
+        Icons.autorenew,
+        size: size,
+        color: style.color,
+      ),
     };
-    final label = Flexible(child: Text(text, style: style, textAlign: textAlign));
+    final label = Flexible(
+      child: Text(text, style: style, textAlign: textAlign),
+    );
     if (glyph == null) return Text(text, style: style, textAlign: textAlign);
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
-      children: [glyph, const SizedBox(width: 8), label, const SizedBox(width: 8), glyph],
+      children: [
+        glyph,
+        const SizedBox(width: 8),
+        label,
+        const SizedBox(width: 8),
+        glyph,
+      ],
     );
   }
 
@@ -270,12 +307,13 @@ class KurczakiDecor extends RpgDecor {
   }
 
   @override
-  Widget loginEmblem(BuildContext context) => const KurczakArt(
-        Kurczak.henHero,
-        width: 150,
-        height: 150,
-        label: 'Kura',
-      );
+  Widget loginEmblem(BuildContext context) => const LivelyKurczak(
+    Kurczak.henHero,
+    voice: KurczakVoice.hen,
+    width: 150,
+    height: 150,
+    label: 'Kura',
+  );
 
   @override
   Widget? logoMark(BuildContext context) =>
@@ -286,41 +324,66 @@ class KurczakiDecor extends RpgDecor {
 
   @override
   Perch? perch(BuildContext context, PerchSpot spot) => switch (spot) {
-        PerchSpot.characterCard => const Perch(
-            art: _CardRoost(),
-            rise: 92,
-            inset: 0,
-          ),
-        PerchSpot.questsSummary => const Perch(
-            art: KurczakArt(Kurczak.chick, width: 36, height: 34),
-            rise: 31,
-            inset: 56,
-          ),
-        PerchSpot.questCard => const Perch(
-            art: KurczakArt(Kurczak.chick, width: 44, height: 42, flip: true),
-            rise: 39,
-            inset: 26,
-          ),
-        PerchSpot.dailyQuest => const Perch(
-            art: KurczakArt(Kurczak.henPerched, width: 74, height: 68),
-            rise: 64,
-            inset: 12,
-            left: true,
-          ),
-        PerchSpot.achievementsSummary => const Perch(
-            art: KurczakArt(Kurczak.hen, width: 70, height: 64),
-            rise: 60,
-            inset: 14,
-          ),
-      };
+    PerchSpot.characterCard => const Perch(
+      art: _CardRoost(),
+      rise: 92,
+      inset: 0,
+    ),
+    PerchSpot.questsSummary => const Perch(
+      art: LivelyKurczak(
+        Kurczak.chick,
+        voice: KurczakVoice.chick,
+        width: 36,
+        height: 34,
+      ),
+      rise: 31,
+      inset: 56,
+    ),
+    PerchSpot.questCard => const Perch(
+      art: LivelyKurczak(
+        Kurczak.chick,
+        voice: KurczakVoice.chick,
+        width: 44,
+        height: 42,
+        flip: true,
+      ),
+      rise: 39,
+      inset: 26,
+    ),
+    PerchSpot.dailyQuest => const Perch(
+      art: LivelyKurczak(
+        Kurczak.henPerched,
+        voice: KurczakVoice.hen,
+        width: 74,
+        height: 68,
+      ),
+      rise: 64,
+      inset: 12,
+      left: true,
+    ),
+    PerchSpot.achievementsSummary => const Perch(
+      art: LivelyKurczak(
+        Kurczak.hen,
+        voice: KurczakVoice.hen,
+        width: 70,
+        height: 64,
+      ),
+      rise: 60,
+      inset: 14,
+    ),
+  };
 
   @override
   Widget? footerScene(BuildContext context, FooterScene scene) =>
       _Meadow(scene: scene);
 
   @override
-  Widget? questsTitleMascot(BuildContext context) =>
-      const KurczakArt(Kurczak.roosterLight, width: 46, height: 42);
+  Widget? questsTitleMascot(BuildContext context) => const LivelyKurczak(
+    Kurczak.roosterLight,
+    voice: KurczakVoice.rooster,
+    width: 46,
+    height: 42,
+  );
 
   @override
   Widget? xpRunner(BuildContext context) =>
@@ -348,47 +411,71 @@ class KurczakiDecor extends RpgDecor {
   bool get eggBadges => true;
 
   @override
-  Widget? badgeNest(BuildContext context, double width) =>
-      KurczakArt(Kurczak.nest, width: width, height: width / 4, fit: BoxFit.fill);
+  Widget? badgeNest(BuildContext context, double width) => KurczakArt(
+    Kurczak.nest,
+    width: width,
+    height: width / 4,
+    fit: BoxFit.fill,
+  );
 
   @override
   Widget badgeHero(BuildContext context, Widget badge) => SizedBox(
-        height: 244,
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          clipBehavior: Clip.none,
-          children: [
-            const Positioned(
-              left: 0,
-              bottom: 4,
-              child: KurczakArt(Kurczak.hen, width: 88, height: 80, label: 'Dumna kura'),
-            ),
-            const Positioned(
-              right: 12,
-              bottom: 6,
-              child: KurczakArt(Kurczak.chick, width: 46, height: 44, flip: true),
-            ),
-            Positioned(bottom: 22, child: badge),
-            const Positioned(
-              bottom: 0,
-              child: KurczakArt(Kurczak.nest, width: 170, height: 42, fit: BoxFit.fill),
-            ),
-          ],
+    height: 244,
+    child: Stack(
+      alignment: Alignment.bottomCenter,
+      clipBehavior: Clip.none,
+      children: [
+        const Positioned(
+          left: 0,
+          bottom: 4,
+          child: LivelyKurczak(
+            Kurczak.hen,
+            voice: KurczakVoice.hen,
+            width: 88,
+            height: 80,
+            label: 'Dumna kura',
+          ),
         ),
-      );
+        const Positioned(
+          right: 12,
+          bottom: 6,
+          child: LivelyKurczak(
+            Kurczak.chick,
+            voice: KurczakVoice.chick,
+            width: 46,
+            height: 44,
+            flip: true,
+          ),
+        ),
+        Positioned(bottom: 22, child: badge),
+        const Positioned(
+          bottom: 0,
+          child: KurczakArt(
+            Kurczak.nest,
+            width: 170,
+            height: 42,
+            fit: BoxFit.fill,
+          ),
+        ),
+      ],
+    ),
+  );
 
   @override
   bool get eggMedallion => true;
 
   @override
-  Widget? countEgg(BuildContext context, int count) =>
-      _EggNumber(value: '$count', width: 30, height: 36, fontSize: 20, outline: context.rpg.parchmentLight);
+  Widget? countEgg(BuildContext context, int count) => _EggNumber(
+    value: '$count',
+    width: 30,
+    height: 36,
+    fontSize: 20,
+    outline: context.rpg.parchmentLight,
+  );
 
   @override
-  Widget backdrop(BuildContext context, Widget child) => CustomPaint(
-        painter: const _StrawPainter(),
-        child: child,
-      );
+  Widget backdrop(BuildContext context, Widget child) =>
+      CustomPaint(painter: const _StrawPainter(), child: child);
 }
 
 /// The shape every Kurczaki egg shares, on a 52×62 grid: a pointed top and
@@ -398,8 +485,11 @@ Path eggPath(Size size) {
   return Path()
     ..moveTo(26 * sx, 4 * sy)
     ..cubicTo(13 * sx, 4 * sy, 5 * sx, 25 * sy, 5 * sx, 38 * sy)
-    ..arcToPoint(Offset(47 * sx, 38 * sy),
-        radius: Radius.elliptical(21 * sx, 21 * sy), clockwise: false)
+    ..arcToPoint(
+      Offset(47 * sx, 38 * sy),
+      radius: Radius.elliptical(21 * sx, 21 * sy),
+      clockwise: false,
+    )
     ..cubicTo(47 * sx, 25 * sy, 39 * sx, 4 * sy, 26 * sx, 4 * sy)
     ..close();
 }
@@ -427,7 +517,10 @@ class _EggNumber extends StatelessWidget {
       width: width,
       height: height,
       child: CustomPaint(
-        painter: _EggFillPainter(fill: const Color(0xFFFFC83D), stroke: outline ?? t.crimson),
+        painter: _EggFillPainter(
+          fill: const Color(0xFFFFC83D),
+          stroke: outline ?? t.crimson,
+        ),
         child: Padding(
           padding: EdgeInsets.only(top: height * 0.3),
           child: Center(
@@ -472,7 +565,8 @@ class _EggFillPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_EggFillPainter old) => old.fill != fill || old.stroke != stroke;
+  bool shouldRepaint(_EggFillPainter old) =>
+      old.fill != fill || old.stroke != stroke;
 }
 
 /// Straw: the scaffold colour with a fine grid of darker dots.
@@ -499,23 +593,35 @@ class _CardRoost extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const SizedBox(
-        width: 300,
-        height: 96,
-        child: Stack(
-          children: [
-            Positioned(
-              left: 18,
-              bottom: 0,
-              child: KurczakArt(Kurczak.chick, width: 44, height: 42, label: 'Pisklak'),
-            ),
-            Positioned(
-              right: 14,
-              top: 0,
-              child: KurczakArt(Kurczak.henNest, width: 104, height: 96, label: 'Kura wysiadująca jajka'),
-            ),
-          ],
+    width: 300,
+    height: 96,
+    child: Stack(
+      children: [
+        Positioned(
+          left: 18,
+          bottom: 0,
+          child: LivelyKurczak(
+            Kurczak.chick,
+            voice: KurczakVoice.chick,
+            width: 44,
+            height: 42,
+            label: 'Pisklak',
+          ),
         ),
-      );
+        Positioned(
+          right: 14,
+          top: 0,
+          child: LivelyKurczak(
+            Kurczak.henNest,
+            voice: KurczakVoice.hen,
+            width: 104,
+            height: 96,
+            label: 'Kura wysiadująca jajka',
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 /// Grass with a hen and her chicks, closing a list.
@@ -528,24 +634,142 @@ class _Meadow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cast = switch (scene) {
       FooterScene.home => const [
-          Positioned(left: 14, bottom: 26, child: KurczakArt(Kurczak.chick, width: 32, height: 30)),
-          Positioned(left: 56, bottom: 22, child: KurczakArt(Kurczak.chickPeck, width: 36, height: 34, turns: 0.06)),
-          Positioned(left: 92, bottom: 22, child: KurczakArt(Kurczak.grain, width: 20, height: 8)),
-          Positioned(left: 100, bottom: 26, child: KurczakArt(Kurczak.chick, width: 40, height: 38)),
-          Positioned(left: 150, bottom: 26, child: KurczakArt(Kurczak.henBrown, width: 96, height: 88, label: 'Kura z pisklętami')),
-        ],
+        Positioned(
+          left: 14,
+          bottom: 26,
+          child: LivelyKurczak(
+            Kurczak.chick,
+            voice: KurczakVoice.chick,
+            runs: true,
+            width: 32,
+            height: 30,
+          ),
+        ),
+        Positioned(
+          left: 56,
+          bottom: 22,
+          child: LivelyKurczak(
+            Kurczak.chickPeck,
+            voice: KurczakVoice.chick,
+            runs: true,
+            width: 36,
+            height: 34,
+            turns: 0.06,
+          ),
+        ),
+        Positioned(
+          left: 92,
+          bottom: 22,
+          child: KurczakArt(Kurczak.grain, width: 20, height: 8),
+        ),
+        Positioned(
+          left: 100,
+          bottom: 26,
+          child: LivelyKurczak(
+            Kurczak.chick,
+            voice: KurczakVoice.chick,
+            runs: true,
+            width: 40,
+            height: 38,
+          ),
+        ),
+        Positioned(
+          left: 150,
+          bottom: 26,
+          child: LivelyKurczak(
+            Kurczak.henBrown,
+            voice: KurczakVoice.hen,
+            width: 96,
+            height: 88,
+            label: 'Kura z pisklętami',
+          ),
+        ),
+      ],
       FooterScene.quests => const [
-          Positioned(left: 20, bottom: 24, child: KurczakArt(Kurczak.hen, width: 92, height: 84, turns: 0.04, label: 'Kury dziobią ziarno')),
-          Positioned(left: 116, bottom: 22, child: KurczakArt(Kurczak.grain, width: 34, height: 10)),
-          Positioned(left: 150, bottom: 22, child: KurczakArt(Kurczak.chickPeck, width: 36, height: 34, flip: true, turns: -0.06)),
-          Positioned(left: 196, bottom: 26, child: KurczakArt(Kurczak.chick, width: 40, height: 38)),
-          Positioned(right: 16, bottom: 24, child: KurczakArt(Kurczak.henBrown, width: 92, height: 84, flip: true)),
-        ],
+        Positioned(
+          left: 20,
+          bottom: 24,
+          child: LivelyKurczak(
+            Kurczak.hen,
+            voice: KurczakVoice.hen,
+            width: 92,
+            height: 84,
+            turns: 0.04,
+            label: 'Kury dziobią ziarno',
+          ),
+        ),
+        Positioned(
+          left: 116,
+          bottom: 22,
+          child: KurczakArt(Kurczak.grain, width: 34, height: 10),
+        ),
+        Positioned(
+          left: 150,
+          bottom: 22,
+          child: LivelyKurczak(
+            Kurczak.chickPeck,
+            voice: KurczakVoice.chick,
+            runs: true,
+            width: 36,
+            height: 34,
+            flip: true,
+            turns: -0.06,
+          ),
+        ),
+        Positioned(
+          left: 196,
+          bottom: 26,
+          child: LivelyKurczak(
+            Kurczak.chick,
+            voice: KurczakVoice.chick,
+            runs: true,
+            width: 40,
+            height: 38,
+          ),
+        ),
+        Positioned(
+          right: 16,
+          bottom: 24,
+          child: LivelyKurczak(
+            Kurczak.henBrown,
+            voice: KurczakVoice.hen,
+            width: 92,
+            height: 84,
+            flip: true,
+          ),
+        ),
+      ],
       FooterScene.achievements => const [
-          Positioned(left: 70, bottom: 26, child: KurczakArt(Kurczak.chick, width: 40, height: 38)),
-          Positioned(left: 172, bottom: 22, child: KurczakArt(Kurczak.eggPlain, width: 44, height: 54)),
-          Positioned(left: 260, bottom: 26, child: KurczakArt(Kurczak.chick, width: 40, height: 38, flip: true, label: 'Pisklęta podziwiają jajko')),
-        ],
+        Positioned(
+          left: 70,
+          bottom: 26,
+          child: LivelyKurczak(
+            Kurczak.chick,
+            voice: KurczakVoice.chick,
+            runs: true,
+            width: 40,
+            height: 38,
+          ),
+        ),
+        Positioned(
+          left: 172,
+          bottom: 22,
+          child: KurczakArt(Kurczak.eggPlain, width: 44, height: 54),
+        ),
+        Positioned(
+          left: 260,
+          bottom: 26,
+          child: LivelyKurczak(
+            Kurczak.chick,
+            voice: KurczakVoice.chick,
+            runs: true,
+            width: 40,
+            height: 38,
+            flip: true,
+            label: 'Pisklęta podziwiają jajko',
+          ),
+        ),
+      ],
     };
     return SizedBox(
       height: 124,
@@ -573,31 +797,74 @@ class _LoginYard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const SizedBox(
-        height: 190,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: 110,
-              child: KurczakArt(Kurczak.fence, fit: BoxFit.fill),
-            ),
-            Positioned(
-              left: -4,
-              bottom: 82,
-              child: KurczakArt(Kurczak.rooster, width: 96, height: 88, label: 'Kogut pieje'),
-            ),
-            Positioned(
-              right: 20,
-              bottom: 6,
-              child: KurczakArt(Kurczak.henBrown, width: 84, height: 78, label: 'Kura prowadzi pisklęta'),
-            ),
-            Positioned(right: 112, bottom: 8, child: KurczakArt(Kurczak.chick, width: 38, height: 36)),
-            Positioned(right: 160, bottom: 6, child: KurczakArt(Kurczak.chick, width: 34, height: 32)),
-            Positioned(right: 204, bottom: 4, child: KurczakArt(Kurczak.chickPeck, width: 30, height: 28, turns: 0.06)),
-          ],
+    height: 190,
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 110,
+          child: KurczakArt(Kurczak.fence, fit: BoxFit.fill),
         ),
-      );
+        Positioned(
+          left: -4,
+          bottom: 82,
+          child: LivelyKurczak(
+            Kurczak.rooster,
+            voice: KurczakVoice.rooster,
+            width: 96,
+            height: 88,
+            label: 'Kogut pieje',
+          ),
+        ),
+        Positioned(
+          right: 20,
+          bottom: 6,
+          child: LivelyKurczak(
+            Kurczak.henBrown,
+            voice: KurczakVoice.hen,
+            width: 84,
+            height: 78,
+            label: 'Kura prowadzi pisklęta',
+          ),
+        ),
+        Positioned(
+          right: 112,
+          bottom: 8,
+          child: LivelyKurczak(
+            Kurczak.chick,
+            voice: KurczakVoice.chick,
+            runs: true,
+            width: 38,
+            height: 36,
+          ),
+        ),
+        Positioned(
+          right: 160,
+          bottom: 6,
+          child: LivelyKurczak(
+            Kurczak.chick,
+            voice: KurczakVoice.chick,
+            runs: true,
+            width: 34,
+            height: 32,
+          ),
+        ),
+        Positioned(
+          right: 204,
+          bottom: 4,
+          child: LivelyKurczak(
+            Kurczak.chickPeck,
+            voice: KurczakVoice.chick,
+            runs: true,
+            width: 30,
+            height: 28,
+            turns: 0.06,
+          ),
+        ),
+      ],
+    ),
+  );
 }

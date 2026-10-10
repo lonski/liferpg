@@ -184,8 +184,9 @@ class LabelledDivider extends StatelessWidget {
 }
 
 /// [child] with the theme's illustration for [spot] seated on its top edge
-/// (nothing in Kronika). The illustration never takes taps -- it must not
-/// shadow a band's edit button.
+/// (nothing in Kronika). The illustration rests on the frame, never over
+/// the band, so it can take its own taps (Kurczaki's birds react) without
+/// shadowing the band's label or edit button.
 class Perched extends StatelessWidget {
   const Perched({super.key, required this.spot, required this.child});
 
@@ -196,20 +197,20 @@ class Perched extends StatelessWidget {
   Widget build(BuildContext context) {
     final perch = context.rpg.decor.perch(context, spot);
     if (perch == null) return child;
-    return Padding(
-      padding: EdgeInsets.only(top: perch.rise),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          child,
-          Positioned(
-            top: -perch.rise,
-            left: perch.left ? perch.inset : null,
-            right: perch.left ? null : perch.inset,
-            child: IgnorePointer(child: ExcludeSemantics(child: perch.art)),
-          ),
-        ],
-      ),
+    // The perch's strip is inside the Stack's own bounds (the card padded
+    // down by [Perch.rise]), not hung above it at a negative offset: a hit
+    // test never reaches a child outside its parent's box, and the birds
+    // answer taps.
+    return Stack(
+      children: [
+        Padding(padding: EdgeInsets.only(top: perch.rise), child: child),
+        Positioned(
+          top: 0,
+          left: perch.left ? perch.inset : null,
+          right: perch.left ? null : perch.inset,
+          child: ExcludeSemantics(child: perch.art),
+        ),
+      ],
     );
   }
 }

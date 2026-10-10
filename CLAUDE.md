@@ -455,13 +455,21 @@ characterName, email
   glyphs (✦ ❧ ⚔ ⟳) with every illustration hook returning null;
   `KurczakiDecor` overrides them with the SVGs in `assets/kurczaki/`
   (`KurczakArt`): chick heads flanking band labels, footprints in card
-  corners, a hen nesting on the character card (`Perched`, never taking
-  taps — it must not shadow the edit button), a chick running the XP bar,
+  corners, a hen nesting on the character card (`Perched`: the birds rest
+  on the card's frame, never over its band, so they can't hide the label or
+  the edit button), a chick running the XP bar,
   a golden egg by the gold, trait values in eggs (only up to 3 characters;
   longer legacy text stays text), badges drawn as metal eggs in straw
   nests (`eggBadges`), the electronics count in a yolk-filling egg with a
   thin Fredoka Light digit (`eggMedallion`), and scenes closing lists
-  (`FooterSceneView`) and the login screen. Kurczaki's display font is
+  (`FooterSceneView`) and the login screen. Those hens, roosters and chicks
+  are `LivelyKurczak`s: a tap makes them hop and say something in a bubble
+  (Ko-ko! / Kukuryku! / Pi-pi!) with a light haptic, chicks on the grass
+  scurry off and back, and a hen tapped five times within 0.7 s of each
+  other lays a golden egg that rolls away (a hidden surprise; the quick-tap
+  run is a `Timer`, not wall-clock reads). Art that already sits inside a
+  tap target — the AppBar logo (update check), the XP-bar chick (XP hint),
+  the FAB — stays inert. Kurczaki's display font is
   **Baloo 2** — Fredoka has no Polish diacritics (ą ę ś ż…), so it ships
   only in Light for that digit. See
   `docs/superpowers/specs/2026-10-10-themes-design.md`.
