@@ -147,4 +147,15 @@ void main() {
     final traits = tester.getTopLeft(find.text('CECHY')).dy;
     expect(gold < slot && slot < traits, isTrue);
   });
-}
+  testWidgets('renders the achievements slot after the traits', (tester) async {
+    await tester.pumpWidget(wrap(CharacterCard(
+      character: sample(traits: const [Trait(name: 'Siła', value: '18')]),
+      canEdit: false,
+      achievements: const Text('slot-odznak'),
+    )));
+    expect(find.text('slot-odznak'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('slot-odznak')).dy,
+      greaterThan(tester.getTopLeft(find.text('CECHY')).dy),
+    );
+  });}

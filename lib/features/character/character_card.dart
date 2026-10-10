@@ -28,6 +28,7 @@ class CharacterCard extends StatefulWidget {
     required this.character,
     required this.canEdit,
     this.electronics,
+    this.achievements,
   });
 
   final Character character;
@@ -36,6 +37,10 @@ class CharacterCard extends StatefulWidget {
   /// The "Dni elektroniki" section, built by the home screen (it needs
   /// providers this widget deliberately doesn't).
   final Widget? electronics;
+
+  /// The "Odznaki" section, built by the home screen (it needs providers
+  /// this widget deliberately doesn't). Null hides it.
+  final Widget? achievements;
 
   @override
   State<CharacterCard> createState() => _CharacterCardState();
@@ -127,6 +132,10 @@ class _CharacterCardState extends State<CharacterCard> {
                         const LabelledDivider(label: 'Cechy'),
                         const SizedBox(height: 8),
                         _TraitPills(traits: c.traits),
+                      ],
+                      if (widget.achievements != null) ...[
+                        const SizedBox(height: 12),
+                        widget.achievements!,
                       ],
                     ],
                   ),

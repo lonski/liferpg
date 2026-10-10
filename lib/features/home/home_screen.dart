@@ -9,6 +9,7 @@ import '../../providers/character_providers.dart';
 import '../../providers/hidden_characters_providers.dart';
 import '../../providers/update_providers.dart';
 import '../../theme/app_theme.dart';
+import '../achievements/achievements_section.dart';
 import '../character/character_card.dart';
 import '../character/electronics_panel.dart';
 import '../quests/quests_summary_card.dart';
@@ -199,6 +200,10 @@ class HomeScreen extends ConsumerWidget {
                       character: c,
                       canEdit: user?.canEdit ?? false,
                       electronics: ElectronicsPanel(character: c),
+                      achievements:
+                          AchievementsSection.visibleFor(c, isAdmin: isAdmin)
+                              ? AchievementsSection(character: c, isAdmin: isAdmin)
+                              : null,
                     ),
               ],
             ),
