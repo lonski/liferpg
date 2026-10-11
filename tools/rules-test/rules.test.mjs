@@ -16,6 +16,7 @@ import {
   where,
   serverTimestamp,
   deleteField,
+  writeBatch,
 } from 'firebase/firestore';
 import assert from 'node:assert/strict';
 
@@ -1024,4 +1025,167 @@ test('a quest reward may not carry an electronics claim', async () => {
       reward: { current_xp: 30, electronics_claim: '2026-10-22' },
     })
   );
+});
+
+// --- /bosses -----------------------------------------------------------------
+//
+// Every boss write happens on a player's own client (there are no Cloud
+// Functions), so these rules are what keeps attacks, joins and reward claims
+// honest -- see BossRepository.
+
+async function seedBoss(id, data) {
+  await env.withSecurityRulesDisabled(async (c) => {
+    const db = c.firestore();
+    await setDoc(doc(db, 'characters/cb-alice'), {
+      name: 'Alicja', email: ALICE.email, current_xp: 100, gold: 5,
+      traits: [{ name: 'Odwaga', value: '1' }],
+    });
+    await setDoc(doc(db, 'characters/cb-bob'), { name: 'Bob', email: BOB.email, current_xp: 40 });
+    await setDoc(doc(db, `bosses/${id}`), {
+      name: 'Smok Ognisty', look: 'smok', maxHp: 100, hp: 100,
+      reward: { current_xp: 50, gold: 20, traits: [{ name: 'Odwaga', value: '1' }] },
+      targetCharacterId: null, targetCharacterName: null,
+      status: 'active', createdBy: 'adm', createdByName: 'Admin',
+      baseline: { 'cb-alice': 60, 'cb-bob': 40 },
+      spent: {}, damage: {}, rewarded: {},
+      ...data,
+    });
+  });
+}
+
+function blow(characterId, boss, paid, dealt, extra = {}) {
+  const hp = Math.max(0, boss.hp - dealt);
+  return {
+    hp,
+    spent: { ...boss.spent, [characterId]: (boss.spent[characterId] ?? 0) + paid },
+    damage: { ...boss.damage, [characterId]: (boss.damage[characterId] ?? 0) + dealt },
+    lastAttackerId: characterId,
+    lastAttackerName: 'Alicja',
+    ...(hp === 0 ? { status: 'defeated', defeatedAt: serverTimestamp() } : {}),
+    ...extra,
+  };
+}
+
+const FRESH = { hp: 100, spent: {}, damage: {} };
+
+test('any signed-in user may read a boss; a signed-out one may not', async () => {
+  await seedBoss('b-read', {});
+  await assertSucceeds(getDoc(doc(ctxFor(BOB), 'bosses/b-read')));
+  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'bosses/b-read')));
+});
+
+test('only an admin may summon a boss', async () => {
+  const boss = { name: 'Troll', look: 'troll', maxHp: 50, hp: 50, status: 'active',
+    baseline: {}, spent: {}, damage: {}, rewarded: {} };
+  await assertFails(setDoc(doc(ctxFor(ALICE), 'bosses/b-new'), boss));
+  await assertSucceeds(setDoc(doc(ctxFor(ADMIN), 'bosses/b-new'), boss));
+});
+
+test('an owner may hit a boss with a tier blow paid from new XP', async () => {
+  await seedBoss('b-hit', {});
+  await assertSucceeds(updateDoc(doc(ctxFor(ALICE), 'bosses/b-hit'), blow('cb-alice', FRESH, 10, 10)));
+});
+
+test('a blow must be one of the four cost/damage pairs', async () => {
+  await seedBoss('b-pair', {});
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'bosses/b-pair'), blow('cb-alice', FRESH, 1, 10)));
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'bosses/b-pair'), blow('cb-alice', FRESH, 10, 60)));
+});
+
+test('a blow may not cost more energy than XP gained since the boss appeared', async () => {
+  // current_xp 100, baseline 60, already spent 35 -> 5 left.
+  await seedBoss('b-poor', { spent: { 'cb-alice': 35 } });
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'bosses/b-poor'),
+    blow('cb-alice', { hp: 100, spent: { 'cb-alice': 35 }, damage: {} }, 10, 10)));
+  await assertSucceeds(updateDoc(doc(ctxFor(ALICE), 'bosses/b-poor'),
+    blow('cb-alice', { hp: 100, spent: { 'cb-alice': 35 }, damage: {} }, 1, 1)));
+});
+
+test("a player may not attack with somebody else's character", async () => {
+  await seedBoss('b-other', {});
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'bosses/b-other'), blow('cb-bob', FRESH, 1, 1)));
+});
+
+test('a boss meant for one character may not be hit by another', async () => {
+  await seedBoss('b-bobs', { targetCharacterId: 'cb-bob', targetCharacterName: 'Bob' });
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'bosses/b-bobs'), blow('cb-alice', FRESH, 1, 1)));
+});
+
+test('a blow must take exactly its damage off the HP', async () => {
+  await seedBoss('b-hp', {});
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'bosses/b-hp'),
+    blow('cb-alice', FRESH, 1, 1, { hp: 50 })));
+});
+
+test('the killing blow defeats the boss, and must say so', async () => {
+  await seedBoss('b-kill', { hp: 5 });
+  const boss = { hp: 5, spent: {}, damage: {} };
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'bosses/b-kill'),
+    { ...blow('cb-alice', boss, 10, 10), status: 'active', defeatedAt: deleteField() }));
+  await assertSucceeds(updateDoc(doc(ctxFor(ALICE), 'bosses/b-kill'), blow('cb-alice', boss, 10, 10)));
+});
+
+test('a beaten boss may not be hit again', async () => {
+  await seedBoss('b-dead', { hp: 0, status: 'defeated' });
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'bosses/b-dead'),
+    blow('cb-alice', { hp: 0, spent: {}, damage: {} }, 1, 1)));
+});
+
+test('a late character joins with its current XP as baseline, nothing else', async () => {
+  await seedBoss('b-join', { baseline: {} });
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'bosses/b-join'),
+    { baseline: { 'cb-alice': 0 }, lastJoinedId: 'cb-alice' }));
+  await assertFails(updateDoc(doc(ctxFor(BOB), 'bosses/b-join'),
+    { baseline: { 'cb-alice': 100 }, lastJoinedId: 'cb-alice' }));
+  await assertSucceeds(updateDoc(doc(ctxFor(ALICE), 'bosses/b-join'),
+    { baseline: { 'cb-alice': 100 }, lastJoinedId: 'cb-alice' }));
+});
+
+function claimBatch(db, bossId, characterId, character) {
+  const batch = writeBatch(db);
+  batch.update(doc(db, `characters/${characterId}`), { ...character, lastBossRewardId: bossId });
+  batch.update(doc(db, `bosses/${bossId}`), { rewarded: { [characterId]: true }, lastClaimId: characterId });
+  return batch.commit();
+}
+
+const ALICE_PAID = {
+  current_xp: 150, gold: 25,
+  traits: [{ name: 'Odwaga', value: '2' }],
+};
+
+test('a fighter collects the exact reward together with the boss entry', async () => {
+  await seedBoss('b-claim', { hp: 0, status: 'defeated', damage: { 'cb-alice': 60 } });
+  await assertSucceeds(claimBatch(ctxFor(ALICE), 'b-claim', 'cb-alice', ALICE_PAID));
+});
+
+test('a reward may not be collected twice', async () => {
+  await seedBoss('b-twice', { hp: 0, status: 'defeated', damage: { 'cb-alice': 60 },
+    rewarded: { 'cb-alice': true } });
+  await assertFails(claimBatch(ctxFor(ALICE), 'b-twice', 'cb-alice', ALICE_PAID));
+});
+
+test('a reward claim must pay exactly the reward', async () => {
+  await seedBoss('b-greedy', { hp: 0, status: 'defeated', damage: { 'cb-alice': 60 } });
+  await assertFails(claimBatch(ctxFor(ALICE), 'b-greedy', 'cb-alice',
+    { ...ALICE_PAID, current_xp: 1000 }));
+  await assertFails(claimBatch(ctxFor(ALICE), 'b-greedy', 'cb-alice',
+    { ...ALICE_PAID, level: 99 }));
+});
+
+test('only a character that dealt damage collects, and only from a beaten boss', async () => {
+  await seedBoss('b-idle', { hp: 0, status: 'defeated', damage: { 'cb-bob': 100 } });
+  await assertFails(claimBatch(ctxFor(ALICE), 'b-idle', 'cb-alice', ALICE_PAID));
+  await seedBoss('b-alive', { hp: 40, damage: { 'cb-alice': 60 } });
+  await assertFails(claimBatch(ctxFor(ALICE), 'b-alive', 'cb-alice', ALICE_PAID));
+});
+
+test('the character half of a claim is refused on its own', async () => {
+  await seedBoss('b-half', { hp: 0, status: 'defeated', damage: { 'cb-alice': 60 } });
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'characters/cb-alice'),
+    { ...ALICE_PAID, lastBossRewardId: 'b-half' }));
+});
+
+test("a player may not collect for somebody else's character", async () => {
+  await seedBoss('b-steal', { hp: 0, status: 'defeated', damage: { 'cb-alice': 60 } });
+  await assertFails(claimBatch(ctxFor(BOB), 'b-steal', 'cb-alice', ALICE_PAID));
 });

@@ -28,6 +28,10 @@ enum BadgeShape { medal, egg, boneTag }
 /// yolk-filling egg, Lagotto's paw pad.
 enum MedallionShape { ring, egg, paw }
 
+/// The ground a boss walks on: Kronika's stone flags, Kurczaki's straw
+/// yard, Lagotto's forest floor.
+enum ArenaFloor { stone, yard, forest }
+
 /// An illustration seated on a card's top edge: [art] rises [rise] px above
 /// the card and sits [inset] px in from the [left] or right side. Keep
 /// [rise] within a few px of the art's height, so it rests on the frame
@@ -155,6 +159,34 @@ class RpgDecor {
   /// Bands stitched like a leather collar: a dashed seam along each long
   /// edge (see [Stitched]).
   bool get stitchedBands => false;
+
+  /// The boss arena's ground pattern.
+  ArenaFloor get arenaFloor => ArenaFloor.stone;
+
+  /// A small onlooker in the arena's corner; the base has none.
+  Widget? arenaOnlooker(BuildContext context) => null;
+
+  /// Peeks over the open spellbook; the base has none.
+  Widget? spellbookKeeper(BuildContext context) => null;
+
+  /// Marks a spell the character cannot afford yet: a wax seal.
+  Widget spellbookSeal(BuildContext context) => Container(
+    width: 34,
+    height: 34,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: context.rpg.crimsonBright,
+      border: Border.all(color: context.rpg.crimsonDeep, width: 2),
+    ),
+    child: Text(
+      '✦',
+      style: TextStyle(color: context.rpg.arena.accent, fontSize: 16, height: 1),
+    ),
+  );
+
+  /// What a spell the character cannot afford yet is called.
+  String get sealedSpellLabel => 'Zapieczętowane';
 }
 
 class KronikaDecor extends RpgDecor {
@@ -479,6 +511,24 @@ class KurczakiDecor extends RpgDecor {
 
   @override
   MedallionShape get medallionShape => MedallionShape.egg;
+
+  @override
+  ArenaFloor get arenaFloor => ArenaFloor.yard;
+
+  @override
+  Widget? arenaOnlooker(BuildContext context) =>
+      const KurczakArt(Kurczak.chick, width: 38, height: 36);
+
+  @override
+  Widget? spellbookKeeper(BuildContext context) =>
+      const KurczakArt(Kurczak.chickHead, width: 56, height: 52);
+
+  @override
+  Widget spellbookSeal(BuildContext context) =>
+      const KurczakArt(Kurczak.eggPlain, width: 30, height: 36);
+
+  @override
+  String get sealedSpellLabel => 'Jeszcze w skorupce';
 
   @override
   Widget? countEgg(BuildContext context, int count) => _EggNumber(

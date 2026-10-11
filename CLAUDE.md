@@ -54,6 +54,8 @@ name, clazz, email, level, current_xp, next_level_xp, gold, favour
 traits: [{ name: string, value: string }]  (optional)
 electronics: { days: int, as_of: 'YYYY-MM-DD', claimed: ['YYYY-MM-DD'] }  (optional)
 achievements: [{ id, title, event?, reason?, date: 'YYYY-MM-DD', emblem, place?, tier, reward: { current_xp?, gold?, traits?: [{name, value}], electronics_days? }, awardedBy, awardedByName, awardedAt }]  (optional)
+weapon: 'miecz'|'luk'|'maczuga'|'miotla'|'ksiega'  (optional, admin-set)
+lastBossRewardId  (optional, written only by a boss reward claim)
 ```
 
 - Characters are linked to users via `email`.
@@ -165,6 +167,38 @@ changeRequestId (optional), createdAt (server timestamp)
 isDaily (optional bool), lastCompletedDate (optional, 'yyyy-MM-dd')
 dailyShared (optional bool)
 ```
+
+**`bosses/{id}`**
+```
+name, look ('smok'|'rycerz'|'wiedzma'|'upior'|'troll'|'golem'|'kosciej'|'kraken')
+maxHp, hp, reward: { current_xp?, gold?, traits?: [{name, value}] }
+targetCharacterId, targetCharacterName  (null = every character)
+status: 'active' | 'defeated' | 'cancelled'
+createdAt (server), createdBy, createdByName
+baseline / spent / damage: { <characterId>: int },  rewarded: { <characterId>: true }
+lastAttackerId, lastAttackerName, lastJoinedId, lastClaimId, defeatedAt
+```
+
+- Every boss write but summon/cancel runs on a **player's own client**, so
+  `firestore.rules` checks each one (tested in `tools/rules-test/`): an
+  attack changes only the attacker's `spent`/`damage` entries by exactly one
+  tier pair (1→1, 10→10, 50→60, 100→150), never spending more than
+  `current_xp − baseline` read off the character, and takes exactly that
+  damage off `hp` (at 0 it must also set `status: defeated` +
+  `defeatedAt == request.time`); a join adds the caller's own missing
+  baseline equal to its `current_xp`; a reward claim is a two-document
+  write -- the character (only `current_xp`/`gold`/`traits`/
+  `lastBossRewardId`, XP and gold exactly `+reward`, the traits list growing
+  by at most the reward's trait count; trait *values* are not verifiable
+  without loops) and the boss's `rewarded` entry -- each half requiring the
+  other via `getAfter`. This is the only non-admin character write.
+- **Energy** ("energia bojowa") is `max(0, current_xp − baseline − spent)`:
+  XP earned since the boss appeared. The admin's summon writes every
+  target's baseline; a character created later joins from its owner's
+  client the first time its arena shows (`BossRepository.join`). An admin
+  lowering `current_xp` by hand lowers energy too.
+- The live list is `where('status', whereIn: ['active', 'defeated'])`; a
+  beaten boss stays under a fighter's card until that fighter collects.
 
 **`quest_roster/{characterId}`**
 ```
@@ -439,6 +473,31 @@ characterName, email
   `docs/superpowers/specs/2026-09-17-quest-deep-link-app-links-design.md`
   for the full design.
 
+- **Bosses** (`lib/features/bosses/`, `docs/superpowers/specs/2026-10-11-bosses-design.md`):
+  an admin's **PRZYWOŁAJ BOSSA** button (home list, under the cards) opens
+  `SummonBossScreen`: one of eight looks (`BossLook`, SVGs in
+  `assets/bosses/`) or Losowy, name, HP, a reward of XP / gold / **any
+  number of traits**, and Wszyscy or one character. `BossArena` sits under
+  each targeted character's card: the boss walks the floor (stone / yard /
+  forest per `RpgDecor.arenaFloor`), and for the card's **owner** their
+  character stands there too (`HeroPainter`, `hero_art.dart`, dressed by
+  weapon). A tap on the ground walks the hero there; the weapon button
+  opens the blow picker (`pickBlow`: an open, page-turning `SpellbookView`
+  for the księga, a `BlowSheet` otherwise; spells the energy can't pay are
+  sealed -- wax / egg / paw per theme); with a blow picked a tap on the
+  boss sends the hero in (melee walks up, bow and book strike from where
+  they stand) and plays the blow out (`FightFxPainter`: slashes, arrows, a
+  volley, a lightning arrow, fireball, ice shards, meteors; flash, shake,
+  floating damage), while the boss stands still. A tap on the boss with no
+  blow picked opens the picker. One `Ticker` drives walking and fighting
+  and stops whenever nothing moves; `BossMotion.loops = false` in widget
+  tests turns the boss's endless walk off. **Weapon**: the admin's
+  `weapon` (edit screen, **BROŃ**, any class) else the class default --
+  Barbarzyńca maczuga, Pani domu miotła, Czarodziej(ka) księga; with
+  neither: "Brak broni". At 0 HP the arena becomes the victory panel
+  (reward chips, **ODBIERZ NAGRODĘ** for owner or admin); admins can call a
+  live boss off (× on its band). Arena and book colours are
+  `RpgTheme.arena` (`BossArenaPalette`).
 - **Themes ("Wygląd")**: a palette icon in the home AppBar opens
   `ThemePickerSheet` (`lib/features/theme/`), one previewed tile per
   `AppThemeId`: **Kronika** (the original crimson/parchment look, the

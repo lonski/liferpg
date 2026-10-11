@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../feature_flags.dart';
+import '../../models/boss.dart';
 import '../../models/character.dart';
 import '../../models/electronics_days.dart';
 import '../../providers/character_providers.dart';
@@ -9,6 +10,7 @@ import '../../providers/clock_provider.dart';
 import '../../providers/hidden_characters_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
+import '../bosses/boss_art.dart';
 
 TextStyle _fieldLabel(BuildContext context) => TextStyle(
   fontFamily: context.rpg.fontDisplay,
@@ -73,6 +75,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
   late List<int> _traitKeys;
   int _nextTraitKey = 0;
   late int _favour;
+  Weapon? _weapon;
   // Owned by the Autocomplete below, not by us: we capture the instance it
   // hands to fieldViewBuilder so that _addTrait can actually clear the box.
   // (A shadow controller synced via onChanged cannot -- the widget keeps
@@ -99,6 +102,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
     _traits = List<Trait>.from(c.traits);
     _traitKeys = [for (final _ in _traits) _nextTraitKey++];
     _favour = c.favour;
+    _weapon = c.weapon;
   }
 
   @override
@@ -174,6 +178,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
         nextLevelXp: _intOf('next_level_xp'),
         favour: _favour,
         traits: _traits,
+        weapon: () => _weapon,
       );
       await ref.read(characterRepositoryProvider).updateCharacter(updated);
       final electronicsText = _controllers['electronics']!.text.trim();
@@ -190,6 +195,51 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Zapis nieudany: $error')));
     }
+  }
+
+  /// The boss-fight weapon. Barbarzyńca / Pani domu / Czarodziej(ka) have a
+  /// default; the admin may pick any weapon for anyone, and "domyślna"
+  /// (null) falls back to the class's.
+  Widget _weaponRow() {
+    final fallback = Weapon.forClass(widget.character.clazz);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 10, bottom: 6),
+          child: Text('Broń'.toUpperCase(), style: _fieldLabel(context)),
+        ),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (final w in [null, ...Weapon.values])
+              ChoiceChip(
+                key: Key('weapon-${w?.name ?? 'none'}'),
+                avatar: w == null
+                    ? null
+                    : WeaponIcon(
+                        w,
+                        size: 16,
+                        color: _weapon == w ? context.rpg.parchmentLight : context.rpg.crimson,
+                      ),
+                label: Text(
+                  w?.label ?? (fallback == null ? 'brak' : 'domyślna (${fallback.label})'),
+                ),
+                selected: _weapon == w,
+                selectedColor: context.rpg.crimsonDeep,
+                labelStyle: TextStyle(
+                  color: _weapon == w ? context.rpg.parchmentLight : context.rpg.crimson,
+                ),
+                backgroundColor: context.rpg.crimsonBgFaint,
+                side: BorderSide(color: context.rpg.crimsonBorder),
+                showCheckmark: false,
+                onSelected: (_) => setState(() => _weapon = w),
+              ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override
@@ -374,6 +424,8 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                 const OrnamentDivider(),
                                 const SizedBox(height: 12),
                                 _traitEditor(traitNames),
+                                const SizedBox(height: 4),
+                                _weaponRow(),
                               ],
                             ),
                           ),

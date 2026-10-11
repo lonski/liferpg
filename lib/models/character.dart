@@ -1,4 +1,5 @@
 import 'achievement.dart';
+import 'boss.dart' show Weapon;
 import 'electronics_days.dart';
 
 /// The live Firestore database was populated by a React web app that wrote
@@ -43,6 +44,7 @@ class Character {
     required this.traits,
     this.electronics = const ElectronicsDays(),
     this.achievements = const [],
+    this.weapon,
   });
 
   final String id;
@@ -62,6 +64,9 @@ class Character {
   /// Newest first. Written only by AchievementRepository's transactions --
   /// never by toMap(), for the same reason as [electronics].
   final List<Achievement> achievements;
+
+  /// The admin's pick, overriding the class's default; see weaponOf().
+  final Weapon? weapon;
 
   factory Character.fromMap(String id, Map<String, dynamic> data) {
     final rawTraits = data['traits'];
@@ -93,6 +98,7 @@ class Character {
       traits: traits,
       electronics: ElectronicsDays.fromMap(data['electronics']),
       achievements: achievements,
+      weapon: Weapon.parse(data['weapon']),
     );
   }
 
@@ -107,6 +113,7 @@ class Character {
         'gold': gold,
         'favour': favour,
         'traits': traits.map((t) => t.toMap()).toList(),
+        'weapon': weapon?.name,
       };
 
   Character copyWith({
@@ -118,6 +125,7 @@ class Character {
     num? gold,
     int? favour,
     List<Trait>? traits,
+    Weapon? Function()? weapon,
   }) =>
       Character(
         id: id,
@@ -132,6 +140,7 @@ class Character {
         traits: traits ?? this.traits,
         electronics: electronics,
         achievements: achievements,
+        weapon: weapon == null ? this.weapon : weapon(),
       );
 
   /// Progress towards the next level, 0.0–1.0, for the XP bar.

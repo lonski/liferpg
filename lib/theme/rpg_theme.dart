@@ -93,6 +93,7 @@ class RpgTheme extends ThemeExtension<RpgTheme> {
     required this.actionFill,
     required this.onActionFill,
     required this.actionBorder,
+    required this.arena,
   });
 
   final AppThemeId id;
@@ -185,6 +186,9 @@ class RpgTheme extends ThemeExtension<RpgTheme> {
   final Color actionFill;
   final Color onActionFill;
   final Color actionBorder;
+
+  /// The boss arena under a character card and the spellbook.
+  final BossArenaPalette arena;
 
   /// The "Cechy" divider heading, on both the character card and the edit
   /// screen. Deliberately smaller and wider-tracked than the stat/field
@@ -281,6 +285,48 @@ class RpgTheme extends ThemeExtension<RpgTheme> {
     actionFill: Color(0xFF6B1A1A),
     onActionFill: Color(0xFFF5E8D0),
     actionBorder: Color(0x80C8860A),
+    arena: BossArenaPalette(
+      frame: Color(0xFFC8860A),
+      band: LinearGradient(
+        colors: [Color(0xFF6B4405), Color(0xFFC8860A), Color(0xFF6B4405)],
+      ),
+      bandInk: Color(0xFF2D0A0A),
+      panel: Color(0xFF2A1A10),
+      panelInk: Color(0xFFF5E8D0),
+      accent: Color(0xFFF2C46B),
+      floor: Color(0xFF3A2A1C),
+      floorLine: Color(0x40000000),
+      grass: null,
+      hpTrack: Color(0xFF1A0A0A),
+      hpFill: LinearGradient(colors: [Color(0xFF7A1414), Color(0xFFD9452B)]),
+      weaponFill: RadialGradient(
+        center: Alignment(-0.2, -0.3),
+        colors: [Color(0xFF7A1414), Color(0xFF3A0A0A)],
+      ),
+      weaponInk: Color(0xFFF2C46B),
+      weaponBorder: Color(0xFFC8860A),
+      bookCover: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF6B3418), Color(0xFF4A220E)],
+      ),
+      bookFrame: Color(0xFFC8860A),
+      bookStitched: false,
+      bookPaper: RadialGradient(
+        center: Alignment(0, -1),
+        radius: 1.3,
+        colors: [Color(0xFFFBF3E2), Color(0xFFEFDDBA), Color(0xFFDCC394)],
+        stops: [0.0, 0.7, 1.0],
+      ),
+      bookInk: Color(0xFF5A3A1A),
+      bookTitle: Color(0xFF5A2A12),
+      bookSigil: Color(0xFF8A5A2A),
+      bookDamage: Color(0xFF7A1414),
+      overlayTitle: Color(0xFFF2C46B),
+      buttonFill: LinearGradient(colors: [Color(0xFF3A0A0A), Color(0xFF6B1A1A)]),
+      buttonInk: Color(0xFFF2C46B),
+      buttonBorder: Color(0xFFC8860A),
+    ),
   );
 
   /// Straw, eggshell, comb red and yolk -- see the "motyw Kurczaki"
@@ -357,6 +403,45 @@ class RpgTheme extends ThemeExtension<RpgTheme> {
     actionFill: Color(0xFFFFC83D),
     onActionFill: Color(0xFF4A2A12),
     actionBorder: Color(0xFFB83224),
+    arena: BossArenaPalette(
+      frame: Color(0xFFB83224),
+      band: LinearGradient(
+        colors: [Color(0xFFEE8A1E), Color(0xFFFFD95A), Color(0xFFEE8A1E)],
+      ),
+      bandInk: Color(0xFF4A2A12),
+      panel: Color(0xFFFFF3D9),
+      panelInk: Color(0xFF4A2A12),
+      accent: Color(0xFFB83224),
+      floor: Color(0xFFE9C97A),
+      floorLine: Color(0x409C6A2A),
+      grass: Color(0xFF8DBF5A),
+      hpTrack: Color(0x1AB83224),
+      hpFill: LinearGradient(colors: [Color(0xFFD23E2C), Color(0xFFEE8A1E)]),
+      weaponFill: LinearGradient(colors: [Color(0xFFFFC83D), Color(0xFFFFC83D)]),
+      weaponInk: Color(0xFF8E2117),
+      weaponBorder: Color(0xFF4A2A12),
+      bookCover: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFD23E2C), Color(0xFFA8261A)],
+      ),
+      bookFrame: Color(0xFFFFD95A),
+      bookStitched: true,
+      bookPaper: RadialGradient(
+        center: Alignment(0, -1),
+        radius: 1.3,
+        colors: [Color(0xFFFFFDF6), Color(0xFFFFF3D9), Color(0xFFF6DFAE)],
+        stops: [0.0, 0.65, 1.0],
+      ),
+      bookInk: Color(0xFF4A2A12),
+      bookTitle: Color(0xFFB83224),
+      bookSigil: Color(0xFFD9A63A),
+      bookDamage: Color(0xFFB83224),
+      overlayTitle: Color(0xFFFFD95A),
+      buttonFill: LinearGradient(colors: [Color(0xFFFFC83D), Color(0xFFFFC83D)]),
+      buttonInk: Color(0xFF8E2117),
+      buttonBorder: Color(0xFF4A2A12),
+    ),
   );
 
   /// Curly Lagotto Romagnolo dogs hunting truffles in an oak wood: honey
@@ -434,6 +519,45 @@ class RpgTheme extends ThemeExtension<RpgTheme> {
     actionFill: Color(0xFFE08A3C),
     onActionFill: Color(0xFF3B2A20),
     actionBorder: Color(0xFF6B4128),
+    arena: BossArenaPalette(
+      frame: Color(0xFF3B2A20),
+      band: LinearGradient(
+        colors: [Color(0xFF4A2C1A), Color(0xFF8A5A36), Color(0xFF4A2C1A)],
+      ),
+      bandInk: Color(0xFFFFFBF3),
+      panel: Color(0xFFF8EEDC),
+      panelInk: Color(0xFF3B2A20),
+      accent: Color(0xFF6B4128),
+      floor: Color(0xFF8A6248),
+      floorLine: Color(0x26000000),
+      grass: Color(0xFF6E8A3E),
+      hpTrack: Color(0x1F6B4128),
+      hpFill: LinearGradient(colors: [Color(0xFF6B4128), Color(0xFFB07A4E)]),
+      weaponFill: LinearGradient(colors: [Color(0xFF6B4128), Color(0xFF6B4128)]),
+      weaponInk: Color(0xFFFFFBF3),
+      weaponBorder: Color(0xFF3B2A20),
+      bookCover: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF5A3622), Color(0xFF2E1A10)],
+      ),
+      bookFrame: Color(0xFFC9A27A),
+      bookStitched: true,
+      bookPaper: RadialGradient(
+        center: Alignment(0, -1),
+        radius: 1.3,
+        colors: [Color(0xFFFFFBF3), Color(0xFFF8EEDC), Color(0xFFEBD7B4)],
+        stops: [0.0, 0.65, 1.0],
+      ),
+      bookInk: Color(0xFF3B2A20),
+      bookTitle: Color(0xFF6B4128),
+      bookSigil: Color(0xFFA07850),
+      bookDamage: Color(0xFF8A2E1A),
+      overlayTitle: Color(0xFFF1E4CF),
+      buttonFill: LinearGradient(colors: [Color(0xFF6B4128), Color(0xFF6B4128)]),
+      buttonInk: Color(0xFFFFFBF3),
+      buttonBorder: Color(0xFFD8BFA0),
+    ),
   );
 
   @override
@@ -443,6 +567,86 @@ class RpgTheme extends ThemeExtension<RpgTheme> {
   @override
   RpgTheme lerp(covariant RpgTheme? other, double t) =>
       other == null || t < 0.5 ? this : other;
+}
+
+/// Every colour of the boss arena and the spellbook, per look.
+@immutable
+class BossArenaPalette {
+  const BossArenaPalette({
+    required this.frame,
+    required this.band,
+    required this.bandInk,
+    required this.panel,
+    required this.panelInk,
+    required this.accent,
+    required this.floor,
+    required this.floorLine,
+    required this.grass,
+    required this.hpTrack,
+    required this.hpFill,
+    required this.weaponFill,
+    required this.weaponInk,
+    required this.weaponBorder,
+    required this.bookCover,
+    required this.bookFrame,
+    required this.bookStitched,
+    required this.bookPaper,
+    required this.bookInk,
+    required this.bookTitle,
+    required this.bookSigil,
+    required this.bookDamage,
+    required this.overlayTitle,
+    required this.buttonFill,
+    required this.buttonInk,
+    required this.buttonBorder,
+  });
+
+  /// The arena's outer border.
+  final Color frame;
+
+  /// The "BOSS" band and its label.
+  final Gradient band;
+  final Color bandInk;
+
+  /// The strips above and below the floor (name + HP, weapon + energy).
+  final Color panel;
+  final Color panelInk;
+
+  /// HP numbers and energy on [panel].
+  final Color accent;
+
+  /// The ground the boss walks on, its pattern lines, and a strip of grass
+  /// along its top (null for none).
+  final Color floor;
+  final Color floorLine;
+  final Color? grass;
+
+  final Color hpTrack;
+  final Gradient hpFill;
+
+  /// The round weapon button.
+  final Gradient weaponFill;
+  final Color weaponInk;
+  final Color weaponBorder;
+
+  /// The spellbook: cover, the ring (or seam, when [bookStitched]) inside
+  /// it, the pages and their inks.
+  final Gradient bookCover;
+  final Color bookFrame;
+  final bool bookStitched;
+  final Gradient bookPaper;
+  final Color bookInk;
+  final Color bookTitle;
+  final Color bookSigil;
+  final Color bookDamage;
+
+  /// Text over the dimmed screen behind the book or a sheet.
+  final Color overlayTitle;
+
+  /// Buttons in the book and the blow sheet.
+  final Gradient buttonFill;
+  final Color buttonInk;
+  final Color buttonBorder;
 }
 
 extension RpgThemeContext on BuildContext {

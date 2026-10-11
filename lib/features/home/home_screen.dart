@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/character.dart';
 import '../../models/update_info.dart';
 import '../../providers/auth_providers.dart';
+import '../../providers/boss_providers.dart';
 import '../../providers/change_request_providers.dart';
 import '../../providers/character_providers.dart';
 import '../../providers/hidden_characters_providers.dart';
@@ -11,6 +12,8 @@ import '../../providers/update_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/ornaments.dart';
 import '../achievements/achievements_section.dart';
+import '../bosses/boss_arena.dart';
+import '../bosses/summon_boss_screen.dart';
 import '../character/character_card.dart';
 import '../character/electronics_panel.dart';
 import '../quests/quests_summary_card.dart';
@@ -202,7 +205,7 @@ class HomeScreen extends ConsumerWidget {
               children: [
                 const QuestsSummaryCard(),
                 for (final c in data.characters)
-                  if (!hiddenIds.contains(c.id))
+                  if (!hiddenIds.contains(c.id)) ...[
                     CharacterCard(
                       character: c,
                       canEdit: user?.canEdit ?? false,
@@ -212,12 +215,55 @@ class HomeScreen extends ConsumerWidget {
                               ? AchievementsSection(character: c, isAdmin: isAdmin)
                               : null,
                     ),
+                    // Bosses walk under the card of each character they
+                    // are after; only its owner fights.
+                    for (final boss in ref.watch(bossesForCharacterProvider(c.id)))
+                      BossArena(
+                        key: ValueKey('boss-${boss.id}-${c.id}'),
+                        boss: boss,
+                        character: c,
+                        canFight: user != null &&
+                            c.email.toLowerCase() == user.email.toLowerCase(),
+                        isAdmin: isAdmin,
+                      ),
+                  ],
+                if (isAdmin) const _SummonBossButton(),
                 const FooterSceneView(FooterScene.home),
               ],
             ),
           ),
         ),
       )),
+    );
+  }
+}
+
+/// Admin-only: opens the summon-a-boss form.
+class _SummonBossButton extends StatelessWidget {
+  const _SummonBossButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.rpg;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: OutlinedButton.icon(
+          key: const Key('open-summon-boss'),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const SummonBossScreen()),
+          ),
+          icon: Icon(Icons.local_fire_department_outlined, size: 18, color: t.onBg),
+          label: Text(
+            'Przywołaj bossa'.toUpperCase(),
+            style: TextStyle(fontFamily: t.fontDisplay, fontSize: 12, letterSpacing: 2.5, color: t.onBg),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: t.goldBorder),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(t.buttonRadius)),
+          ),
+        ),
+      ),
     );
   }
 }

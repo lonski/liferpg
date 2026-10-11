@@ -326,6 +326,24 @@ class LagottoDecor extends RpgDecor {
 
   @override
   bool get stitchedBands => true;
+
+  @override
+  ArenaFloor get arenaFloor => ArenaFloor.forest;
+
+  @override
+  Widget? arenaOnlooker(BuildContext context) =>
+      const LagottoArt(Lagotto.oakLeafBrown, width: 26, height: 26);
+
+  @override
+  Widget? spellbookKeeper(BuildContext context) =>
+      const LagottoArt(Lagotto.dogFace, width: 62, height: 58);
+
+  @override
+  Widget spellbookSeal(BuildContext context) =>
+      LagottoArt(Lagotto.paw, width: 32, height: 32, color: context.rpg.crimson);
+
+  @override
+  String get sealedSpellLabel => 'Zakopane głęboko';
 }
 
 const _biscuit = Color(0xFFF3B866);

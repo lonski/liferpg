@@ -338,4 +338,18 @@ void main() {
     expect(find.byKey(const Key('electronics-plus')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('the admin picks a boss weapon, even over the class default', (tester) async {
+    final (db, character) = await seed();
+    await pumpEdit(tester, db, character);
+
+    await tester.ensureVisible(find.byKey(const Key('weapon-luk')));
+    await tester.tap(find.byKey(const Key('weapon-luk')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    final snap = await db.collection('characters').doc(character.id).get();
+    expect(snap.data()!['weapon'], 'luk');
+  });
 }

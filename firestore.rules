@@ -32,6 +32,125 @@ service cloud.firestore {
       allow read: if isAdmin() || isReadOnlyOthers()
                      || (isAuthenticated() && resource.data.email.lower() == request.auth.token.email.lower());
       allow write: if isAdmin();
+      // The one non-admin write: an owner collecting a beaten boss's reward
+      // (BossRepository.claimReward), batched with the boss's `rewarded`
+      // entry -- see isBossRewardClaim.
+      allow update: if isBossRewardClaim(characterId);
+    }
+
+    // A number on a character as the app reads it: legacy React data may
+    // hold a numeric string, a missing field counts as 0.
+    function asNumber(data, key) {
+      return !(key in data) || data[key] == null ? 0
+           : (data[key] is string ? float(data[key]) : data[key]);
+    }
+
+    function ownsCharacter(characterId) {
+      return isAuthenticated()
+          && get(/databases/$(database)/documents/characters/$(characterId))
+               .data.email.lower() == request.auth.token.email.lower();
+    }
+
+    // XP and gold must move by exactly the reward; trait values cannot be
+    // checked without loops, so only the list's growth is bounded.
+    function isBossRewardClaim(characterId) {
+      let before = resource.data;
+      let after = request.resource.data;
+      let bossPath = /databases/$(database)/documents/bosses/$(after.lastBossRewardId);
+      let boss = get(bossPath).data;
+      let reward = boss.reward;
+      return isAuthenticated()
+          && before.email.lower() == request.auth.token.email.lower()
+          && after.diff(before).affectedKeys()
+               .hasOnly(['current_xp', 'gold', 'traits', 'lastBossRewardId'])
+          && boss.status == 'defeated'
+          && boss.damage.get(characterId, 0) > 0
+          && !(characterId in boss.rewarded)
+          && getAfter(bossPath).data.rewarded.get(characterId, false) == true
+          && ('current_xp' in reward
+                ? after.current_xp == asNumber(before, 'current_xp') + reward.current_xp
+                : !after.diff(before).affectedKeys().hasAny(['current_xp']))
+          && ('gold' in reward
+                ? after.gold == asNumber(before, 'gold') + reward.gold
+                : !after.diff(before).affectedKeys().hasAny(['gold']))
+          && ('traits' in reward
+                ? after.traits.size() <= before.get('traits', []).size() + reward.traits.size()
+                : !after.diff(before).affectedKeys().hasAny(['traits']));
+    }
+
+    match /bosses/{bossId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+                    || isBossAttack()
+                    || isBossJoin()
+                    || isBossClaim(bossId);
+
+      function targets(boss, characterId) {
+        return boss.get('targetCharacterId', null) == null
+            || boss.targetCharacterId == characterId;
+      }
+
+      // One blow (BossRepository.attack): exactly one tier's cost/damage
+      // pair, paid from XP earned since the boss appeared.
+      function isBossAttack() {
+        let before = resource.data;
+        let after = request.resource.data;
+        let c = after.lastAttackerId;
+        let paid = after.spent.get(c, 0) - before.spent.get(c, 0);
+        let dealt = after.damage.get(c, 0) - before.damage.get(c, 0);
+        let character = get(/databases/$(database)/documents/characters/$(c)).data;
+        return isAuthenticated()
+            && before.status == 'active'
+            && targets(before, c)
+            && character.email.lower() == request.auth.token.email.lower()
+            && after.diff(before).affectedKeys().hasOnly(
+                 ['hp', 'spent', 'damage', 'lastAttackerId', 'lastAttackerName', 'status', 'defeatedAt'])
+            && after.spent.diff(before.spent).affectedKeys().hasOnly([c])
+            && after.damage.diff(before.damage).affectedKeys().hasOnly([c])
+            && ((paid == 1 && dealt == 1) || (paid == 10 && dealt == 10)
+                || (paid == 50 && dealt == 60) || (paid == 100 && dealt == 150))
+            && c in before.baseline
+            && after.spent[c] <= character.current_xp - before.baseline[c]
+            && ((before.hp > dealt && after.hp == before.hp - dealt
+                   && after.status == 'active' && !('defeatedAt' in after))
+                || (before.hp <= dealt && after.hp == 0
+                   && after.status == 'defeated' && after.defeatedAt == request.time));
+      }
+
+      // A character created after the boss appeared joins with its current
+      // XP as baseline (BossRepository.join).
+      function isBossJoin() {
+        let before = resource.data;
+        let after = request.resource.data;
+        let c = after.lastJoinedId;
+        let character = get(/databases/$(database)/documents/characters/$(c)).data;
+        return isAuthenticated()
+            && before.status == 'active'
+            && targets(before, c)
+            && character.email.lower() == request.auth.token.email.lower()
+            && after.diff(before).affectedKeys().hasOnly(['baseline', 'lastJoinedId'])
+            && !(c in before.baseline)
+            && after.baseline.diff(before.baseline).affectedKeys().hasOnly([c])
+            && after.baseline[c] == character.current_xp;
+      }
+
+      // The boss half of a reward claim; the character half is
+      // isBossRewardClaim, and each requires the other via getAfter.
+      function isBossClaim(bossId) {
+        let before = resource.data;
+        let after = request.resource.data;
+        let c = after.lastClaimId;
+        return ownsCharacter(c)
+            && before.status == 'defeated'
+            && before.damage.get(c, 0) > 0
+            && !(c in before.rewarded)
+            && after.diff(before).affectedKeys().hasOnly(['rewarded', 'lastClaimId'])
+            && after.rewarded.diff(before.rewarded).affectedKeys().hasOnly([c])
+            && after.rewarded[c] == true
+            && getAfter(/databases/$(database)/documents/characters/$(c))
+                 .data.get('lastBossRewardId', null) == bossId;
+      }
     }
 
     match /change_requests/{requestId} {

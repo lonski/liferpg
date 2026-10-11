@@ -28,6 +28,41 @@ const Color badgeDiskEdge = Color(0xFF2A0606);
 const Color badgeGlow = Color(0x8CF6DC8E); // 55%
 const Color badgeGlowFade = Color(0x00F6DC8E); // 0%
 
+// Boss-fight elements (BossArena, SpellbookSheet): like the badge metals,
+// fire is fire and ice is ice in every theme.
+const Color spellSpark = Color(0xFFF2C46B);
+const Color spellFire = Color(0xFFD9452B);
+const Color spellFireCore = Color(0xFFFFF3B0);
+const Color spellIce = Color(0xFF4A90C8);
+const Color spellIceLight = Color(0xFF9FD3F2);
+const Color spellRock = Color(0xFF7A4A2C);
+const Color spellRockDark = Color(0xFF3A2210);
+const Color bossHitFlash = Color(0xCCFFFFFF);
+
+// The player's fighter on the arena (HeroPainter): character art, like the
+// boss drawings, so the same in every theme.
+const Color heroSkin = Color(0xFFF6C9A0);
+const Color heroOutline = Color(0xFF2B1B12);
+const Color heroHair = Color(0xFF6B3A1E);
+const Color heroBoot = Color(0xFF4A2C1A);
+const Color heroMetal = Color(0xFFC9CDD6);
+const Color heroMetalDark = Color(0xFF8A93A6);
+const Color heroWood = Color(0xFF8A5A2A);
+const Color heroWoodDark = Color(0xFF5A3A1A);
+const Color heroStraw = Color(0xFFE8C068);
+const Color heroPaper = Color(0xFFFBF3E2);
+const Color heroGold = Color(0xFFF2C46B);
+const Color heroWizardRobe = Color(0xFF5B3A8E);
+const Color heroWizardHat = Color(0xFF3E2A6B);
+const Color heroBarbarianTunic = Color(0xFF8A5A36);
+const Color heroFur = Color(0xFFC9A27A);
+const Color heroDress = Color(0xFFC83A2A);
+const Color heroApron = Color(0xFFFFF8E8);
+const Color heroKnightTunic = Color(0xFF3A5A8E);
+const Color heroPlume = Color(0xFFC83A2A);
+const Color heroArcherTunic = Color(0xFF4E7A3A);
+const Color heroHood = Color(0xFF3E6A2E);
+
 ThemeData buildAppTheme([RpgTheme t = RpgTheme.kronika]) {
   final base = ThemeData(brightness: Brightness.light, useMaterial3: true);
   return base.copyWith(
