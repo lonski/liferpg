@@ -10,7 +10,7 @@ required -- credited here anyway):
 
 - "Medium rooster crowing.ogg", "Small rooster crowing.ogg",
   "Hen announcing shes lain an egg.ogg" -- by alys, public domain.
-- "Chicken in Vezo.ogg" -- by Gasybeaugosse2020, CC0.
+- "Chickens demanding food.ogg" -- by alys, public domain.
 - "মুরগির বাচ্চার ডাক.oga" (chick calls) -- by Md. Tahmid Hossain, CC0.
 """
 import os
@@ -27,7 +27,7 @@ SOURCES = {
     'rooster': 'Medium rooster crowing.ogg',
     'rooster_small': 'Small rooster crowing.ogg',
     'hen_egg': 'Hen announcing shes lain an egg.ogg',
-    'hen_vezo': 'Chicken in Vezo.ogg',
+    'hens_food': 'Chickens demanding food.ogg',
     'chicks': 'মুরগির বাচ্চার ডাক.oga',
 }
 
@@ -106,9 +106,16 @@ def main():
         # name: (samples, peak dB) -- spans found by RMS onset analysis.
         'rooster_1': (cut('rooster', 2.80, 5.55), -4),
         'rooster_2': (cut('rooster_small', 2.55, 4.20), -4),
-        'hen_1': (cut('hen_vezo', 0.08, 0.78), -3),
+        # Hen clucks: runs of clucks from the egg-laying hen (clean), the
+        # cackle itself (3.4-5.6 s) kept for 'egg', plus one from the hens
+        # demanding food (gated: farmyard hiss). Never a pronunciation
+        # recording: "Chicken in Vezo" was a person saying the word.
+        'hen_1': (cut('hen_egg', 0.02, 0.52), -3),
         'hen_2': (cut('hen_egg', 0.52, 1.36), -3),
         'hen_3': (cut('hen_egg', 1.42, 2.40), -3),
+        'hen_4': (cut('hen_egg', 5.62, 6.32), -3),
+        'hen_5': (cut('hen_egg', 6.36, 7.36), -3),
+        'hen_6': (gate(highpass(cut('hens_food', 8.80, 9.48), 350)), -3),
         'egg': (cut('hen_egg', 3.40, 5.62), -3),
         # The chick recording has room hiss: high-pass + a soft gate.
         'chick_1': (gate(highpass(cut('chicks', 1.56, 2.18), 1800)), -3),

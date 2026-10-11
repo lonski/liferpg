@@ -95,6 +95,9 @@ class LivelyKurczak extends StatelessWidget {
       'kurczaki/sounds/hen_1.m4a',
       'kurczaki/sounds/hen_2.m4a',
       'kurczaki/sounds/hen_3.m4a',
+      'kurczaki/sounds/hen_4.m4a',
+      'kurczaki/sounds/hen_5.m4a',
+      'kurczaki/sounds/hen_6.m4a',
     ],
     KurczakVoice.rooster: [
       'kurczaki/sounds/rooster_1.m4a',

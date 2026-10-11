@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/theme/app_theme.dart';
 import 'package:liferpg/theme/chatter.dart';
@@ -196,5 +197,17 @@ void main() {
       }
       expect(tipped, isTrue);
     });
+  });
+
+  test('every sound a bird may play is bundled', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final assets = {
+      for (final list in LivelyKurczak.sounds.values) ...list,
+      LivelyKurczak.eggSound,
+    };
+    for (final asset in assets) {
+      final data = await rootBundle.load('assets/$asset');
+      expect(data.lengthInBytes, greaterThan(1000), reason: asset);
+    }
   });
 }
