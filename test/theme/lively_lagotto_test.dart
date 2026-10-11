@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/theme/app_theme.dart';
+import 'package:liferpg/theme/chatter.dart';
 import 'package:liferpg/theme/lagotto_decor.dart';
 import 'package:liferpg/theme/lively.dart';
 import 'package:liferpg/theme/lively_lagotto.dart';
@@ -156,6 +158,48 @@ void main() {
       await _tap(tester);
       expect(find.byKey(const Key('lagotto-drop')), findsNothing);
       await tester.pumpAndSettle();
+    }
+  });
+
+  group('sounds', () {
+    Widget heard(Widget dog, List<String> played) =>
+        _park(ThemeChatter(tips: const [], playSound: played.add, child: dog));
+
+    for (final voice in LagottoVoice.values) {
+      testWidgets('a tapped ${voice.name} dog makes one of its own sounds', (tester) async {
+        final played = <String>[];
+        await tester.pumpWidget(heard(
+          LivelyLagotto(Lagotto.dogSit, key: const Key('dog'), voice: voice, width: 90, height: 97),
+          played,
+        ));
+        await _tap(tester);
+
+        expect(played, hasLength(1));
+        expect(LivelyLagotto.sounds[voice], contains(played.single));
+        await tester.pumpAndSettle();
+      });
+    }
+
+    testWidgets('digging up the golden truffle is a howl', (tester) async {
+      final played = <String>[];
+      await tester.pumpWidget(heard(_dog, played));
+      for (var i = 0; i < LivelySecret.taps; i++) {
+        await _tap(tester);
+      }
+      expect(played.last, LivelyLagotto.truffleSound);
+      await tester.pumpAndSettle();
+    });
+  });
+
+  test('every sound a dog may play is bundled', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final assets = {
+      for (final list in LivelyLagotto.sounds.values) ...list,
+      LivelyLagotto.truffleSound,
+    };
+    for (final asset in assets) {
+      final data = await rootBundle.load('assets/$asset');
+      expect(data.lengthInBytes, greaterThan(1000), reason: asset);
     }
   });
 }

@@ -79,6 +79,28 @@ class LivelyLagotto extends StatelessWidget {
 
   static const truffleLine = 'Hau! Trufla!';
 
+  /// The sound files (under `assets/`) each voice picks from: barks, a
+  /// puppy's yips, the sleeper's soft dreaming whimper.
+  static const sounds = {
+    LagottoVoice.dog: [
+      'lagotto/sounds/bark_1.m4a',
+      'lagotto/sounds/bark_2.m4a',
+      'lagotto/sounds/bark_3.m4a',
+      'lagotto/sounds/bark_4.m4a',
+      'lagotto/sounds/bark_5.m4a',
+    ],
+    LagottoVoice.puppy: [
+      'lagotto/sounds/puppy_1.m4a',
+      'lagotto/sounds/puppy_2.m4a',
+      'lagotto/sounds/puppy_3.m4a',
+      'lagotto/sounds/puppy_4.m4a',
+    ],
+    LagottoVoice.sleepy: ['lagotto/sounds/sleepy.m4a'],
+  };
+
+  /// The golden truffle dug up: a howl of triumph.
+  static const truffleSound = 'lagotto/sounds/howl.m4a';
+
   /// What a dog says when kibble is dropped on it.
   static const feedLines = {
     LagottoVoice.dog: ['Mniam, karma!', 'Hau! Pyszne!', 'Dziękuję!', 'Jeszcze miseczkę?'],
@@ -101,6 +123,7 @@ class LivelyLagotto extends StatelessWidget {
       flip: flip,
       runs: runs,
       lines: linesOf(voice),
+      sounds: sounds[voice]!,
       moves: asleep
           ? const [LivelyMove.stretch, LivelyMove.shake]
           : const [LivelyMove.hop, LivelyMove.chase, LivelyMove.shake, LivelyMove.bow],
@@ -109,6 +132,7 @@ class LivelyLagotto extends StatelessWidget {
         eats: const {'kibble'},
         lines: feedLines[voice]!,
         move: asleep ? LivelyMove.stretch : LivelyMove.peck,
+        sound: sounds[voice]!.first,
         burst: const LivelyBurst(
           rise: true,
           piece: LagottoArt(Lagotto.heart, key: Key('lagotto-fed-heart'), width: 13, height: 13),
@@ -130,6 +154,7 @@ class LivelyLagotto extends StatelessWidget {
           ? const LivelySecret(
               line: truffleLine,
               pops: true,
+              sound: truffleSound,
               piece: LagottoArt(Lagotto.truffleGold, key: Key('lagotto-truffle'), width: 22, height: 22),
             )
           : null,

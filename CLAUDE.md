@@ -488,7 +488,14 @@ characterName, email
   low-latency player per effect; a seam tests override or simply leave
   out — without a `ThemeChatter` above it a bird is silent and tipless).
   Sounds and tips live in the shared `Lively` engine (`lib/theme/lively.dart`),
-  so Lagotto's dogs drop tips too (they have no sound files yet).
+  so Lagotto's dogs drop tips and make sounds too: barks for a grown dog,
+  yips for a puppy, a soft dreaming whimper for the sleeper and a howl for
+  the golden truffle (public domain / CC0 real-dog recordings, cut into
+  `assets/lagotto/sounds/` by `tools/theme_art/lagotto_sounds.py`). Source
+  sounds must be the animal itself: Commons is full of pronunciation files
+  ("Chicken in Vezo", "Dog in Antefasy" -- a person saying the word),
+  which is how an odd "ko-ku" once slipped in as a hen; tests check every
+  listed sound is bundled.
   **Feeding**: `LivelyFoodPile`s lie in the scenes — a grain pile
   (`GrainPile`) among the Kurczaki birds, a kibble bowl (`KibbleBowl`) among
   the Lagotto dogs, in every footer scene and on the login screen. Dragging
