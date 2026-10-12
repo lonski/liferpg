@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/app_user.dart';
 import '../models/character.dart';
+import '../models/character_deltas.dart';
 import '../models/electronics_days.dart';
 
 /// Thrown when an electronics write re-reads the character mid-transaction
@@ -64,8 +65,20 @@ class CharacterRepository {
         );
   }
 
-  Future<void> updateCharacter(Character character) =>
-      _db.collection('characters').doc(character.id).update(character.toMap());
+  /// The edit screen's save. A changed `current_xp` also moves `xp_earned`
+  /// (see xpUpdate), read in the same transaction so a rise accepted while
+  /// the screen was open is never undone.
+  Future<void> updateCharacter(Character character) {
+    final ref = _db.collection('characters').doc(character.id);
+    return _db.runTransaction((tx) async {
+      final stored = (await tx.get(ref)).data() ?? const <String, dynamic>{};
+      final xpChanged = stored['current_xp'] != character.currentXp;
+      tx.update(ref, {
+        ...character.toMap(),
+        if (xpChanged) ...xpUpdate(stored, character.currentXp),
+      });
+    });
+  }
 
   /// An admin spending today's electronics day directly, no request needed.
   Future<void> claimElectronicsDay(String characterId) =>

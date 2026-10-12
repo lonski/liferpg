@@ -84,7 +84,7 @@ class BossRepository {
       );
 
   /// An admin calls a boss onto [targets]' cards (the whole roster for
-  /// "everyone", or the one chosen character). Each target's current XP
+  /// "everyone", or the one chosen character). Each target's earned XP
   /// becomes its baseline, so energy counts only XP earned from now on.
   Future<void> summon({
     required String name,
@@ -107,13 +107,13 @@ class BossRepository {
     'createdAt': FieldValue.serverTimestamp(),
     'createdBy': createdBy,
     'createdByName': createdByName,
-    'baseline': {for (final c in targets) c.id: c.currentXp},
+    'baseline': {for (final c in targets) c.id: c.earnedXp},
     'spent': <String, int>{},
     'damage': <String, int>{},
     'rewarded': <String, bool>{},
   });
 
-  /// A character created after the boss appeared joins with its current XP
+  /// A character created after the boss appeared joins with its earned XP
   /// as baseline. A no-op once it has one, or once the boss is gone.
   Future<void> join(String bossId, String characterId) async {
     final bossRef = _bosses.doc(bossId);
@@ -129,7 +129,7 @@ class BossRepository {
         return;
       }
       tx.update(bossRef, {
-        'baseline': {...parsed.baseline, characterId: _xpOf(character)},
+        'baseline': {...parsed.baseline, characterId: earnedXpOf(character)},
         'lastJoinedId': characterId,
       });
     });
@@ -156,7 +156,7 @@ class BossRepository {
       final spent = boss.spent[characterId] ?? 0;
       final energy = base == null
           ? 0
-          : math.max(0, _xpOf(charData) - base - spent);
+          : math.max(0, earnedXpOf(charData) - base - spent);
       if (energy < tier.cost) throw NotEnoughEnergy(energy);
 
       final hp = math.max(0, boss.hp - tier.damage);
@@ -207,14 +207,33 @@ class BossRepository {
     });
   }
 
+  /// An admin sets [characterId]'s energy against this boss outright (the
+  /// edit screen's Moc bojowa) by moving its baseline, since energy is
+  /// earned XP − baseline − spent. Read in a transaction so it lands exactly
+  /// as typed even right after the same save changed the XP.
+  Future<void> setEnergy(String bossId, String characterId, int energy) async {
+    final bossRef = _bosses.doc(bossId);
+    final charRef = _db.collection('characters').doc(characterId);
+    await _db.runTransaction((tx) async {
+      final bossData = (await tx.get(bossRef)).data();
+      if (bossData == null) throw const BossGone();
+      final charData = (await tx.get(charRef)).data();
+      if (charData == null) throw const BossCharacterGone();
+      final boss = Boss.fromMap(bossId, bossData);
+      if (!boss.isActive || !boss.targets(characterId)) throw const BossGone();
+      tx.update(bossRef, {
+        'baseline': {
+          ...boss.baseline,
+          characterId:
+              earnedXpOf(charData) -
+              (boss.spent[characterId] ?? 0) -
+              math.max(0, energy),
+        },
+      });
+    });
+  }
+
   /// An admin calls the boss off; it leaves every card.
   Future<void> cancel(String bossId) =>
       _bosses.doc(bossId).update({'status': BossStatus.cancelled.name});
-
-  int _xpOf(Map<String, dynamic> character) {
-    final v = character['current_xp'];
-    if (v is num) return v.toInt();
-    if (v is String) return num.tryParse(v.trim())?.toInt() ?? 0;
-    return 0;
-  }
 }

@@ -1,10 +1,36 @@
+import 'dart:math' as math;
+
 import 'change_request.dart';
+
+int _xpField(Object? v) {
+  if (v is num) return v.toInt();
+  if (v is String) return num.tryParse(v.trim())?.toInt() ?? 0;
+  return 0;
+}
+
+/// The character's `xp_earned` (see Character.xpEarned), falling back to
+/// `current_xp` before the first XP write records it.
+int earnedXpOf(Map<String, dynamic> character) {
+  final v = character['xp_earned'];
+  return v is num ? v.toInt() : _xpField(character['current_xp']);
+}
+
+/// The `current_xp` + `xp_earned` pair for setting XP to [xp]: only a rise
+/// adds to `xp_earned`, so lowering XP (a level-up) never takes boss
+/// energy away.
+Map<String, int> xpUpdate(Map<String, dynamic> character, int xp) => {
+  'current_xp': xp,
+  'xp_earned':
+      earnedXpOf(character) +
+      math.max(0, xp - _xpField(character['current_xp'])),
+};
 
 /// The character fields to write for the XP / gold / trait part of
 /// [changes], given the character's current data. Only fields the change
 /// actually touches appear, so an XP-only change cannot invent `gold: 0`.
 /// Shared by change-request accept and achievement award / revoke; nothing
-/// here clamps, so a negative delta may take a value below zero.
+/// here clamps, so a negative delta may take a value below zero. An XP
+/// change also writes `xp_earned` (see [xpUpdate]).
 Map<String, dynamic> applyCharacterDeltas(
   Map<String, dynamic> character,
   ChangeSet changes,
@@ -20,7 +46,10 @@ Map<String, dynamic> applyCharacterDeltas(
 
   final updates = <String, dynamic>{
     if (changes.currentXp != null)
-      'current_xp': (current('current_xp') + changes.currentXp!).toInt(),
+      ...xpUpdate(
+        character,
+        (current('current_xp') + changes.currentXp!).toInt(),
+      ),
     if (changes.gold != null) 'gold': current('gold') + changes.gold!,
   };
 

@@ -84,6 +84,12 @@ void main() {
       expect(boss.energyOf(hero(id: 'c3')), isNull, reason: 'no baseline yet');
     });
 
+    test('energy counts earned XP, so a level-up keeps it', () {
+      final levelledUp = Character.fromMap('c1', {'current_xp': 0, 'xp_earned': 100});
+      expect(levelledUp.earnedXp, 100);
+      expect(boss.energyOf(levelledUp), 25);
+    });
+
     test('reads tolerantly', () {
       final odd = Boss.fromMap('b2', {'look': 'nieznany', 'maxHp': '40', 'hp': 99, 'status': 'zly'});
       expect(odd.look, BossLook.smok);

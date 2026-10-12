@@ -5,6 +5,7 @@ import '../../feature_flags.dart';
 import '../../models/boss.dart';
 import '../../models/character.dart';
 import '../../models/electronics_days.dart';
+import '../../providers/boss_providers.dart';
 import '../../providers/character_providers.dart';
 import '../../providers/clock_provider.dart';
 import '../../providers/hidden_characters_providers.dart';
@@ -64,6 +65,9 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
   final _formKey = GlobalKey<FormState>();
   late final Map<String, TextEditingController> _controllers;
   late final int _initialElectronics;
+  // Moc bojowa per live boss, by boss id, filled in as the bosses load.
+  final _energy = <String, TextEditingController>{};
+  final _initialEnergy = <String, int>{};
   late List<Trait> _traits;
   // Stable per-row identity, independent of list position, so that removing
   // a trait in the middle of the list doesn't confuse Flutter's element
@@ -107,7 +111,7 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
 
   @override
   void dispose() {
-    for (final c in _controllers.values) {
+    for (final c in [..._controllers.values, ..._energy.values]) {
       c.dispose();
     }
     _newTraitValue.dispose();
@@ -160,11 +164,17 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
     Navigator.of(context).pop();
   }
 
-  void _stepElectronics(int delta) {
-    final current = int.tryParse(_controllers['electronics']!.text.trim()) ?? 0;
+  void _step(TextEditingController controller, int delta) {
+    final current = int.tryParse(controller.text.trim()) ?? 0;
     final next = (current + delta) < 0 ? 0 : current + delta;
-    setState(() => _controllers['electronics']!.text = '$next');
+    setState(() => controller.text = '$next');
   }
+
+  TextEditingController _energyOf(Boss boss) => _energy.putIfAbsent(boss.id, () {
+    final energy = boss.energyOf(widget.character) ?? 0;
+    _initialEnergy[boss.id] = energy;
+    return TextEditingController(text: '$energy');
+  });
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -187,6 +197,15 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
         await ref
             .read(characterRepositoryProvider)
             .setElectronicsDays(original.id, electronics < 0 ? 0 : electronics);
+      }
+      // After the character, so a raised XP cannot shift the typed energy.
+      for (final MapEntry(key: bossId, value: controller) in _energy.entries) {
+        final energy = int.tryParse(controller.text.trim());
+        if (energy != null && energy != _initialEnergy[bossId]) {
+          await ref
+              .read(bossRepositoryProvider)
+              .setEnergy(bossId, original.id, energy);
+        }
       }
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
@@ -385,39 +404,11 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                     ),
                                   ],
                                 ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Flexible(
-                                      child: Text('Dni elektroniki'.toUpperCase(),
-                                          style: _fieldLabel(context)),
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          key: const Key('electronics-minus'),
-                                          visualDensity: VisualDensity.compact,
-                                          color: context.rpg.crimson,
-                                          icon: const Icon(Icons.remove),
-                                          onPressed: () => _stepElectronics(-1),
-                                        ),
-                                        SizedBox(
-                                          width: 48,
-                                          child: _numberField('electronics',
-                                              _controllers['electronics']!),
-                                        ),
-                                        IconButton(
-                                          key: const Key('electronics-plus'),
-                                          visualDensity: VisualDensity.compact,
-                                          color: context.rpg.crimson,
-                                          icon: const Icon(Icons.add),
-                                          onPressed: () => _stepElectronics(1),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                _stepperRow(
+                                  label: 'Dni elektroniki',
+                                  fieldKey: 'electronics',
+                                  controller: _controllers['electronics']!,
+                                  step: 1,
                                 ),
                                 if (kShowFavour) _favourRow(),
                                 const SizedBox(height: 12),
@@ -426,6 +417,17 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
                                 _traitEditor(traitNames),
                                 const SizedBox(height: 4),
                                 _weaponRow(),
+                                for (final boss in ref
+                                    .watch(bossesForCharacterProvider(
+                                        widget.character.id))
+                                    .where((b) => b.isActive))
+                                  _stepperRow(
+                                    label: 'Moc bojowa · ${boss.name}',
+                                    fieldKey: 'energy-${boss.id}',
+                                    controller: _energyOf(boss),
+                                    step: 10,
+                                    width: 64,
+                                  ),
                               ],
                             ),
                           ),
@@ -449,6 +451,41 @@ class _EditCharacterScreenState extends ConsumerState<EditCharacterScreen> {
       )),
     );
   }
+
+  /// A label and a number box with −/+ buttons (keys `<fieldKey>-minus` /
+  /// `-plus`) that never step below 0.
+  Widget _stepperRow({
+    required String label,
+    required String fieldKey,
+    required TextEditingController controller,
+    required int step,
+    double width = 48,
+  }) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Flexible(child: Text(label.toUpperCase(), style: _fieldLabel(context))),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            key: Key('$fieldKey-minus'),
+            visualDensity: VisualDensity.compact,
+            color: context.rpg.crimson,
+            icon: const Icon(Icons.remove),
+            onPressed: () => _step(controller, -step),
+          ),
+          SizedBox(width: width, child: _numberField(fieldKey, controller)),
+          IconButton(
+            key: Key('$fieldKey-plus'),
+            visualDensity: VisualDensity.compact,
+            color: context.rpg.crimson,
+            icon: const Icon(Icons.add),
+            onPressed: () => _step(controller, step),
+          ),
+        ],
+      ),
+    ],
+  );
 
   Widget _favourRow() => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

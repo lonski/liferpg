@@ -1,6 +1,7 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liferpg/data/boss_repository.dart';
+import 'package:liferpg/data/character_repository.dart';
 import 'package:liferpg/models/boss.dart';
 import 'package:liferpg/models/change_request.dart';
 import 'package:liferpg/models/character.dart';
@@ -56,8 +57,8 @@ void main() {
   Future<Boss> reload(String id) async =>
       Boss.fromMap(id, (await db.collection('bosses').doc(id).get()).data()!);
 
-  Future<void> earn(String id, int xp) =>
-      db.collection('characters').doc(id).update({'current_xp': xp});
+  Future<void> earn(String id, int xp) async =>
+      CharacterRepository(db).updateCharacter((await load(db, id)).copyWith(currentXp: xp));
 
   test('summon records every target\'s XP as its baseline', () async {
     final boss = await summon();
@@ -138,6 +139,31 @@ void main() {
     expect(() => repo.claimReward(boss.id, 'c1'), throwsA(isA<BossRewardNotAvailable>()));
     expect(() => repo.claimReward(boss.id, 'c2'), throwsA(isA<BossRewardNotAvailable>()),
         reason: 'Kuba never hit it');
+  });
+
+  test('a level-up through the edit screen leaves the energy alone', () async {
+    final boss = await summon();
+    await earn('c1', 2500); // via the edit screen: xp_earned 2500
+    await CharacterRepository(db).updateCharacter((await load(db, 'c1')).copyWith(currentXp: 0));
+    final c1 = await load(db, 'c1');
+    expect(c1.currentXp, 0);
+    expect(boss.energyOf(c1), 2400);
+    await CharacterRepository(db).updateCharacter(c1.copyWith(currentXp: 40));
+    expect(boss.energyOf(await load(db, 'c1')), 2440, reason: 'new XP still counts');
+    await repo.attack(bossId: boss.id, characterId: 'c1', characterName: 'Zosia', tier: BlowTier.hyper);
+    expect((await reload(boss.id)).energyOf(await load(db, 'c1')), 2340);
+  });
+
+  test('an admin sets the energy outright', () async {
+    final boss = await summon();
+    await earn('c1', 130);
+    await repo.attack(bossId: boss.id, characterId: 'c1', characterName: 'Zosia', tier: BlowTier.strong);
+    await repo.setEnergy(boss.id, 'c1', 500);
+    expect((await reload(boss.id)).energyOf(await load(db, 'c1')), 500);
+    await repo.setEnergy(boss.id, 'c1', 0);
+    expect((await reload(boss.id)).energyOf(await load(db, 'c1')), 0);
+    await repo.cancel(boss.id);
+    expect(() => repo.setEnergy(boss.id, 'c1', 5), throwsA(isA<BossGone>()));
   });
 
   test('a cancelled boss leaves the live list', () async {

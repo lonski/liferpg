@@ -56,6 +56,7 @@ electronics: { days: int, as_of: 'YYYY-MM-DD', claimed: ['YYYY-MM-DD'] }  (optio
 achievements: [{ id, title, event?, reason?, date: 'YYYY-MM-DD', emblem, place?, tier, reward: { current_xp?, gold?, traits?: [{name, value}], electronics_days? }, awardedBy, awardedByName, awardedAt }]  (optional)
 weapon: 'miecz'|'luk'|'maczuga'|'miotla'|'ksiega'  (optional, admin-set)
 lastBossRewardId  (optional, written only by a boss reward claim)
+xp_earned  (optional: every XP ever gained, never lowered -- see Bosses)
 ```
 
 - Characters are linked to users via `email`.
@@ -183,20 +184,30 @@ lastAttackerId, lastAttackerName, lastJoinedId, lastClaimId, defeatedAt
   `firestore.rules` checks each one (tested in `tools/rules-test/`): an
   attack changes only the attacker's `spent`/`damage` entries by exactly one
   tier pair (1→1, 10→10, 50→60, 100→150), never spending more than
-  `current_xp − baseline` read off the character, and takes exactly that
+  the earned XP `− baseline` read off the character, and takes exactly that
   damage off `hp` (at 0 it must also set `status: defeated` +
   `defeatedAt == request.time`); a join adds the caller's own missing
-  baseline equal to its `current_xp`; a reward claim is a two-document
-  write -- the character (only `current_xp`/`gold`/`traits`/
-  `lastBossRewardId`, XP and gold exactly `+reward`, the traits list growing
+  baseline equal to its earned XP; a reward claim is a two-document
+  write -- the character (only `current_xp`/`xp_earned`/`gold`/`traits`/
+  `lastBossRewardId`, XP and gold exactly `+reward`, earned XP by the
+  reward's rise, the traits list growing
   by at most the reward's trait count; trait *values* are not verifiable
   without loops) and the boss's `rewarded` entry -- each half requiring the
   other via `getAfter`. This is the only non-admin character write.
-- **Energy** ("energia bojowa") is `max(0, current_xp − baseline − spent)`:
-  XP earned since the boss appeared. The admin's summon writes every
-  target's baseline; a character created later joins from its owner's
-  client the first time its arena shows (`BossRepository.join`). An admin
-  lowering `current_xp` by hand lowers energy too.
+- **Energy** ("energia bojowa") is `max(0, earned − baseline − spent)`:
+  XP earned since the boss appeared, and **only a blow ever lowers it**.
+  `earned` is the character's `xp_earned` (`Character.earnedXp`, rules'
+  `earnedXp()`), every XP it ever gained: each XP write moves it with
+  `current_xp` and only a rise adds (`xpUpdate` in
+  `lib/models/character_deltas.dart`, used by `applyCharacterDeltas` and
+  by `CharacterRepository.updateCharacter`, now a transaction), so a
+  level-up that resets `current_xp` to 0 leaves energy alone. A character
+  without the field counts its `current_xp` until the first XP write
+  records it. The admin's summon writes every target's baseline; a
+  character created later joins from its owner's client the first time its
+  arena shows (`BossRepository.join`). The admin sets the energy outright
+  in the edit screen (**Moc bojowa · <boss>** per live boss,
+  `BossRepository.setEnergy`, which moves the baseline).
 - The live list is `where('status', whereIn: ['active', 'defeated'])`; a
   beaten boss stays under a fighter's card until that fighter collects.
 

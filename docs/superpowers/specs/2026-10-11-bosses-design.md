@@ -22,7 +22,7 @@ reward: { current_xp?, gold?, traits?: [{name, value}] }   (deltas)
 targetCharacterId, targetCharacterName   (null = everyone)
 status: 'active' | 'defeated' | 'cancelled'
 createdAt (server), createdBy, createdByName
-baseline: { <characterId>: current_xp when the boss appeared }
+baseline: { <characterId>: earned XP (xp_earned) when the boss appeared }
 spent:    { <characterId>: energy spent }
 damage:   { <characterId>: damage dealt }
 rewarded: { <characterId>: true }
@@ -30,8 +30,8 @@ lastAttackerId, lastAttackerName, lastJoinedId, lastClaimId, defeatedAt
 ```
 
 `characters/{id}` gains `weapon` ('miecz'|'luk'|'maczuga'|'miotla'|'ksiega',
-admin-set, in `toMap()`) and `lastBossRewardId` (written only by a reward
-claim, never by `toMap()`).
+admin-set, in `toMap()`), `lastBossRewardId` (written only by a reward
+claim, never by `toMap()`) and `xp_earned` (see Energy).
 
 ## Rules of play
 
@@ -42,13 +42,19 @@ claim, never by `toMap()`).
 - **Blows**: four tiers for every weapon, cost → damage: 1 → 1, 10 → 10,
   50 → 60, 100 → 150. Names per weapon (Iskra / Kula ognia / Lodowa burza /
   Deszcz meteorów for the book, …).
-- **Energy** ("energia bojowa") = `max(0, current_xp − baseline − spent)`:
+- **Energy** ("energia bojowa") = `max(0, earned − baseline − spent)`:
   XP gained since the boss appeared, minus what blows used. XP and level are
-  untouched. The admin writes `baseline` for every targeted character at
-  summon time; a character missing from it (created later) gets its own
-  baseline written by its owner's client the first time the arena shows.
-  An admin lowering `current_xp` by hand (a level-up reset) lowers energy
-  too; it never goes below 0.
+  untouched. Only a blow ever lowers it: `earned` is the character's
+  `xp_earned`, every XP it ever gained, which a lowered `current_xp` (a
+  level-up reset, a revoked badge) leaves alone. Every XP write moves it
+  with `current_xp` (`xpUpdate` in `character_deltas.dart`: only a rise
+  adds), and a character without the field counts its `current_xp` until
+  the first XP write records it. The admin writes `baseline` for every
+  targeted character at summon time; a character missing from it (created
+  later) gets its own baseline written by its owner's client the first time
+  the arena shows. The admin can also set the energy outright in the edit
+  screen (**Moc bojowa · <boss>**, one row per live boss), which moves the
+  baseline (`BossRepository.setEnergy`).
 - **Attack** (owner's client, transaction): re-reads boss and character,
   checks active / targeted / energy, then writes hp, spent, damage, and on
   0 HP `status: defeated` + `defeatedAt`.
@@ -64,10 +70,10 @@ claim, never by `toMap()`).
   field so the rule can check it:
   - attack — only hp/damage/spent/status/defeatedAt/lastAttacker*; one
     character's entries change, by exactly one tier's cost/damage pair;
-    new `spent ≤ current_xp − baseline` (read off the character);
+    new `spent ≤ earned − baseline` (read off the character);
     hp drops by the damage (or to 0 with `status: defeated`).
   - join — adds the caller's own missing baseline, equal to the
-    character's `current_xp`.
+    character's earned XP.
   - claim — adds the caller's character to `rewarded` on a defeated boss it
     damaged, only together with the character write below.
 - `characters`: besides admin writes, the owner may update their own

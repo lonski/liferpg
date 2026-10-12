@@ -45,6 +45,7 @@ class Character {
     this.electronics = const ElectronicsDays(),
     this.achievements = const [],
     this.weapon,
+    this.xpEarned,
   });
 
   final String id;
@@ -67,6 +68,17 @@ class Character {
 
   /// The admin's pick, overriding the class's default; see weaponOf().
   final Weapon? weapon;
+
+  /// `xp_earned`: every XP the character ever gained, never lowered, so a
+  /// level-up that takes `current_xp` back to 0 leaves it alone. Null on a
+  /// character no XP write has touched yet -- see [earnedXp]. Written only
+  /// with `current_xp` (applyCharacterDeltas, CharacterRepository's
+  /// updateCharacter), never by toMap().
+  final int? xpEarned;
+
+  /// What boss energy counts: [xpEarned], or `current_xp` until the first
+  /// XP write records it.
+  int get earnedXp => xpEarned ?? currentXp;
 
   factory Character.fromMap(String id, Map<String, dynamic> data) {
     final rawTraits = data['traits'];
@@ -99,10 +111,11 @@ class Character {
       electronics: ElectronicsDays.fromMap(data['electronics']),
       achievements: achievements,
       weapon: Weapon.parse(data['weapon']),
+      xpEarned: _asInt(data['xp_earned']),
     );
   }
 
-  // Deliberately omits `electronics` and `achievements`: the edit screen saves via update(toMap()), and including a snapshot of either here would overwrite a claim accepted, or a badge awarded, while the screen was open.
+  // Deliberately omits `electronics`, `achievements` and `xp_earned`: the edit screen saves via update(toMap()), and including a snapshot of either here would overwrite a claim accepted, or a badge awarded, while the screen was open.
   Map<String, dynamic> toMap() => {
         'name': name,
         'clazz': clazz,
@@ -141,6 +154,7 @@ class Character {
         electronics: electronics,
         achievements: achievements,
         weapon: weapon == null ? this.weapon : weapon(),
+        xpEarned: xpEarned,
       );
 
   /// Progress towards the next level, 0.0–1.0, for the XP bar.

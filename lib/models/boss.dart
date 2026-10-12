@@ -259,8 +259,8 @@ class Boss {
   final String createdBy;
   final String createdByName;
 
-  /// Each character's current_xp when the boss appeared (or when it first
-  /// joined, for a character created later).
+  /// Each character's earned XP (Character.earnedXp) when the boss appeared
+  /// (or when it first joined, for a character created later).
   final Map<String, int> baseline;
   final Map<String, int> spent;
   final Map<String, int> damage;
@@ -304,11 +304,12 @@ class Boss {
       targetCharacterId == null || targetCharacterId == characterId;
 
   /// Energy left for [character]: XP gained since the boss appeared, minus
-  /// what its blows used. Null until the character has a baseline.
+  /// what its blows used. Null until the character has a baseline. Counted
+  /// on earned XP, which never drops, so only a blow ever lowers it.
   int? energyOf(Character character) {
     final base = baseline[character.id];
     if (base == null) return null;
-    return math.max(0, character.currentXp - base - (spent[character.id] ?? 0));
+    return math.max(0, character.earnedXp - base - (spent[character.id] ?? 0));
   }
 
   int damageBy(String characterId) => damage[characterId] ?? 0;

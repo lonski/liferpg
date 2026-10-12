@@ -45,14 +45,22 @@ service cloud.firestore {
            : (data[key] is string ? float(data[key]) : data[key]);
     }
 
+    // Every XP the character ever gained (`xp_earned`, never lowered by a
+    // level-up), or current_xp before the first XP write records it. Boss
+    // energy is counted on this, so it never drops.
+    function earnedXp(data) {
+      return data.get('xp_earned', asNumber(data, 'current_xp'));
+    }
+
     function ownsCharacter(characterId) {
       return isAuthenticated()
           && get(/databases/$(database)/documents/characters/$(characterId))
                .data.email.lower() == request.auth.token.email.lower();
     }
 
-    // XP and gold must move by exactly the reward; trait values cannot be
-    // checked without loops, so only the list's growth is bounded.
+    // XP and gold must move by exactly the reward (earned XP by its rise);
+    // trait values cannot be checked without loops, so only the list's
+    // growth is bounded.
     function isBossRewardClaim(characterId) {
       let before = resource.data;
       let after = request.resource.data;
@@ -62,14 +70,16 @@ service cloud.firestore {
       return isAuthenticated()
           && before.email.lower() == request.auth.token.email.lower()
           && after.diff(before).affectedKeys()
-               .hasOnly(['current_xp', 'gold', 'traits', 'lastBossRewardId'])
+               .hasOnly(['current_xp', 'xp_earned', 'gold', 'traits', 'lastBossRewardId'])
           && boss.status == 'defeated'
           && boss.damage.get(characterId, 0) > 0
           && !(characterId in boss.rewarded)
           && getAfter(bossPath).data.rewarded.get(characterId, false) == true
           && ('current_xp' in reward
                 ? after.current_xp == asNumber(before, 'current_xp') + reward.current_xp
-                : !after.diff(before).affectedKeys().hasAny(['current_xp']))
+                  && earnedXp(after) == earnedXp(before)
+                       + (reward.current_xp > 0 ? reward.current_xp : 0)
+                : !after.diff(before).affectedKeys().hasAny(['current_xp', 'xp_earned']))
           && ('gold' in reward
                 ? after.gold == asNumber(before, 'gold') + reward.gold
                 : !after.diff(before).affectedKeys().hasAny(['gold']))
@@ -111,14 +121,14 @@ service cloud.firestore {
             && ((paid == 1 && dealt == 1) || (paid == 10 && dealt == 10)
                 || (paid == 50 && dealt == 60) || (paid == 100 && dealt == 150))
             && c in before.baseline
-            && after.spent[c] <= character.current_xp - before.baseline[c]
+            && after.spent[c] <= earnedXp(character) - before.baseline[c]
             && ((before.hp > dealt && after.hp == before.hp - dealt
                    && after.status == 'active' && !('defeatedAt' in after))
                 || (before.hp <= dealt && after.hp == 0
                    && after.status == 'defeated' && after.defeatedAt == request.time));
       }
 
-      // A character created after the boss appeared joins with its current
+      // A character created after the boss appeared joins with its earned
       // XP as baseline (BossRepository.join).
       function isBossJoin() {
         let before = resource.data;
@@ -132,7 +142,7 @@ service cloud.firestore {
             && after.diff(before).affectedKeys().hasOnly(['baseline', 'lastJoinedId'])
             && !(c in before.baseline)
             && after.baseline.diff(before.baseline).affectedKeys().hasOnly([c])
-            && after.baseline[c] == character.current_xp;
+            && after.baseline[c] == earnedXp(character);
       }
 
       // The boss half of a reward claim; the character half is

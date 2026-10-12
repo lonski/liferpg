@@ -1149,7 +1149,7 @@ function claimBatch(db, bossId, characterId, character) {
 }
 
 const ALICE_PAID = {
-  current_xp: 150, gold: 25,
+  current_xp: 150, xp_earned: 150, gold: 25,
   traits: [{ name: 'Odwaga', value: '2' }],
 };
 
@@ -1170,6 +1170,8 @@ test('a reward claim must pay exactly the reward', async () => {
     { ...ALICE_PAID, current_xp: 1000 }));
   await assertFails(claimBatch(ctxFor(ALICE), 'b-greedy', 'cb-alice',
     { ...ALICE_PAID, level: 99 }));
+  await assertFails(claimBatch(ctxFor(ALICE), 'b-greedy', 'cb-alice',
+    { ...ALICE_PAID, xp_earned: 5000 }));
 });
 
 test('only a character that dealt damage collects, and only from a beaten boss', async () => {
@@ -1188,4 +1190,42 @@ test('the character half of a claim is refused on its own', async () => {
 test("a player may not collect for somebody else's character", async () => {
   await seedBoss('b-steal', { hp: 0, status: 'defeated', damage: { 'cb-alice': 60 } });
   await assertFails(claimBatch(ctxFor(BOB), 'b-steal', 'cb-alice', ALICE_PAID));
+});
+
+test('energy counts earned XP, so a level-up that zeroes current_xp keeps it', async () => {
+  // Earned 100 (baseline 60 -> 40 energy), then levelled up to current_xp 0.
+  await seedBoss('b-levelup', {});
+  await env.withSecurityRulesDisabled(async (c) => {
+    await updateDoc(doc(c.firestore(), 'characters/cb-alice'), { current_xp: 0, xp_earned: 100 });
+  });
+  await assertSucceeds(updateDoc(doc(ctxFor(ALICE), 'bosses/b-levelup'), blow('cb-alice', FRESH, 10, 10)));
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'bosses/b-levelup'),
+    blow('cb-alice', { hp: 90, spent: { 'cb-alice': 10 }, damage: { 'cb-alice': 10 } }, 50, 60)));
+});
+
+test('a late character joins with its earned XP, not its current XP', async () => {
+  await seedBoss('b-join-earned', { baseline: {} });
+  await env.withSecurityRulesDisabled(async (c) => {
+    await updateDoc(doc(c.firestore(), 'characters/cb-alice'), { current_xp: 0, xp_earned: 300 });
+  });
+  await assertFails(updateDoc(doc(ctxFor(ALICE), 'bosses/b-join-earned'),
+    { baseline: { 'cb-alice': 0 }, lastJoinedId: 'cb-alice' }));
+  await assertSucceeds(updateDoc(doc(ctxFor(ALICE), 'bosses/b-join-earned'),
+    { baseline: { 'cb-alice': 300 }, lastJoinedId: 'cb-alice' }));
+});
+
+test('a claim adds the reward XP to an already recorded xp_earned', async () => {
+  await seedBoss('b-claim-earned', { hp: 0, status: 'defeated', damage: { 'cb-alice': 60 } });
+  await env.withSecurityRulesDisabled(async (c) => {
+    await updateDoc(doc(c.firestore(), 'characters/cb-alice'), { xp_earned: 400 });
+  });
+  await assertFails(claimBatch(ctxFor(ALICE), 'b-claim-earned', 'cb-alice', ALICE_PAID));
+  await assertSucceeds(claimBatch(ctxFor(ALICE), 'b-claim-earned', 'cb-alice',
+    { ...ALICE_PAID, xp_earned: 450 }));
+});
+
+test('an older app that leaves xp_earned out may still collect', async () => {
+  await seedBoss('b-claim-old', { hp: 0, status: 'defeated', damage: { 'cb-alice': 60 } });
+  const { xp_earned: _, ...oldPaid } = ALICE_PAID;
+  await assertSucceeds(claimBatch(ctxFor(ALICE), 'b-claim-old', 'cb-alice', oldPaid));
 });

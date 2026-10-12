@@ -352,4 +352,43 @@ void main() {
     final snap = await db.collection('characters').doc(character.id).get();
     expect(snap.data()!['weapon'], 'luk');
   });
+
+  testWidgets('the admin sets Moc bojowa for each live boss', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final (db, character) = await seed();
+    await db.collection('bosses').doc('b1').set({
+      'name': 'Smok Ognisty', 'look': 'smok', 'maxHp': 100, 'hp': 100,
+      'status': 'active', 'targetCharacterId': null,
+      'baseline': {character.id: 10}, 'spent': {character.id: 20},
+      'damage': {}, 'rewarded': {},
+    });
+    await pumpEdit(tester, db, character);
+
+    final field = find.byKey(const Key('field-energy-b1'));
+    await tester.ensureVisible(field);
+    expect(find.widgetWithText(TextFormField, '10'), findsOneWidget,
+        reason: '40 XP - baseline 10 - spent 20');
+    expect(tester.takeException(), isNull);
+    await tester.enterText(field, '300');
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    final boss = await db.collection('bosses').doc('b1').get();
+    expect(boss.data()!['baseline'], {character.id: 40 - 20 - 300});
+  });
+
+  testWidgets('a level-up in the editor keeps xp_earned', (tester) async {
+    final (db, character) = await seed();
+    await pumpEdit(tester, db, character);
+
+    await tester.enterText(find.byKey(const Key('field-current_xp')), '0');
+    await tester.tap(find.byKey(const Key('save-character')));
+    await tester.pumpAndSettle();
+
+    final snap = await db.collection('characters').doc(character.id).get();
+    expect(snap.data()!['current_xp'], 0);
+    expect(snap.data()!['xp_earned'], 40);
+  });
 }
